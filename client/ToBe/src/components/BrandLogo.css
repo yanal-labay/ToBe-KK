@@ -1,0 +1,16 @@
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo-img {
+  height: 48px;
+  width: auto;
+}
+
+.brand-logo-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text);
+}

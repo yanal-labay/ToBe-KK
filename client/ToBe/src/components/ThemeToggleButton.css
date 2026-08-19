@@ -1,0 +1,19 @@
+.theme-toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--color-primary);
+  background: var(--color-primary-light);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: filter 0.2s, box-shadow 0.2s;
+}
+
+.theme-toggle:hover {
+  box-shadow: var(--shadow);
+  filter: brightness(0.97);
+}

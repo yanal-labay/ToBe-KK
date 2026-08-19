@@ -1,0 +1,36 @@
+.admin-shell {
+  min-height: 100svh;
+  background: var(--color-bg);
+}
+
+.admin-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: var(--color-surface);
+  border-bottom: 3px solid var(--color-primary);
+  box-shadow: var(--shadow);
+}
+
+.admin-topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-badge {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  background: var(--color-primary-light);
+  border: 1px solid var(--color-primary);
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+
+.admin-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
