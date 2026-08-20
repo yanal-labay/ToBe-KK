@@ -5,6 +5,7 @@ const { requireAuth } = require("./auth.middleware");
 
 const router = express.Router();
 
+// Throttles brute-force password guessing against a single IP.
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,

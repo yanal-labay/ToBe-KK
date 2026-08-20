@@ -10,6 +10,11 @@ const cookieParser = require("cookie-parser");
 const { z } = require("zod");
 const authRoutes = require("./userManagement/auth.routes");
 const eventRoutes = require("./events/event.routes");
+const scholarshipRoutes = require("./scholarships/scholarship.routes");
+const tagRoutes = require("./scholarships/tag.routes");
+const studentRegistryRoutes = require("./studentRegistry/registrant.routes");
+const listOptionRoutes = require("./studentRegistry/listOption.routes");
+const seedListOptions = require("./studentRegistry/seedListOptions");
 
 dotenv.config();
 
@@ -27,6 +32,9 @@ const BuySchema = z.object({
 
 app.use(helmet());
 app.use(morgan("dev"));
+// `credentials: true` + an explicit origin (not "*") is required for the
+// browser to send/accept the httpOnly session cookie cross-origin between
+// the Vite dev server and this API.
 app.use(
   cors({
     origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
@@ -36,11 +44,17 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
+// API responses (and the static uploads below) are never cached — admin
+// content changes frequently and auth state must never be served stale.
 app.use((req, res, next) => {
   res.set("Cache-Control", "no-store");
   next();
 });
 
+// Serves uploaded event photos. Helmet's default Cross-Origin-Resource-Policy
+// ("same-origin") would otherwise silently block the client (a different
+// origin in dev) from loading these images via <img>, so it's relaxed to
+// "cross-origin" for this path only.
 app.use(
   "/uploads",
   (req, res, next) => {
@@ -52,6 +66,10 @@ app.use(
 
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
+app.use("/api/scholarships", scholarshipRoutes);
+app.use("/api/tags", tagRoutes);
+app.use("/api/student-registry", studentRegistryRoutes);
+app.use("/api/student-registry-options", listOptionRoutes);
 
 const buyActionLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -70,10 +88,19 @@ if (!MONGO_URI) {
 } else {
   mongoose
     .connect(MONGO_URI)
-    .then(() => console.log("DB STATUS: Connected Successfully"))
+    .then(() => {
+      console.log("DB STATUS: Connected Successfully");
+      return seedListOptions();
+    })
     .catch((err) => console.error("DB CONNECTION ERROR:", err.message));
 }
 
+// --- Legacy scaffolding below ---
+// Order/TestEntry and their /api/test, /api/status, /api/orders, /api/buy,
+// /api/reset routes are leftover boilerplate from an earlier "limited spots"
+// campaign template. They are not part of the current app (events, auth) and
+// aren't wired into any page — left as-is rather than removed since that's
+// outside the scope of whatever asked for changes near them.
 const Order = mongoose.model(
   "Order",
   new mongoose.Schema({

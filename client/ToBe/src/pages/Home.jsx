@@ -1,3 +1,4 @@
+/** Public homepage at "/" — still a placeholder pending real content. */
 function Home() {
   return (
     <div style={{ maxWidth: 960, margin: '0 auto', padding: '80px 24px', textAlign: 'center' }}>

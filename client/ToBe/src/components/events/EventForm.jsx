@@ -1,34 +1,35 @@
-import { useEffect, useState } from 'react'
-import { API_URL } from '../../apiConfig'
+import { useState } from 'react'
+import PhotoDropzone from '../shared/PhotoDropzone'
 import './formFields.css'
 import './EventForm.css'
 
 const EMPTY_FORM = { title: '', description: '', date: '', time: '', location: '', price: '' }
 
+/**
+ * Create/edit form for an event, used both for "new event" (no
+ * `initialValues`) and for editing an existing one. The photo field is
+ * optional and supports both drag-and-drop and click-to-choose; on edit,
+ * leaving it untouched keeps the event's existing photo (the server only
+ * replaces `photoUrl` when a new file is actually uploaded).
+ *
+ * Submits via `onSubmit(formData)` with a `FormData` (not JSON) because the
+ * optional photo file has to travel as `multipart/form-data`.
+ *
+ * @param {{
+ *   initialValues?: {title: string, description: string, date: string, time: string, location: string, price: string},
+ *   existingPhotoUrl?: string|null,
+ *   submitLabel: string,
+ *   onSubmit: (formData: FormData) => Promise<void>,
+ *   onCancel: () => void,
+ * }} props
+ */
 function EventForm({ initialValues, existingPhotoUrl, submitLabel, onSubmit, onCancel }) {
   const [values, setValues] = useState(initialValues || EMPTY_FORM)
   const [photoFile, setPhotoFile] = useState(null)
-  const [photoPreview, setPhotoPreview] = useState(null)
-  const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
   const handleChange = (field) => (e) => setValues({ ...values, [field]: e.target.value })
-
-  const selectPhotoFile = (file) => {
-    if (!file) return
-    setPhotoFile(file)
-    setPhotoPreview((current) => {
-      if (current) URL.revokeObjectURL(current)
-      return URL.createObjectURL(file)
-    })
-  }
-
-  useEffect(() => {
-    return () => {
-      if (photoPreview) URL.revokeObjectURL(photoPreview)
-    }
-  }, [photoPreview])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -88,34 +89,11 @@ function EventForm({ initialValues, existingPhotoUrl, submitLabel, onSubmit, onC
       </label>
       <label>
         תמונה (לא חובה)
-        <img
-          src={photoPreview || (existingPhotoUrl ? `${API_URL}${existingPhotoUrl}` : undefined)}
-          alt=""
-          className="event-photo-preview"
-          hidden={!photoPreview && !existingPhotoUrl}
+        <PhotoDropzone
+          photoFile={photoFile}
+          existingPhotoUrl={existingPhotoUrl}
+          onSelect={setPhotoFile}
         />
-        <div
-          className={`photo-dropzone ${isDragging ? 'is-dragging' : ''}`}
-          onDragOver={(e) => {
-            e.preventDefault()
-            setIsDragging(true)
-          }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={(e) => {
-            e.preventDefault()
-            setIsDragging(false)
-            selectPhotoFile(e.dataTransfer.files?.[0])
-          }}
-        >
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => selectPhotoFile(e.target.files?.[0])}
-          />
-          <p className="photo-dropzone-hint">
-            {photoFile ? photoFile.name : 'גררו תמונה לכאן או לחצו לבחירה'}
-          </p>
-        </div>
       </label>
       {error && <p className="event-form-error">{error}</p>}
       <div className="event-form-actions">

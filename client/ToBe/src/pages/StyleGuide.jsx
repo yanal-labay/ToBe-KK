@@ -9,6 +9,12 @@ const PALETTE = [
   { name: 'Text Muted', varName: '--color-text-muted' },
 ]
 
+/**
+ * Internal reference page (/style-guide, no nav link) showing the color
+ * palette, typography, buttons, and card component — a living reference for
+ * the CSS custom properties and utility classes defined in index.css and
+ * styles/components.css.
+ */
 function StyleGuide() {
   return (
     <div className="style-guide">

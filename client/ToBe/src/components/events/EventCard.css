@@ -24,3 +24,29 @@
   gap: 12px;
   margin-top: 16px;
 }
+
+.event-card {
+  position: relative;
+}
+
+/* The event's date+time has already passed — flagged with a badge and
+   sunk to the bottom of the list (see Events.jsx). The card itself stays
+   full color; only the guest's registration button is greyed out and
+   disabled (below) — admin controls are never affected. */
+.event-register-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.event-expired-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: var(--color-text-muted);
+  color: var(--color-surface);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  z-index: 1;
+}

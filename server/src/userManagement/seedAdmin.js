@@ -3,6 +3,12 @@ const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
 const User = require("./user.model");
 
+/**
+ * One-off script (`npm run seed:admin`) that creates or updates the admin
+ * account from ADMIN_EMAIL/ADMIN_PASSWORD in .env. Uses `upsert` so it's
+ * safe to re-run — e.g. to reset the password by changing .env and running
+ * again — without creating duplicate accounts.
+ */
 async function seedAdmin() {
   const { MONGO_URI, ADMIN_EMAIL, ADMIN_PASSWORD } = process.env;
 

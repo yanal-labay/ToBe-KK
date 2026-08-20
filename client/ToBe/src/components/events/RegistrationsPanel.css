@@ -76,3 +76,62 @@
   background: var(--color-bg);
   color: var(--color-text);
 }
+
+/* `text-align: left` (a physical, not logical, property) keeps this
+   button at the screen's top-left corner regardless of the app's RTL
+   layout direction. */
+.registrations-toolbar {
+  text-align: left;
+  margin-bottom: 8px;
+}
+
+.registrations-add-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.registrations-add-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.registrations-add-form input {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.registrations-add-form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.registrations-delete-btn {
+  border: none;
+  background: transparent;
+  color: #d03b3b;
+  cursor: pointer;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.registrations-delete-btn:hover {
+  background: rgba(208, 59, 59, 0.12);
+}

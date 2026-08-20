@@ -1,0 +1,23 @@
+.student-registry-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  width: 96%;
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+.student-registry-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.student-registry-page-header-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}

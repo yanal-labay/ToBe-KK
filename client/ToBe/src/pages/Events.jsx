@@ -2,15 +2,26 @@ import { useEffect, useState } from 'react'
 import { useAdminSession } from '../hooks/useAdminSession'
 import { API_URL } from '../apiConfig'
 import EventForm from '../components/events/EventForm'
-import EventCard from '../components/events/EventCard'
+import EventCard, { isEventExpired } from '../components/events/EventCard'
 import './Events.css'
 
+/**
+ * The /events page — the app's first fully-built example of a shared page
+ * whose content adapts to the visitor's role (see components/events/):
+ * admins can create/edit/delete events and view registrants, guests can
+ * only view and register. `isAdmin` alone decides which controls render;
+ * everyone hits the same public GET /api/events list.
+ */
 function Events() {
   const { isAdmin } = useAdminSession()
 
   const [events, setEvents] = useState([])
   const [loadState, setLoadState] = useState('loading') // loading | ready | error
 
+  // At most one event is being created/edited/registrations-viewed at a
+  // time; `editingId`/`viewingRegistrationsId` track *which* event by id
+  // rather than a boolean per card, so opening one automatically implies
+  // closing whichever other one was open.
   const [creating, setCreating] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [viewingRegistrationsId, setViewingRegistrationsId] = useState(null)
@@ -92,7 +103,11 @@ function Events() {
       {loadState === 'ready' && events.length === 0 && <p>אין אירועים קרובים כרגע.</p>}
 
       <div className="events-list">
-        {events.map((event) =>
+        {/* Stable sort: groups expired events after active ones while
+            preserving each group's original (soonest-first) order. */}
+        {[...events]
+          .sort((a, b) => Number(isEventExpired(a)) - Number(isEventExpired(b)))
+          .map((event) =>
           isAdmin && editingId === event._id ? (
             <EventForm
               key={event._id}

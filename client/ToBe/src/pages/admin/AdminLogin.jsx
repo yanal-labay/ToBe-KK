@@ -7,6 +7,14 @@ import BrandLogo from '../../components/BrandLogo'
 import ThemeToggleButton from '../../components/ThemeToggleButton'
 import './AdminLogin.css'
 
+/**
+ * Standalone admin login page (outside the shared `Layout`, see App.jsx).
+ * On success, calls `markAuthed` to update the shared session immediately
+ * rather than navigating and relying on a fresh `/api/auth/me` check — the
+ * `RequireAdminAuth` guard on `/admin` reads that same session state, so
+ * without this it would still think the visitor is anonymous the instant
+ * after login and bounce them back to the login page.
+ */
 function AdminLogin() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

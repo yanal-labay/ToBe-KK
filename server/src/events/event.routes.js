@@ -10,10 +10,14 @@ const {
   registerForEvent,
   listRegistrations,
   updateRegistrationStatus,
+  deleteRegistration,
 } = require("./event.controller");
 
 const router = express.Router();
 
+// Guards the public registration endpoint against being used to spam the
+// database or brute-force-probe event IDs; not applied to admin-only routes
+// since those already require an authenticated session.
 const registerLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 10,
@@ -32,6 +36,7 @@ router.delete("/:id", requireAuth, deleteEvent);
 router.post("/:id/register", registerLimiter, registerForEvent);
 router.get("/:id/registrations", requireAuth, listRegistrations);
 router.patch("/:id/registrations/:registrationId", requireAuth, updateRegistrationStatus);
+router.delete("/:id/registrations/:registrationId", requireAuth, deleteRegistration);
 
 // Turn photo upload failures (bad file type, too large) into clean JSON responses
 // instead of Express's default HTML error page.

@@ -1,6 +1,13 @@
 // TODO: replace with the real WhatsApp group invite link
 export const WHATSAPP_GROUP_URL = '#'
 
+/**
+ * The public site's navbar links, rendered by <Navbar/> when the visitor is
+ * not an authenticated admin. Each entry is either `{label, to}` (an
+ * internal route via NavLink) or `{label, href}` (an external link, opened
+ * in a new tab). The entry with `icon: 'home'` renders as an icon instead of
+ * text (see Navbar.jsx).
+ */
 export const NAV_LINKS = [
   { label: 'בית', to: '/', icon: 'home' },
   { label: 'מלגות', to: '/scholarships' },

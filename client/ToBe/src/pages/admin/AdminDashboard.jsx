@@ -1,5 +1,11 @@
 import { useOutletContext } from 'react-router-dom'
 
+/**
+ * Landing page for authenticated admins at "/admin" — still a placeholder.
+ * `admin` comes from the outlet context provided by `RequireAdminAuth`
+ * (the route guard wrapping this page), not from `useAdminSession()`
+ * directly.
+ */
 function AdminDashboard() {
   const { admin } = useOutletContext()
 

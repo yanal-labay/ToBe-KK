@@ -5,6 +5,15 @@ import './RegisterForm.css'
 
 const EMPTY_REGISTER = { name: '', email: '', phone: '' }
 
+/**
+ * Guest registration widget for one event. Guests have no accounts, so
+ * "already registered" is tracked only in this component's local state —
+ * once `status` reaches "success" the form is replaced by a confirmation
+ * message and stays that way for the rest of the page session (reloading
+ * the page resets it, since there's nothing server-side to check against).
+ *
+ * @param {{eventId: string}} props
+ */
 function RegisterForm({ eventId }) {
   const [open, setOpen] = useState(false)
   const [values, setValues] = useState(EMPTY_REGISTER)

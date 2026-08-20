@@ -1,5 +1,6 @@
 import './ThemeToggleButton.css'
 
+/** Sun/moon toggle button; purely presentational — theme state lives in useTheme(). */
 function ThemeToggleButton({ theme, onToggle }) {
   return (
     <button

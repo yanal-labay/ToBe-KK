@@ -8,15 +8,25 @@ const LoginSchema = z.object({
   password: z.string().min(1),
 });
 
+// Name of the httpOnly cookie that carries the signed JWT session. Shared
+// with auth.middleware.js so `requireAuth` reads the same cookie `login`
+// sets.
 const COOKIE_NAME = "token";
 const TOKEN_TTL = "8h";
 
+/** Signs a session JWT for an authenticated admin user. */
 function signToken(user) {
   return jwt.sign({ id: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET, {
     expiresIn: TOKEN_TTL,
   });
 }
 
+/**
+ * Sets the session cookie. `httpOnly` keeps it inaccessible to client-side
+ * JS (XSS mitigation); `secure` is only enforced in production so local dev
+ * over plain http still works; `sameSite: "lax"` is enough since the client
+ * and API are same-site in this deployment.
+ */
 function setAuthCookie(res, token) {
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
@@ -26,6 +36,7 @@ function setAuthCookie(res, token) {
   });
 }
 
+/** POST /api/auth/login — rate-limited (see loginLimiter in auth.routes.js). */
 async function login(req, res) {
   const result = LoginSchema.safeParse(req.body);
   if (!result.success) {
@@ -48,11 +59,17 @@ async function login(req, res) {
   res.json({ success: true, admin: { email: user.email } });
 }
 
+/** POST /api/auth/logout — clears the session cookie. No auth required. */
 function logout(req, res) {
   res.clearCookie(COOKIE_NAME);
   res.json({ success: true });
 }
 
+/**
+ * GET /api/auth/me — behind `requireAuth`, so `req.admin` is the decoded JWT
+ * payload set by the middleware. Used by the client's session context to
+ * check "am I still logged in" on load and to fetch the display email.
+ */
 function me(req, res) {
   res.json({ admin: { email: req.admin.email } });
 }

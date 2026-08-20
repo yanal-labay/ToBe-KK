@@ -4,6 +4,13 @@ const Event = require("./event.model");
 const Registration = require("./registration.model");
 const { deletePhoto } = require("./upload");
 
+/**
+ * Validates the create/update event payload. Note this arrives as
+ * `multipart/form-data` (because the photo upload shares the same request),
+ * so every field is a plain string on `req.body` — `price` in particular is
+ * transformed from a string into either `null` (blank / omitted, meaning
+ * "free") or a validated non-negative number.
+ */
 const EventInputSchema = z.object({
   title: z.string().trim().min(1).max(200),
   description: z.string().trim().min(1).max(5000),
@@ -18,6 +25,7 @@ const EventInputSchema = z.object({
     .refine((v) => v === null || (Number.isFinite(v) && v >= 0), { message: "מחיר לא תקין" }),
 });
 
+/** Validates a guest's registration payload (no authentication required). */
 const RegisterSchema = z.object({
   name: z.string().trim().min(1).max(200),
   email: z.string().trim().email(),
@@ -27,10 +35,12 @@ const RegisterSchema = z.object({
     .regex(/^[0-9+\-\s()]{7,20}$/, "מספר טלפון לא תקין"),
 });
 
+/** Validates an admin's attendance-status update for one registration. */
 const RegistrationStatusSchema = z.object({
   status: z.enum(["signed_up", "arrived", "did_not_arrive"]),
 });
 
+/** GET /api/events — public list of all events, soonest date first. */
 async function listEvents(req, res) {
   try {
     const events = await Event.find().sort({ date: 1 });
@@ -40,6 +50,11 @@ async function listEvents(req, res) {
   }
 }
 
+/**
+ * POST /api/events — admin-only. Creates a new event. The photo is optional;
+ * when present it was already written to disk by the `upload.single("photo")`
+ * middleware (see event.routes.js) and is available here as `req.file`.
+ */
 async function createEvent(req, res) {
   const result = EventInputSchema.safeParse(req.body);
   if (!result.success) {
@@ -55,6 +70,12 @@ async function createEvent(req, res) {
   }
 }
 
+/**
+ * PATCH /api/events/:id — admin-only. Updates an event's fields. If a new
+ * photo is uploaded, it replaces the old one and the old file is deleted
+ * from disk (`deletePhoto`); if no photo is uploaded, the existing photo is
+ * left untouched.
+ */
 async function updateEvent(req, res) {
   const { id } = req.params;
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -88,6 +109,11 @@ async function updateEvent(req, res) {
   }
 }
 
+/**
+ * DELETE /api/events/:id — admin-only. Deletes the event, its uploaded
+ * photo (if any), and cascades to delete every Registration tied to it —
+ * there is no DB-level cascade for this, so it's done explicitly here.
+ */
 async function deleteEvent(req, res) {
   const { id } = req.params;
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -107,6 +133,11 @@ async function deleteEvent(req, res) {
   }
 }
 
+/**
+ * POST /api/events/:id/register — public, rate-limited (see registerLimiter
+ * in event.routes.js). Guests register with no account: just name/email/
+ * phone, stored as a Registration with the default "signed_up" status.
+ */
 async function registerForEvent(req, res) {
   const { id } = req.params;
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -131,6 +162,11 @@ async function registerForEvent(req, res) {
   }
 }
 
+/**
+ * GET /api/events/:id/registrations — admin-only. Lists everyone registered
+ * for one event, in signup order. Powers the admin registrants table and
+ * status-summary chart.
+ */
 async function listRegistrations(req, res) {
   const { id } = req.params;
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -145,6 +181,12 @@ async function listRegistrations(req, res) {
   }
 }
 
+/**
+ * PATCH /api/events/:id/registrations/:registrationId — admin-only. Sets
+ * one registrant's attendance status (e.g. after checking them in at the
+ * door). `event: id` is included in the query filter so a registration
+ * can't be updated through the wrong event's URL.
+ */
 async function updateRegistrationStatus(req, res) {
   const { id, registrationId } = req.params;
   if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(registrationId)) {
@@ -171,6 +213,29 @@ async function updateRegistrationStatus(req, res) {
   }
 }
 
+/**
+ * DELETE /api/events/:id/registrations/:registrationId — admin-only. Lets
+ * an admin remove one registrant (e.g. spam or a mistaken entry) from the
+ * table in RegistrationsPanel.jsx. `event: id` is included in the query
+ * filter so a registration can't be deleted through the wrong event's URL.
+ */
+async function deleteRegistration(req, res) {
+  const { id, registrationId } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(registrationId)) {
+    return res.status(400).json({ success: false, message: "מזהה לא תקין" });
+  }
+
+  try {
+    const registration = await Registration.findOneAndDelete({ _id: registrationId, event: id });
+    if (!registration) {
+      return res.status(404).json({ success: false, message: "ההרשמה לא נמצאה" });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Database error" });
+  }
+}
+
 module.exports = {
   listEvents,
   createEvent,
@@ -179,4 +244,5 @@ module.exports = {
   registerForEvent,
   listRegistrations,
   updateRegistrationStatus,
+  deleteRegistration,
 };
