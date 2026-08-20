@@ -1,3 +1,4 @@
+const path = require("path");
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -8,6 +9,7 @@ const rateLimit = require("express-rate-limit");
 const cookieParser = require("cookie-parser");
 const { z } = require("zod");
 const authRoutes = require("./userManagement/auth.routes");
+const eventRoutes = require("./events/event.routes");
 
 dotenv.config();
 
@@ -39,7 +41,17 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(
+  "/uploads",
+  (req, res, next) => {
+    res.set("Cross-Origin-Resource-Policy", "cross-origin");
+    next();
+  },
+  express.static(path.join(__dirname, "..", "uploads"))
+);
+
 app.use("/api/auth", authRoutes);
+app.use("/api/events", eventRoutes);
 
 const buyActionLimiter = rateLimit({
   windowMs: 60 * 1000,

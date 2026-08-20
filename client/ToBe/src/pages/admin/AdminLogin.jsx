@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../../hooks/useTheme'
+import { useAdminSession } from '../../hooks/useAdminSession'
 import { API_URL } from '../../apiConfig'
 import BrandLogo from '../../components/BrandLogo'
 import ThemeToggleButton from '../../components/ThemeToggleButton'
@@ -13,6 +14,7 @@ function AdminLogin() {
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
   const { theme, toggleTheme } = useTheme()
+  const { markAuthed } = useAdminSession()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -27,6 +29,7 @@ function AdminLogin() {
       })
       const data = await res.json()
       if (data.success) {
+        markAuthed(data.admin)
         navigate('/admin')
       } else {
         setError(data.message || 'שגיאה בהתחברות')
