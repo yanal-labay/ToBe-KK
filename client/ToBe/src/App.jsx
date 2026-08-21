@@ -1,8 +1,9 @@
 import { Routes, Route } from 'react-router-dom'
-import Layout from './components/Layout'
+import Layout from './components/layout/Layout'
 import Home from './pages/Home'
 import Events from './pages/Events'
 import Scholarships from './pages/Scholarships'
+import Jobs from './pages/Jobs'
 import StudentRegistry from './pages/StudentRegistry'
 import StyleGuide from './pages/StyleGuide'
 import PlaceholderPage from './pages/PlaceholderPage'
@@ -26,7 +27,7 @@ function App() {
         <Route path="/scholarships" element={<Scholarships />} />
         <Route path="/events" element={<Events />} />
         <Route path="/schedule" element={<PlaceholderPage title="לוח זמנים" />} />
-        <Route path="/jobs" element={<PlaceholderPage title="לוח משרות" />} />
+        <Route path="/jobs" element={<Jobs />} />
         <Route path="/links" element={<PlaceholderPage title="לינקים שימושיים" />} />
         <Route path="/student-registry" element={<StudentRegistry />} />
         <Route path="/appointment" element={<PlaceholderPage title="בקשה לתאום פגישה" />} />

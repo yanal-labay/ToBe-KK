@@ -2,8 +2,8 @@ import { Outlet } from 'react-router-dom'
 import Header from './Header'
 import Navbar from './Navbar'
 import AdminTopbar from './AdminTopbar'
-import { useAdminSession } from '../hooks/useAdminSession'
-import { NAV_LINKS, ADMIN_NAV_LINKS } from '../navConfig'
+import { useAdminSession } from '../../hooks/useAdminSession'
+import { NAV_LINKS, ADMIN_NAV_LINKS } from '../../navConfig'
 import './Layout.css'
 
 /**

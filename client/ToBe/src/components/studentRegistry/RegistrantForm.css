@@ -7,6 +7,8 @@
   border-radius: 12px;
   padding: 24px;
   max-width: 560px;
+  width: 100%;
+  align-self: center;
 }
 
 .registrant-form-row {
@@ -29,6 +31,8 @@
   border-radius: 12px;
   padding: 24px;
   max-width: 560px;
+  width: 100%;
+  align-self: center;
 }
 
 @media (max-width: 640px) {

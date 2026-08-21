@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { NAV_LINKS } from '../navConfig'
+import { NAV_LINKS } from '../../navConfig'
 import './Navbar.css'
 
 /** Abstract house icon used for the "home" nav entry instead of text. */

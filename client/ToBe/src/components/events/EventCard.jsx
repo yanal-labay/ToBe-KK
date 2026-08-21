@@ -25,6 +25,25 @@ export function isEventExpired(event) {
 }
 
 /**
+ * True once registration is no longer possible: either the event itself has
+ * already happened, or (when the admin set one) its optional
+ * `registrationDeadline` day has fully passed — a cutoff that can close
+ * sign-ups earlier than the event itself. Mirrors the day-only comparison
+ * in `event.controller.js`'s `isRegistrationClosed`, which is the one that
+ * actually enforces this server-side.
+ */
+export function isRegistrationClosed(event) {
+  if (isEventExpired(event)) return true
+  if (!event.registrationDeadline) return false
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const deadline = new Date(event.registrationDeadline)
+  deadline.setHours(0, 0, 0, 0)
+  return deadline.getTime() < today.getTime()
+}
+
+/**
  * Read-only display of a single event, with the action row branching by
  * role: admins get edit/delete/toggle-registrations buttons (and the
  * `RegistrationsPanel` when toggled open), guests get the `RegisterForm`
@@ -44,6 +63,7 @@ export function isEventExpired(event) {
  */
 function EventCard({ event, isAdmin, onEdit, onDelete, isViewingRegistrations, onToggleRegistrations }) {
   const expired = isEventExpired(event)
+  const registrationClosed = isRegistrationClosed(event)
 
   return (
     <div className="card event-card">
@@ -57,6 +77,9 @@ function EventCard({ event, isAdmin, onEdit, onDelete, isViewingRegistrations, o
         <p>🕒 {event.time}</p>
         <p>📍 {event.location}</p>
         {event.price != null && <p> עלות : {event.price} ₪</p>}
+        {event.registrationDeadline && (
+          <p>⏳ הרשמה עד: {formatDate(event.registrationDeadline)}</p>
+        )}
       </div>
       <p>{event.description}</p>
 
@@ -75,7 +98,7 @@ function EventCard({ event, isAdmin, onEdit, onDelete, isViewingRegistrations, o
           </div>
           {isViewingRegistrations && <RegistrationsPanel eventId={event._id} />}
         </>
-      ) : expired ? (
+      ) : registrationClosed ? (
         <button type="button" className="btn btn-outline event-register-disabled" disabled>
           ההרשמה נסגרה
         </button>

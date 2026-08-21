@@ -82,7 +82,6 @@ function RegistrantForm() {
     return (
       <div className="registrant-register-success">
         <p>✔ נרשמת בהצלחה למאגר הצעירים!</p>
-        <p>ניצור איתך קשר :)</p>
       </div>
     )
   }

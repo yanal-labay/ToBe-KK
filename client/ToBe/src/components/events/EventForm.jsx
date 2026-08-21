@@ -3,7 +3,15 @@ import PhotoDropzone from '../shared/PhotoDropzone'
 import './formFields.css'
 import './EventForm.css'
 
-const EMPTY_FORM = { title: '', description: '', date: '', time: '', location: '', price: '' }
+const EMPTY_FORM = {
+  title: '',
+  description: '',
+  date: '',
+  time: '',
+  location: '',
+  price: '',
+  registrationDeadline: '',
+}
 
 /**
  * Create/edit form for an event, used both for "new event" (no
@@ -16,7 +24,7 @@ const EMPTY_FORM = { title: '', description: '', date: '', time: '', location: '
  * optional photo file has to travel as `multipart/form-data`.
  *
  * @param {{
- *   initialValues?: {title: string, description: string, date: string, time: string, location: string, price: string},
+ *   initialValues?: {title: string, description: string, date: string, time: string, location: string, price: string, registrationDeadline: string},
  *   existingPhotoUrl?: string|null,
  *   submitLabel: string,
  *   onSubmit: (formData: FormData) => Promise<void>,
@@ -33,8 +41,14 @@ function EventForm({ initialValues, existingPhotoUrl, submitLabel, onSubmit, onC
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setSaving(true)
     setError('')
+
+    if (values.registrationDeadline && values.date && values.registrationDeadline > values.date) {
+      setError('תאריך סגירת ההרשמה לא יכול להיות מאוחר מתאריך האירוע')
+      return
+    }
+
+    setSaving(true)
     try {
       const formData = new FormData()
       formData.append('title', values.title)
@@ -43,6 +57,7 @@ function EventForm({ initialValues, existingPhotoUrl, submitLabel, onSubmit, onC
       formData.append('time', values.time)
       formData.append('location', values.location)
       formData.append('price', values.price)
+      formData.append('registrationDeadline', values.registrationDeadline)
       if (photoFile) formData.append('photo', photoFile)
       await onSubmit(formData)
     } catch (err) {
@@ -85,6 +100,15 @@ function EventForm({ initialValues, existingPhotoUrl, submitLabel, onSubmit, onC
           placeholder="ללא עלות"
           value={values.price}
           onChange={handleChange('price')}
+        />
+      </label>
+      <label>
+        תאריך אחרון להרשמה (לא חובה)
+        <input
+          type="date"
+          value={values.registrationDeadline}
+          onChange={handleChange('registrationDeadline')}
+          max={values.date || undefined}
         />
       </label>
       <label>

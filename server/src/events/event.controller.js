@@ -23,7 +23,41 @@ const EventInputSchema = z.object({
     .optional()
     .transform((v) => (v ? Number(v) : null))
     .refine((v) => v === null || (Number.isFinite(v) && v >= 0), { message: "מחיר לא תקין" }),
-});
+  registrationDeadline: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => (v ? new Date(v) : null))
+    .refine((v) => v === null || !isNaN(v.getTime()), { message: "תאריך סגירת ההרשמה לא תקין" }),
+}).refine(
+  (data) => data.registrationDeadline === null || data.registrationDeadline.getTime() <= data.date.getTime(),
+  {
+    message: "תאריך סגירת ההרשמה לא יכול להיות מאוחר מתאריך האירוע",
+    path: ["registrationDeadline"],
+  }
+);
+
+/**
+ * True once an event's optional registration cutoff has fully passed (a
+ * day-only comparison, so the deadline day itself still allows signing up),
+ * or once the event itself has already happened. Guests are blocked from
+ * registering server-side once this is true — see `registerForEvent` —
+ * mirroring `isEventExpired`/`isRegistrationClosed` in EventCard.jsx so the
+ * UI and the API agree on when registration is actually closed.
+ */
+function isRegistrationClosed(event) {
+  const [hours, minutes] = event.time.split(":").map(Number);
+  const eventDateTime = new Date(event.date);
+  eventDateTime.setHours(hours, minutes, 0, 0);
+  if (eventDateTime.getTime() < Date.now()) return true;
+
+  if (!event.registrationDeadline) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const deadline = new Date(event.registrationDeadline);
+  deadline.setHours(0, 0, 0, 0);
+  return deadline.getTime() < today.getTime();
+}
 
 /** Validates a guest's registration payload (no authentication required). */
 const RegisterSchema = z.object({
@@ -153,6 +187,9 @@ async function registerForEvent(req, res) {
     const event = await Event.findById(id);
     if (!event) {
       return res.status(404).json({ success: false, message: "האירוע לא נמצא" });
+    }
+    if (isRegistrationClosed(event)) {
+      return res.status(400).json({ success: false, message: "ההרשמה לאירוע זה נסגרה" });
     }
 
     const registration = await new Registration({ event: event._id, ...result.data }).save();

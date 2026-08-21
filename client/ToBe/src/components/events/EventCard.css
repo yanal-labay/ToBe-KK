@@ -1,13 +1,14 @@
 .event-meta {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
   margin-bottom: 8px;
 }
 
 .event-meta p {
   color: var(--color-text-muted);
   font-size: 14px;
+  line-height: 1;
 }
 
 .event-photo {

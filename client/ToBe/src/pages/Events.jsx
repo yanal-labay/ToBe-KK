@@ -118,6 +118,9 @@ function Events() {
                 date: event.date.slice(0, 10),
                 time: event.time,
                 price: event.price != null ? String(event.price) : '',
+                registrationDeadline: event.registrationDeadline
+                  ? event.registrationDeadline.slice(0, 10)
+                  : '',
               }}
               existingPhotoUrl={event.photoUrl}
               submitLabel="עדכון"

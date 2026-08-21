@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../../hooks/useTheme'
 import { useAdminSession } from '../../hooks/useAdminSession'
 import { API_URL } from '../../apiConfig'
-import BrandLogo from '../../components/BrandLogo'
-import ThemeToggleButton from '../../components/ThemeToggleButton'
+import BrandLogo from '../../components/layout/BrandLogo'
+import ThemeToggleButton from '../../components/layout/ThemeToggleButton'
 import './AdminLogin.css'
 
 /**
