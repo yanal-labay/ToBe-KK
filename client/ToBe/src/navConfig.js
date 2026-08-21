@@ -20,11 +20,11 @@ export const NAV_LINKS = [
   { label: 'צרו קשר', to: '/contact' },
 ]
 
-// Same links as the public navbar, with admin-specific overrides:
-// the home icon points back to the admin dashboard, and the registry
-// link uses a shorter label that fits the admin panel's context.
+// Same links as the public navbar, with one admin-specific override: the
+// registry link uses a shorter label that fits the admin panel's context.
+// The home icon stays pointed at "/" for admins too — there's no separate
+// admin dashboard route anymore (see App.jsx).
 export const ADMIN_NAV_LINKS = NAV_LINKS.map((link) => {
-  if (link.icon === 'home') return { ...link, to: '/admin' }
   if (link.to === '/student-registry') return { ...link, label: 'מאגר צעירים' }
   return link
 })

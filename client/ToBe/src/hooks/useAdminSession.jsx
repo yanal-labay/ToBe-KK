@@ -8,8 +8,7 @@ const AdminSessionContext = createContext(null)
  * (see main.jsx) so every consumer shares a single `/api/auth/me` check
  * instead of each doing its own. This is what lets `Layout` pick admin vs.
  * guest chrome for ANY route (including public pages like /events) purely
- * from session state, rather than from which URL subtree is being visited —
- * see `RequireAdminAuth`, which reads this same context to gate `/admin`.
+ * from session state, rather than from which URL subtree is being visited.
  *
  * `markAuthed`/`clearSession` let `AdminLogin` and the logout button in
  * `AdminTopbar` update this state instantly after a successful login/logout,

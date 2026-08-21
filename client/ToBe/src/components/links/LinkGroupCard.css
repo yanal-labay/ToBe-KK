@@ -1,0 +1,133 @@
+.link-group-card {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--color-surface);
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+}
+
+.link-group-header {
+  background: var(--color-primary);
+  color: #000;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.link-group-header h2 {
+  margin: 0;
+  font-size: 18px;
+  /* h1/h2/h3 get a direct color rule in index.css (color: var(--color-text)),
+     which — being a direct match on the element itself — wins over the
+     inherited #000 from .link-group-header above. Set it explicitly here
+     too so the title stays black regardless of theme. */
+  color: #000;
+}
+
+.link-group-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.link-group-collapse-toggle {
+  display: inline-block;
+  color: #000;
+  font-size: 16px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.link-group-collapse-toggle.is-collapsed {
+  transform: rotate(-90deg);
+}
+
+.link-group-drag-handle {
+  display: inline-block;
+  color: #000;
+  font-size: 18px;
+  line-height: 1;
+  cursor: grab;
+  padding: 0 2px;
+}
+
+.link-group-drag-handle:active {
+  cursor: grabbing;
+}
+
+.link-group-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* .btn-outline normally uses --color-text (fine on a normal surface), but
+   that flips to near-white in dark mode and disappears against this
+   header's gold background — override it to stay black. */
+.link-group-header .btn-outline {
+  color: #000;
+  border-color: #000;
+}
+
+.link-group-rename-form {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+}
+
+.link-group-rename-form input {
+  flex: 1;
+  font: inherit;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+}
+
+.link-item-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: right;
+}
+
+.link-item-row:last-child {
+  border-bottom: none;
+}
+
+.link-item-drag-handle {
+  display: inline-block;
+  color: var(--color-text-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: grab;
+}
+
+.link-item-drag-handle:active {
+  cursor: grabbing;
+}
+
+.link-item-headline {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.link-item-description {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.link-item-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.link-group-add-item {
+  padding: 16px 20px;
+}

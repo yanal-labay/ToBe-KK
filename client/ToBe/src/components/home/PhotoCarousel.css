@@ -58,7 +58,14 @@
   right: 0;
   display: flex;
   justify-content: center;
-  gap: 6px;
+  align-items: center;
+  gap: 10px;
+}
+
+.photo-carousel-dot-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .photo-carousel-dot {
@@ -75,22 +82,27 @@
   background: #fff;
 }
 
-.photo-carousel-delete {
+.photo-carousel-dot-delete {
   position: absolute;
-  top: 12px;
-  left: 12px;
-  background: rgba(0, 0, 0, 0.5);
-  color: #fff;
+  bottom: 12px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
   border: none;
-  border-radius: 999px;
-  padding: 4px 12px;
-  font-size: 13px;
-  font-weight: 600;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 
-.photo-carousel-delete:hover {
-  background: rgba(192, 57, 43, 0.85);
+.photo-carousel-dot-delete:hover {
+  background: rgba(192, 57, 43, 0.9);
 }
 
 .photo-carousel-add {

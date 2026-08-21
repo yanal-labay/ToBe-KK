@@ -109,18 +109,6 @@ function Home() {
 
   return (
     <div className="home-page">
-      <div className="home-hero">
-        <h1>מרכז הצעירים כפר כמא</h1>
-        <p>מקום אחד לכל מה שקורה: מלגות, אירועים, משרות ולוח זמנים למען הצעירים בכפר כמא.</p>
-      </div>
-
-      <PhotoCarousel
-        photos={home.photos}
-        isAdmin={isAdmin}
-        onAddPhoto={handleAddPhoto}
-        onDeletePhoto={handleDeletePhoto}
-      />
-
       {homeLoadState === 'loading' && <p className="home-loading">טוען תוכן...</p>}
       {homeLoadState === 'error' && <p className="home-error">לא ניתן לטעון את תוכן העמוד כרגע</p>}
       {homeLoadState === 'ready' && (
@@ -131,6 +119,13 @@ function Home() {
           onSave={handleSaveContent}
         />
       )}
+
+      <PhotoCarousel
+        photos={home.photos}
+        isAdmin={isAdmin}
+        onAddPhoto={handleAddPhoto}
+        onDeletePhoto={handleDeletePhoto}
+      />
 
       <div>
         <h2 className="home-section-title">קיצורי דרך</h2>

@@ -298,7 +298,7 @@ function InterestsCellEditor({ initialValues, onCommit, onCancel }) {
 function RegistrantsPanel({ institutions, fieldsOfStudy }) {
   const [registrants, setRegistrants] = useState([])
   const [loadState, setLoadState] = useState('loading') // loading | ready | error
-  const [showChart, setShowChart] = useState(true)
+  const [showChart, setShowChart] = useState(false)
   const [chartField, setChartField] = useState(CHARTABLE_FIELDS[0].value)
   const [editingCell, setEditingCell] = useState(null) // {id, field} | null
   const [cellError, setCellError] = useState('')

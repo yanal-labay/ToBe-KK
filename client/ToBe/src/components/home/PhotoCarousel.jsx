@@ -62,8 +62,6 @@ function PhotoCarousel({ photos, isAdmin, onAddPhoto, onDeletePhoto }) {
     await onAddPhoto(file)
   }
 
-  const current = slides[index]
-
   return (
     <div className="photo-carousel">
       {slides.map((slide, i) => (
@@ -85,26 +83,31 @@ function PhotoCarousel({ photos, isAdmin, onAddPhoto, onDeletePhoto }) {
           </button>
           <div className="photo-carousel-dots">
             {slides.map((slide, i) => (
-              <button
-                type="button"
-                key={slide.isSeed ? slide.src : slide.photo._id}
-                className={`photo-carousel-dot ${i === index ? 'is-active' : ''}`}
-                onClick={() => goTo(i)}
-                aria-label={`תמונה ${i + 1}`}
-              />
+              <span className="photo-carousel-dot-wrapper" key={slide.isSeed ? slide.src : slide.photo._id}>
+                <button
+                  type="button"
+                  className={`photo-carousel-dot ${i === index ? 'is-active' : ''}`}
+                  onClick={() => goTo(i)}
+                  aria-label={`תמונה ${i + 1}`}
+                />
+                {isAdmin && !slide.isSeed && (
+                  <button
+                    type="button"
+                    className="photo-carousel-dot-delete"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDeletePhoto(slide.photo)
+                    }}
+                    aria-label={`מחיקת תמונה ${i + 1}`}
+                    title="מחיקת תמונה"
+                  >
+                    ×
+                  </button>
+                )}
+              </span>
             ))}
           </div>
         </>
-      )}
-
-      {isAdmin && current && !current.isSeed && (
-        <button
-          type="button"
-          className="photo-carousel-delete"
-          onClick={() => onDeletePhoto(current.photo)}
-        >
-          מחיקה
-        </button>
       )}
 
       {isAdmin && (

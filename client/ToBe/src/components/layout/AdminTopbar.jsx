@@ -12,8 +12,7 @@ function AdminTopbar() {
 
   // Deliberately does not navigate after logging out: clearing the shared
   // session flips Layout back to guest chrome in place on whatever page the
-  // admin was viewing. If they happen to be on /admin, RequireAdminAuth
-  // reacts to the same state change and redirects to /admin/login on its own.
+  // admin was viewing.
   const handleLogout = async () => {
     await fetch(`${API_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' })
     clearSession()

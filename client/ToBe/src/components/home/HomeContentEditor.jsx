@@ -73,15 +73,13 @@ function HomeContentEditor({ title, body, isAdmin, onSave }) {
 
   return (
     <div className="home-content">
-      <div className="home-content-header">
-        <h2>{title}</h2>
-        {isAdmin && (
-          <button type="button" className="btn btn-outline" onClick={startEditing}>
-            עריכה
-          </button>
-        )}
-      </div>
+      <h1>{title}</h1>
       <p className="home-content-body">{body}</p>
+      {isAdmin && (
+        <button type="button" className="btn btn-outline home-content-edit" onClick={startEditing}>
+          עריכה
+        </button>
+      )}
     </div>
   )
 }

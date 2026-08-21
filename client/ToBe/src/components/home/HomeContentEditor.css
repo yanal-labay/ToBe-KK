@@ -1,27 +1,37 @@
 .home-content {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: var(--shadow);
+  text-align: center;
+  background: linear-gradient(180deg, var(--color-primary-light), transparent);
+  border-radius: 20px;
+  padding: 56px 24px;
 }
 
-.home-content-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
+.home-content h1 {
+  font-size: 36px;
+  margin-bottom: 12px;
 }
 
 .home-content-body {
   color: var(--color-text-muted);
+  font-size: 18px;
+  max-width: 640px;
+  margin: 0 auto;
   white-space: pre-wrap;
+}
+
+.home-content-edit {
+  margin-top: 20px;
 }
 
 .home-content-form {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+  text-align: right;
 }
 
 .home-content-form label {

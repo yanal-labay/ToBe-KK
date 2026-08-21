@@ -6,20 +6,21 @@ import Scholarships from './pages/Scholarships'
 import Jobs from './pages/Jobs'
 import Schedule from './pages/Schedule'
 import Contact from './pages/Contact'
+import Links from './pages/Links'
 import StudentRegistry from './pages/StudentRegistry'
 import StyleGuide from './pages/StyleGuide'
 import PlaceholderPage from './pages/PlaceholderPage'
 import AdminLogin from './pages/admin/AdminLogin'
-import AdminDashboard from './pages/admin/AdminDashboard'
-import RequireAdminAuth from './components/admin/RequireAdminAuth'
 import './styles/components.css'
 
 /**
- * Route tree. Nearly every route (including public pages like /events and
- * the admin dashboard) shares one <Layout/>, which decides its own chrome
- * (guest vs. admin) from the session context — see useAdminSession.jsx and
- * Layout.jsx. Only /admin/login sits outside it, since it needs no chrome
- * ambiguity for anonymous visitors.
+ * Route tree. Nearly every route (including public pages like /events)
+ * shares one <Layout/>, which decides its own chrome (guest vs. admin) from
+ * the session context — see useAdminSession.jsx and Layout.jsx. There is no
+ * separate admin dashboard route: an authenticated admin sees the same "/"
+ * as everyone else, just with admin-only controls layered on (see Home.jsx).
+ * Only /admin/login sits outside Layout, since it needs no chrome ambiguity
+ * for anonymous visitors.
  */
 function App() {
   return (
@@ -30,16 +31,11 @@ function App() {
         <Route path="/events" element={<Events />} />
         <Route path="/schedule" element={<Schedule />} />
         <Route path="/jobs" element={<Jobs />} />
-        <Route path="/links" element={<PlaceholderPage title="לינקים שימושיים" />} />
+        <Route path="/links" element={<Links />} />
         <Route path="/student-registry" element={<StudentRegistry />} />
         <Route path="/appointment" element={<PlaceholderPage title="בקשה לתאום פגישה" />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/style-guide" element={<StyleGuide />} />
-
-        {/* Admin dashboard stays inside the shared Layout so its chrome matches every other page */}
-        <Route element={<RequireAdminAuth />}>
-          <Route path="/admin" element={<AdminDashboard />} />
-        </Route>
       </Route>
 
       {/* Login page has its own standalone chrome, deliberately outside Layout */}

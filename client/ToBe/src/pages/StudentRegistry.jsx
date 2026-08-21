@@ -17,7 +17,7 @@ import './StudentRegistry.css'
  */
 function StudentRegistry() {
   const { isAdmin } = useAdminSession()
-  const [showRegistrants, setShowRegistrants] = useState(false)
+  const [showRegistrants, setShowRegistrants] = useState(true)
   const [showOptionsManager, setShowOptionsManager] = useState(false)
   const [institutions, setInstitutions] = useState([])
   const [fieldsOfStudy, setFieldsOfStudy] = useState([])

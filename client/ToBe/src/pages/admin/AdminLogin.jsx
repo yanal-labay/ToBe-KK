@@ -10,10 +10,9 @@ import './AdminLogin.css'
 /**
  * Standalone admin login page (outside the shared `Layout`, see App.jsx).
  * On success, calls `markAuthed` to update the shared session immediately
- * rather than navigating and relying on a fresh `/api/auth/me` check — the
- * `RequireAdminAuth` guard on `/admin` reads that same session state, so
- * without this it would still think the visitor is anonymous the instant
- * after login and bounce them back to the login page.
+ * (rather than navigating and relying on a fresh `/api/auth/me` check), then
+ * sends the admin to "/" — the same home page everyone sees, just now with
+ * admin-only controls layered on since the session is already authed.
  */
 function AdminLogin() {
   const [email, setEmail] = useState('')
@@ -38,7 +37,7 @@ function AdminLogin() {
       const data = await res.json()
       if (data.success) {
         markAuthed(data.admin)
-        navigate('/admin')
+        navigate('/')
       } else {
         setError(data.message || 'שגיאה בהתחברות')
       }
