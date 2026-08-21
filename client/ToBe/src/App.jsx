@@ -5,6 +5,7 @@ import Events from './pages/Events'
 import Scholarships from './pages/Scholarships'
 import Jobs from './pages/Jobs'
 import Schedule from './pages/Schedule'
+import Contact from './pages/Contact'
 import StudentRegistry from './pages/StudentRegistry'
 import StyleGuide from './pages/StyleGuide'
 import PlaceholderPage from './pages/PlaceholderPage'
@@ -32,7 +33,7 @@ function App() {
         <Route path="/links" element={<PlaceholderPage title="לינקים שימושיים" />} />
         <Route path="/student-registry" element={<StudentRegistry />} />
         <Route path="/appointment" element={<PlaceholderPage title="בקשה לתאום פגישה" />} />
-        <Route path="/contact" element={<PlaceholderPage title="צרו קשר" />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="/style-guide" element={<StyleGuide />} />
 
         {/* Admin dashboard stays inside the shared Layout so its chrome matches every other page */}

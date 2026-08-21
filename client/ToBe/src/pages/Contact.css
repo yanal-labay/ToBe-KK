@@ -1,0 +1,39 @@
+.contact-page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+.contact-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.contact-error {
+  color: #c0392b;
+}
+
+.contact-new-group-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+
+.contact-new-group-form input {
+  flex: 1;
+  font: inherit;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+}

@@ -2,6 +2,12 @@
   --color-primary: #ffc72c;
   --color-primary-dark: #e0a800;
   --color-primary-light: rgba(255, 199, 44, 0.15);
+  /* Text/icon color for content sitting directly on a --color-primary (gold)
+     surface — e.g. .btn-primary, the contact page's group header. Gold
+     stays equally light in both themes (--color-primary doesn't change
+     below), so this is deliberately NOT --color-text (which flips to
+     near-white in dark mode and becomes invisible on that same gold). */
+  --color-on-primary: #2a2620;
   --color-bg: #ffffff;
   --color-surface: #fffdf7;
   --color-text: #2a2620;
@@ -28,6 +34,7 @@
   --color-primary: #ffc72c;
   --color-primary-dark: #ffd65c;
   --color-primary-light: rgba(255, 199, 44, 0.18);
+  --color-on-primary: #2a2620;
   --color-bg: #16140f;
   --color-surface: #221e16;
   --color-text: #f5efe0;

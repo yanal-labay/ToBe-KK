@@ -12,7 +12,7 @@
 
 .btn-primary {
   background: var(--color-primary);
-  color: var(--color-text);
+  color: var(--color-on-primary);
   border: 2px solid var(--color-primary);
 }
 

@@ -17,6 +17,8 @@ const listOptionRoutes = require("./studentRegistry/listOption.routes");
 const seedListOptions = require("./studentRegistry/seedListOptions");
 const jobRoutes = require("./jobs/job.routes");
 const scheduleRoutes = require("./schedule/schedule.routes");
+const homeRoutes = require("./home/home.routes");
+const contactRoutes = require("./contact/contact.routes");
 
 dotenv.config();
 
@@ -74,6 +76,8 @@ app.use("/api/student-registry", studentRegistryRoutes);
 app.use("/api/student-registry-options", listOptionRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/schedule", scheduleRoutes);
+app.use("/api/home", homeRoutes);
+app.use("/api/contact", contactRoutes);
 
 const buyActionLimiter = rateLimit({
   windowMs: 60 * 1000,

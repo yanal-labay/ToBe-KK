@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import './Calendar.css'
 
 const WEEKDAY_LABELS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש']
-const MAX_VISIBLE_ENTRIES = 3
 
 /** Zero-pads a "yyyy-mm-dd" key from a Date's *local* components (never UTC) — */
 function toDateKey(date) {
@@ -84,8 +83,9 @@ function colorClassFor(entry) {
  *   onPrevMonth: () => void,
  *   onNextMonth: () => void,
  *   onToday: () => void,
- *   onSelectManual: (entry: object) => void,
- *   onDeleteManual: (entry: object) => void,
+ *   onSelectManual?: (entry: object) => void,
+ *   onDeleteManual?: (entry: object) => void,
+ *   compact?: boolean,
  * }} props
  */
 function Calendar({
@@ -99,6 +99,7 @@ function Calendar({
   onToday,
   onSelectManual,
   onDeleteManual,
+  compact = false,
 }) {
   const navigate = useNavigate()
   const [expandedDayKey, setExpandedDayKey] = useState(null)
@@ -106,17 +107,19 @@ function Calendar({
   const entriesByDay = useMemo(() => buildEntriesByDay(entries), [entries])
   const days = useMemo(() => buildMonthGrid(viewYear, viewMonth), [viewYear, viewMonth])
   const todayKey = useMemo(() => toDateKey(new Date()), [])
+  const maxVisibleEntries = compact ? 1 : 3
+  const allowManualEdit = isAdmin && Boolean(onSelectManual)
 
   const handleEntryClick = (entry) => {
     if (entry.kind === 'manual') {
-      if (isAdmin) onSelectManual(entry)
+      if (allowManualEdit) onSelectManual(entry)
       return
     }
     navigate(`${entry.linkTo}?highlight=${entry.refId}`)
   }
 
   return (
-    <div className="schedule-calendar">
+    <div className={`schedule-calendar ${compact ? 'schedule-calendar--compact' : ''}`}>
       <div className="schedule-calendar-header">
         <button type="button" className="btn btn-outline" onClick={onPrevMonth} aria-label="חודש קודם">
           ‹
@@ -135,22 +138,24 @@ function Calendar({
         </button>
       </div>
 
-      <div className="schedule-calendar-legend">
-        <span className="schedule-legend-item">
-          <span className="schedule-legend-dot schedule-color-event" />
-          אירועים
-        </span>
-        <span className="schedule-legend-item">
-          <span className="schedule-legend-dot schedule-color-scholarship" />
-          מלגות
-        </span>
-        {categories.map((category) => (
-          <span className="schedule-legend-item" key={category._id}>
-            <span className={`schedule-legend-dot schedule-color-category-${category.colorSlot}`} />
-            {category.name}
+      {!compact && (
+        <div className="schedule-calendar-legend">
+          <span className="schedule-legend-item">
+            <span className="schedule-legend-dot schedule-color-event" />
+            אירועים
           </span>
-        ))}
-      </div>
+          <span className="schedule-legend-item">
+            <span className="schedule-legend-dot schedule-color-scholarship" />
+            מלגות
+          </span>
+          {categories.map((category) => (
+            <span className="schedule-legend-item" key={category._id}>
+              <span className={`schedule-legend-dot schedule-color-category-${category.colorSlot}`} />
+              {category.name}
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="schedule-calendar-weekdays">
         {WEEKDAY_LABELS.map((label) => (
@@ -164,7 +169,7 @@ function Calendar({
           const dayEntries = entriesByDay.get(key) || []
           const isCurrentMonth = day.getMonth() === viewMonth
           const isToday = key === todayKey
-          const visible = dayEntries.slice(0, MAX_VISIBLE_ENTRIES)
+          const visible = dayEntries.slice(0, maxVisibleEntries)
           const hiddenCount = dayEntries.length - visible.length
 
           return (
@@ -230,7 +235,7 @@ function Calendar({
                   >
                     {entry.title}
                   </button>
-                  {isAdmin && entry.kind === 'manual' && (
+                  {isAdmin && entry.kind === 'manual' && onDeleteManual && (
                     <button
                       type="button"
                       className="btn btn-secondary schedule-day-popover-delete"

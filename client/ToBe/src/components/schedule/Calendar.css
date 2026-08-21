@@ -207,3 +207,28 @@
 .schedule-day-popover-delete {
   flex-shrink: 0;
 }
+
+/* Compact variant: the home page's small preview of the same calendar
+   (see Home.jsx) — shorter day cells, smaller pills, no legend. */
+.schedule-calendar--compact {
+  padding: 12px;
+}
+
+.schedule-calendar--compact .schedule-calendar-header h2 {
+  min-width: auto;
+  font-size: 16px;
+}
+
+.schedule-calendar--compact .schedule-calendar-day {
+  min-height: 44px;
+  padding: 2px;
+}
+
+.schedule-calendar--compact .schedule-calendar-day-number {
+  font-size: 11px;
+}
+
+.schedule-calendar--compact .schedule-entry-pill {
+  font-size: 9px;
+  padding: 1px 4px;
+}

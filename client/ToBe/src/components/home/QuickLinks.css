@@ -1,0 +1,10 @@
+.quick-links a.card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.quick-links a.card:hover {
+  transform: translateY(-2px);
+}
