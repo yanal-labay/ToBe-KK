@@ -38,18 +38,22 @@ export function isScholarshipExpired(scholarship) {
  * @param {{
  *   scholarship: object,
  *   isAdmin: boolean,
+ *   isHighlighted?: boolean,
  *   onEdit: () => void,
  *   onDelete: () => void,
  * }} props
  */
-function ScholarshipCard({ scholarship, isAdmin, onEdit, onDelete }) {
+function ScholarshipCard({ scholarship, isAdmin, isHighlighted, onEdit, onDelete }) {
   const { theme } = useTheme()
   const fallbackLogo = theme === 'dark' ? '/logodark.png' : '/logo.png'
   const photoSrc = scholarship.photoUrl ? `${API_URL}${scholarship.photoUrl}` : fallbackLogo
   const expired = isScholarshipExpired(scholarship)
 
   return (
-    <div className="card scholarship-card">
+    <div
+      id={`scholarship-${scholarship._id}`}
+      className={`card scholarship-card ${isHighlighted ? 'is-highlighted' : ''}`}
+    >
       {expired && <span className="scholarship-expired-badge">פג תוקף</span>}
       <div className="scholarship-card-top">
         <div className="scholarship-card-info">

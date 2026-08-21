@@ -51,3 +51,18 @@
   border-radius: 999px;
   z-index: 1;
 }
+
+/* Arriving from /schedule with ?highlight=<id> — a brief pulse around the
+   matching card so the visitor can find it after the scroll. */
+.event-card.is-highlighted {
+  animation: event-card-highlight-pulse 2.5s ease-out;
+}
+
+@keyframes event-card-highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 4px var(--color-primary-light);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}

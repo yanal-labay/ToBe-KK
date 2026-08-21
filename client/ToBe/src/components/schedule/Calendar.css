@@ -1,0 +1,209 @@
+/* The calendar's full 5-color palette: 2 permanently reserved for Events
+   and Scholarships, 3 free slots handed out to admin-named categories
+   (see CategoryManager) — colorClassFor() in Calendar.jsx picks between
+   them per entry. */
+:root {
+  --schedule-event-color: #3b82f6;
+  --schedule-scholarship-color: #16a34a;
+  --schedule-category-0-color: #f97316;
+  --schedule-category-1-color: #14b8a6;
+  --schedule-category-2-color: #ec4899;
+}
+
+:root[data-theme='dark'] {
+  --schedule-event-color: #6ea8ff;
+  --schedule-scholarship-color: #4ade80;
+  --schedule-category-0-color: #fb923c;
+  --schedule-category-1-color: #2dd4bf;
+  --schedule-category-2-color: #f472b6;
+}
+
+.schedule-calendar {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.schedule-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.schedule-calendar-header h2 {
+  min-width: 160px;
+  text-align: center;
+  margin: 0;
+}
+
+.schedule-calendar-today {
+  margin-inline-start: 8px;
+}
+
+.schedule-calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.schedule-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.schedule-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.schedule-color-event {
+  background: var(--schedule-event-color);
+}
+
+.schedule-color-scholarship {
+  background: var(--schedule-scholarship-color);
+}
+
+.schedule-color-category-0 {
+  background: var(--schedule-category-0-color);
+}
+
+.schedule-color-category-1 {
+  background: var(--schedule-category-1-color);
+}
+
+.schedule-color-category-2 {
+  background: var(--schedule-category-2-color);
+}
+
+.schedule-calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.schedule-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.schedule-calendar-day {
+  min-height: 88px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.schedule-calendar-day.is-outside-month {
+  opacity: 0.4;
+}
+
+.schedule-calendar-day.is-today {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.schedule-calendar-day-number {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.schedule-calendar-day-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.schedule-entry-pill {
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.3;
+  text-align: right;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #fff;
+}
+
+.schedule-entry-pill.schedule-entry-more {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+
+.schedule-day-popover-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.schedule-day-popover {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 20px;
+  width: min(420px, 90vw);
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.schedule-day-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.schedule-day-popover-header h3 {
+  margin: 0;
+}
+
+.schedule-day-popover-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.schedule-day-popover-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.schedule-day-popover-row .schedule-entry-pill {
+  flex: 1;
+  font-size: 13px;
+  padding: 6px 10px;
+  text-align: center;
+  white-space: normal;
+}
+
+.schedule-day-popover-delete {
+  flex-shrink: 0;
+}

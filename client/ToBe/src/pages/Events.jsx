@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAdminSession } from '../hooks/useAdminSession'
 import { API_URL } from '../apiConfig'
 import EventForm from '../components/events/EventForm'
@@ -14,9 +15,12 @@ import './Events.css'
  */
 function Events() {
   const { isAdmin } = useAdminSession()
+  const [searchParams] = useSearchParams()
+  const highlightParam = searchParams.get('highlight')
 
   const [events, setEvents] = useState([])
   const [loadState, setLoadState] = useState('loading') // loading | ready | error
+  const [highlightedId, setHighlightedId] = useState(null)
 
   // At most one event is being created/edited/registrations-viewed at a
   // time; `editingId`/`viewingRegistrationsId` track *which* event by id
@@ -43,6 +47,21 @@ function Events() {
   useEffect(() => {
     loadEvents()
   }, [])
+
+  // Scrolls to and briefly highlights the event named by ?highlight=<id>
+  // (arriving from the /schedule calendar) once the list has loaded.
+  useEffect(() => {
+    if (!highlightParam || loadState !== 'ready') return
+    if (!events.some((event) => event._id === highlightParam)) return
+
+    setHighlightedId(highlightParam)
+    const card = document.getElementById(`event-${highlightParam}`)
+    card?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
+    const timeout = setTimeout(() => setHighlightedId(null), 2500)
+    return () => clearTimeout(timeout)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [highlightParam, loadState])
 
   const handleCreate = async (formData) => {
     const res = await fetch(`${API_URL}/api/events`, {
@@ -132,6 +151,7 @@ function Events() {
               key={event._id}
               event={event}
               isAdmin={isAdmin}
+              isHighlighted={highlightedId === event._id}
               onEdit={() => setEditingId(event._id)}
               onDelete={() => handleDelete(event)}
               isViewingRegistrations={viewingRegistrationsId === event._id}

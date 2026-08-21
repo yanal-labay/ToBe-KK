@@ -4,6 +4,7 @@ import Home from './pages/Home'
 import Events from './pages/Events'
 import Scholarships from './pages/Scholarships'
 import Jobs from './pages/Jobs'
+import Schedule from './pages/Schedule'
 import StudentRegistry from './pages/StudentRegistry'
 import StyleGuide from './pages/StyleGuide'
 import PlaceholderPage from './pages/PlaceholderPage'
@@ -26,7 +27,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/scholarships" element={<Scholarships />} />
         <Route path="/events" element={<Events />} />
-        <Route path="/schedule" element={<PlaceholderPage title="לוח זמנים" />} />
+        <Route path="/schedule" element={<Schedule />} />
         <Route path="/jobs" element={<Jobs />} />
         <Route path="/links" element={<PlaceholderPage title="לינקים שימושיים" />} />
         <Route path="/student-registry" element={<StudentRegistry />} />

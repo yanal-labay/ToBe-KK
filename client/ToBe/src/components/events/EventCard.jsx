@@ -55,18 +55,20 @@ export function isRegistrationClosed(event) {
  * @param {{
  *   event: object,
  *   isAdmin: boolean,
+ *   isHighlighted?: boolean,
  *   onEdit: () => void,
  *   onDelete: () => void,
  *   isViewingRegistrations: boolean,
  *   onToggleRegistrations: () => void,
  * }} props
  */
-function EventCard({ event, isAdmin, onEdit, onDelete, isViewingRegistrations, onToggleRegistrations }) {
+function EventCard({ event, isAdmin, isHighlighted, onEdit, onDelete, isViewingRegistrations, onToggleRegistrations }) {
   const expired = isEventExpired(event)
   const registrationClosed = isRegistrationClosed(event)
 
   return (
-    <div className="card event-card">
+    <div id={`event-${event._id}`} className={`card event-card ${isHighlighted ? 'is-highlighted' : ''}`}>
+
       {expired && <span className="event-expired-badge">הסתיים</span>}
       {event.photoUrl && (
         <img src={`${API_URL}${event.photoUrl}`} alt={event.title} className="event-photo" />

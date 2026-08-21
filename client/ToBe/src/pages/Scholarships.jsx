@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAdminSession } from '../hooks/useAdminSession'
 import { API_URL } from '../apiConfig'
 import ScholarshipForm from '../components/scholarships/ScholarshipForm'
@@ -15,10 +16,13 @@ import './Scholarships.css'
  */
 function Scholarships() {
   const { isAdmin } = useAdminSession()
+  const [searchParams] = useSearchParams()
+  const highlightParam = searchParams.get('highlight')
 
   const [scholarships, setScholarships] = useState([])
   const [tags, setTags] = useState([])
   const [loadState, setLoadState] = useState('loading') // loading | ready | error
+  const [highlightedId, setHighlightedId] = useState(null)
 
   const [creating, setCreating] = useState(false)
   const [editingId, setEditingId] = useState(null)
@@ -50,6 +54,21 @@ function Scholarships() {
     loadScholarships()
     loadTags()
   }, [])
+
+  // Scrolls to and briefly highlights the scholarship named by
+  // ?highlight=<id> (arriving from the /schedule calendar) once loaded.
+  useEffect(() => {
+    if (!highlightParam || loadState !== 'ready') return
+    if (!scholarships.some((scholarship) => scholarship._id === highlightParam)) return
+
+    setHighlightedId(highlightParam)
+    const card = document.getElementById(`scholarship-${highlightParam}`)
+    card?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
+    const timeout = setTimeout(() => setHighlightedId(null), 2500)
+    return () => clearTimeout(timeout)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [highlightParam, loadState])
 
   const handleCreate = async (formData) => {
     const res = await fetch(`${API_URL}/api/scholarships`, {
@@ -188,6 +207,7 @@ function Scholarships() {
               key={scholarship._id}
               scholarship={scholarship}
               isAdmin={isAdmin}
+              isHighlighted={highlightedId === scholarship._id}
               onEdit={() => setEditingId(scholarship._id)}
               onDelete={() => handleDelete(scholarship)}
             />

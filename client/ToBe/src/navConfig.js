@@ -15,7 +15,6 @@ export const NAV_LINKS = [
   { label: 'לוח זמנים', to: '/schedule' },
   { label: 'לוח משרות', to: '/jobs' },
   { label: 'רישום למאגר הצעירים', to: '/student-registry' },
-  { label: 'בקשה לתאום פגישה', to: '/appointment' },
   { label: 'לינקים שימושיים', to: '/links' },
   { label: 'קישור לקבוצת הווצאפ', href: WHATSAPP_GROUP_URL },
   { label: 'צרו קשר', to: '/contact' },

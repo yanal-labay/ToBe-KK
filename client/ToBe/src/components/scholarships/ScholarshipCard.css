@@ -27,6 +27,21 @@
   z-index: 1;
 }
 
+/* Arriving from /schedule with ?highlight=<id> — a brief pulse around the
+   matching card so the visitor can find it after the scroll. */
+.scholarship-card.is-highlighted {
+  animation: scholarship-card-highlight-pulse 2.5s ease-out;
+}
+
+@keyframes scholarship-card-highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 4px var(--color-primary-light);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
 .scholarship-card-top {
   display: flex;
   gap: 20px;
