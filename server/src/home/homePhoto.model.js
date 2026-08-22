@@ -1,10 +1,9 @@
 const mongoose = require("mongoose");
 
 /**
- * One admin-uploaded photo for the home page's rotating photo box. The two
- * seed images (tobe1.jpg/tobe2.jpg) are static files under client/ToBe/public
- * and are referenced directly by the client — they are never stored here,
- * so they can never be deleted through this collection.
+ * One photo for the home page's rotating photo box. Includes the two
+ * original launch photos (migrated here from client/ToBe/public/tobe1.jpg
+ * and tobe2.jpg) as well as every admin-uploaded photo since.
  */
 const HomePhotoSchema = new mongoose.Schema({
   photoUrl: { type: String, required: true },

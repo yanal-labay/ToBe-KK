@@ -15,7 +15,18 @@ const mongoose = require("mongoose");
  *   guest type free text when "אחר" is selected), but once submitted the
  *   value is decoupled from the list, so deleting a list option later never
  *   invalidates existing registrants.
- * - `academicStatus` is the degree level (תואר ראשון/שני/שלישי/אחר).
+ * - `education` is the registrant's highest completed education level
+ *   (בגרות/תואר ראשון/שני/שלישי/אחר) — independent of whether they're
+ *   *currently* enrolled anywhere. That's tracked separately by
+ *   `isStudent`, which is what actually makes `institution`/`fieldOfStudy`/
+ *   `yearOfStudy` nullable below — see the `.superRefine()` in
+ *   registrant.controller.js's `RegistrantInputSchema`, which enforces
+ *   "required unless isStudent is false" (Mongoose's own `required` can't
+ *   express a condition on a sibling field). Someone can hold a bachelor's
+ *   degree (`education: "bachelor"`) and not currently be a student, or
+ *   have only a matriculation certificate (`education: "high_school"`) and
+ *   still be currently enrolled somewhere — the two questions are
+ *   deliberately independent, not one field doing double duty.
  * - `interests` is a subset of `['scholarships', 'jobs', 'events']`.
  * - `militaryStatus` is nullable, same convention as `Event.price` — null
  *   means "not specified," since this field is optional.
@@ -26,14 +37,15 @@ const RegistrantSchema = new mongoose.Schema({
   email: { type: String, required: true, trim: true, lowercase: true, unique: true },
   phone: { type: String, required: true, trim: true },
   city: { type: String, required: true, trim: true },
-  fieldOfStudy: { type: String, required: true, trim: true },
-  institution: { type: String, required: true, trim: true },
-  academicStatus: {
+  education: {
     type: String,
     required: true,
-    enum: ["bachelor", "master", "doctorate", "other"],
+    enum: ["high_school", "bachelor", "master", "doctorate", "other"],
   },
-  yearOfStudy: { type: Number, required: true, min: 1, max: 6 },
+  isStudent: { type: Boolean, required: true },
+  fieldOfStudy: { type: String, default: null, trim: true },
+  institution: { type: String, default: null, trim: true },
+  yearOfStudy: { type: Number, default: null, min: 1, max: 6 },
   interests: { type: [String], required: true },
   militaryStatus: { type: String, default: null },
   createdAt: { type: Date, default: Date.now },

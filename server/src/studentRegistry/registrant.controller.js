@@ -2,28 +2,67 @@ const mongoose = require("mongoose");
 const { z } = require("zod");
 const Registrant = require("./registrant.model");
 
-/** Validates a student-registry sign-up/edit payload (create and admin edit share this). */
-const RegistrantInputSchema = z.object({
-  firstName: z.string().trim().min(1).max(100),
-  lastName: z.string().trim().min(1).max(100),
-  email: z.string().trim().toLowerCase().email(),
-  phone: z
+/** An optional free-text field: blank/null/omitted becomes `null` rather than an empty string. */
+const optionalTrimmedString = (max) =>
+  z
     .string()
     .trim()
-    .regex(/^[0-9+\-\s()]{7,20}$/, "מספר טלפון לא תקין"),
-  city: z.string().trim().min(1).max(200),
-  fieldOfStudy: z.string().trim().min(1).max(200),
-  institution: z.string().trim().min(1).max(200),
-  academicStatus: z.enum(["bachelor", "master", "doctorate", "other"]),
-  yearOfStudy: z.coerce.number().int().min(1).max(6),
-  interests: z
-    .array(z.enum(["scholarships", "jobs", "events"]))
-    .min(1, "יש לבחור לפחות תחום עניין אחד"),
-  militaryStatus: z
-    .enum(["discharged", "currently_serving", "did_not_serve"])
+    .max(max)
+    .nullable()
     .optional()
-    .transform((v) => v ?? null),
-});
+    .transform((v) => (v ? v : null));
+
+/**
+ * Validates a student-registry sign-up/edit payload (create and admin edit
+ * share this). `institution`/`fieldOfStudy`/`yearOfStudy` are nullable at
+ * the field level (a non-student registrant has none of these), but the
+ * `.superRefine()` below makes them required whenever `isStudent` is true
+ * — Mongoose's own `required` can't express "required unless isStudent is
+ * false", so this schema is what actually enforces it. `education` (highest
+ * completed level) and `isStudent` (currently enrolled anywhere) are
+ * deliberately independent questions — see registrant.model.js.
+ *
+ * `isStudent` accepts either a real boolean (JSON from the guest form / the
+ * admin's create form) or the string "true"/"false" (the admin table's
+ * inline `<select>` cell editor, which — like every native `<select>` —
+ * can only ever send a string).
+ */
+const RegistrantInputSchema = z
+  .object({
+    firstName: z.string().trim().min(1).max(100),
+    lastName: z.string().trim().min(1).max(100),
+    email: z.string().trim().toLowerCase().email(),
+    phone: z
+      .string()
+      .trim()
+      .regex(/^[0-9+\-\s()]{7,20}$/, "מספר טלפון לא תקין"),
+    city: z.string().trim().min(1).max(200),
+    education: z.enum(["high_school", "bachelor", "master", "doctorate", "other"]),
+    isStudent: z.union([z.boolean(), z.enum(["true", "false"]).transform((v) => v === "true")]),
+    fieldOfStudy: optionalTrimmedString(200),
+    institution: optionalTrimmedString(200),
+    yearOfStudy: z
+      .union([z.coerce.number().int().min(1).max(6), z.null()])
+      .optional()
+      .transform((v) => v ?? null),
+    interests: z.array(z.enum(["scholarships", "jobs", "events"])),
+    militaryStatus: z
+      .enum(["discharged", "currently_serving", "did_not_serve"])
+      .optional()
+      .transform((v) => v ?? null),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.isStudent) return;
+    if (!data.institution) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "שדה חובה", path: ["institution"] });
+    }
+    if (!data.fieldOfStudy) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "שדה חובה", path: ["fieldOfStudy"] });
+    }
+    if (data.yearOfStudy == null) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "שדה חובה", path: ["yearOfStudy"] });
+    }
+  });
 
 /**
  * POST /api/student-registry — public, rate-limited (see registerLimiter in

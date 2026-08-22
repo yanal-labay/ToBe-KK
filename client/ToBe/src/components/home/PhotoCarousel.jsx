@@ -2,14 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { API_URL } from '../../apiConfig'
 import './PhotoCarousel.css'
 
-const SEED_IMAGES = ['/tobe1.jpg', '/tobe2.jpg']
 const ROTATE_INTERVAL_MS = 5000
 
 /**
- * The home page's single rotating-photo box. Always starts with the 2 fixed
- * seed images (static files under client/ToBe/public, never deletable),
- * followed by every admin-uploaded photo from `GET /api/home`. Auto-advances
- * on a timer, with manual prev/next arrows and dot indicators that reset it.
+ * The home page's single rotating-photo box. Renders every photo from
+ * `GET /api/home`, oldest first (originally seeded with the two launch
+ * photos, migrated into this same collection so there's nothing hardcoded
+ * left to special-case). Auto-advances on a timer, with manual prev/next
+ * arrows and dot indicators that reset it.
  *
  * @param {{
  *   photos: Array<{_id: string, photoUrl: string}>,
@@ -20,10 +20,7 @@ const ROTATE_INTERVAL_MS = 5000
  */
 function PhotoCarousel({ photos, isAdmin, onAddPhoto, onDeletePhoto }) {
   const slides = useMemo(
-    () => [
-      ...SEED_IMAGES.map((src) => ({ isSeed: true, src })),
-      ...photos.map((photo) => ({ isSeed: false, src: `${API_URL}${photo.photoUrl}`, photo })),
-    ],
+    () => photos.map((photo) => ({ src: `${API_URL}${photo.photoUrl}`, photo })),
     [photos]
   )
 
@@ -66,7 +63,7 @@ function PhotoCarousel({ photos, isAdmin, onAddPhoto, onDeletePhoto }) {
     <div className="photo-carousel">
       {slides.map((slide, i) => (
         <img
-          key={slide.isSeed ? slide.src : slide.photo._id}
+          key={slide.photo._id}
           src={slide.src}
           alt=""
           className={`photo-carousel-slide ${i === index ? 'is-active' : ''}`}
@@ -83,14 +80,14 @@ function PhotoCarousel({ photos, isAdmin, onAddPhoto, onDeletePhoto }) {
           </button>
           <div className="photo-carousel-dots">
             {slides.map((slide, i) => (
-              <span className="photo-carousel-dot-wrapper" key={slide.isSeed ? slide.src : slide.photo._id}>
+              <span className="photo-carousel-dot-wrapper" key={slide.photo._id}>
                 <button
                   type="button"
                   className={`photo-carousel-dot ${i === index ? 'is-active' : ''}`}
                   onClick={() => goTo(i)}
                   aria-label={`תמונה ${i + 1}`}
                 />
-                {isAdmin && !slide.isSeed && (
+                {isAdmin && (
                   <button
                     type="button"
                     className="photo-carousel-dot-delete"

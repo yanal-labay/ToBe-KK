@@ -6,18 +6,29 @@ import {
   INTEREST_LABELS,
   MILITARY_STATUS_OPTIONS,
   MILITARY_STATUS_LABELS,
-  ACADEMIC_STATUS_OPTIONS,
-  ACADEMIC_STATUS_LABELS,
+  EDUCATION_OPTIONS,
+  EDUCATION_LABELS,
   resolveOptionValue,
 } from './constants'
 import PieChart from './PieChart'
-import AdminRegistrantForm from './AdminRegistrantForm'
+import RegistrantForm from './RegistrantForm'
 import './RegistrantsPanel.css'
+
+// The admin table's isStudent cell is a plain select like every other enum
+// column, but its stored value is a real boolean — so unlike
+// IS_STUDENT_OPTIONS in constants.js (which models the guest form's local
+// state as 'yes'/'no' strings), this one's option values are the strings
+// "true"/"false" that RegistrantInputSchema's isStudent union accepts
+// directly from a native <select>.
+const IS_STUDENT_COLUMN_OPTIONS = [
+  { value: 'true', label: 'כן' },
+  { value: 'false', label: 'לא' },
+]
 
 // Categorical fields worth charting — deliberately excludes identity fields
 // like name/email/phone/city, which have no meaningful "distribution".
 const CHARTABLE_FIELDS = [
-  { value: 'academicStatus', label: 'תואר' },
+  { value: 'education', label: 'השכלה' },
   { value: 'institution', label: 'מוסד לימודים' },
   { value: 'fieldOfStudy', label: 'תחום לימודים' },
   { value: 'yearOfStudy', label: 'שנת לימודים' },
@@ -38,9 +49,10 @@ const EDITABLE_COLUMNS = [
   { field: 'email', label: 'אימייל', kind: 'text', inputType: 'email' },
   { field: 'phone', label: 'טלפון', kind: 'text', inputType: 'tel' },
   { field: 'city', label: 'עיר', kind: 'text' },
+  { field: 'education', label: 'השכלה', kind: 'select', options: EDUCATION_OPTIONS },
+  { field: 'isStudent', label: 'סטודנט/ית כעת', kind: 'select', options: IS_STUDENT_COLUMN_OPTIONS },
   { field: 'institution', label: 'מוסד לימודים', kind: 'listSelect' },
   { field: 'fieldOfStudy', label: 'תחום לימודים', kind: 'listSelect' },
-  { field: 'academicStatus', label: 'תואר', kind: 'select', options: ACADEMIC_STATUS_OPTIONS },
   { field: 'yearOfStudy', label: 'שנה', kind: 'select', options: YEAR_OPTIONS },
   { field: 'interests', label: 'תחומי עניין', kind: 'multiselect' },
   { field: 'militaryStatus', label: 'רקע צבאי/לאומי', kind: 'select', options: MILITARY_STATUS_OPTIONS },
@@ -60,14 +72,16 @@ function formatDateTime(value) {
 /** The plain display text for one column's value — shared by the table, search, and CSV-ish sort. */
 function displayValue(registrant, field) {
   switch (field) {
-    case 'academicStatus':
-      return ACADEMIC_STATUS_LABELS[registrant.academicStatus] || registrant.academicStatus
+    case 'education':
+      return EDUCATION_LABELS[registrant.education] || registrant.education
+    case 'isStudent':
+      return registrant.isStudent ? 'כן' : 'לא'
     case 'militaryStatus':
       return registrant.militaryStatus ? MILITARY_STATUS_LABELS[registrant.militaryStatus] : '—'
     case 'interests':
       return registrant.interests.map((i) => INTEREST_LABELS[i] || i).join(', ')
     case 'yearOfStudy':
-      return `שנה ${registrant.yearOfStudy}`
+      return registrant.yearOfStudy ? `שנה ${registrant.yearOfStudy}` : '—'
     case 'createdAt':
       return formatDateTime(registrant.createdAt)
     default:
@@ -85,14 +99,16 @@ function searchableText(registrant) {
 /** A sortable value per column — ranked order for enums, numeric for year/date, text otherwise. */
 function sortValue(registrant, field) {
   switch (field) {
-    case 'academicStatus':
-      return ACADEMIC_STATUS_OPTIONS.findIndex((o) => o.value === registrant.academicStatus)
+    case 'education':
+      return EDUCATION_OPTIONS.findIndex((o) => o.value === registrant.education)
+    case 'isStudent':
+      return registrant.isStudent ? 1 : 0
     case 'militaryStatus':
       return registrant.militaryStatus
         ? MILITARY_STATUS_OPTIONS.findIndex((o) => o.value === registrant.militaryStatus)
         : -1
     case 'yearOfStudy':
-      return registrant.yearOfStudy
+      return registrant.yearOfStudy ?? -1
     case 'createdAt':
       return new Date(registrant.createdAt).getTime()
     case 'interests':
@@ -113,8 +129,8 @@ function compareSortValues(a, b) {
 /** Extracts the display label(s) a single registrant contributes to a chart field. */
 function valuesForChartField(registrant, field) {
   switch (field) {
-    case 'academicStatus':
-      return [ACADEMIC_STATUS_LABELS[registrant.academicStatus] || registrant.academicStatus]
+    case 'education':
+      return [EDUCATION_LABELS[registrant.education] || registrant.education]
     case 'yearOfStudy':
       return [`שנה ${registrant.yearOfStudy}`]
     case 'militaryStatus':
@@ -325,8 +341,13 @@ function RegistrantsPanel({ institutions, fieldsOfStudy }) {
     load()
   }, [])
 
+  // A registrant who isn't currently a student (isStudent === false) is
+  // excluded from every chart entirely (never a slice on any of the six
+  // fields, education included) rather than just having blank institution/
+  // fieldOfStudy/yearOfStudy dilute those distributions. The table below
+  // still lists them — only the charts filter them out.
   const chartData = useMemo(
-    () => computeCounts(registrants, chartField),
+    () => computeCounts(registrants.filter((r) => r.isStudent), chartField),
     [registrants, chartField]
   )
 
@@ -370,7 +391,11 @@ function RegistrantsPanel({ institutions, fieldsOfStudy }) {
   const commitCell = async (registrant, field, rawValue) => {
     const { _id, __v, createdAt, ...rest } = registrant
     const payload = { ...rest, [field]: rawValue }
-    payload.yearOfStudy = Number(payload.yearOfStudy)
+    // yearOfStudy is null for a "לימודים תיכוניים" (non-student) registrant
+    // — coercing unconditionally would turn that null into Number(null) = 0,
+    // which fails validation (0 is neither null nor >= 1).
+    payload.yearOfStudy =
+      payload.yearOfStudy === null || payload.yearOfStudy === '' ? null : Number(payload.yearOfStudy)
     if (!payload.militaryStatus) delete payload.militaryStatus
 
     try {
@@ -464,10 +489,8 @@ function RegistrantsPanel({ institutions, fieldsOfStudy }) {
     return (
       <div className="registrants-panel">
         {headerControls}
-        <AdminRegistrantForm
-          institutions={institutions}
-          fieldsOfStudy={fieldsOfStudy}
-          onCreated={() => {
+        <RegistrantForm
+          onSuccess={() => {
             setCreating(false)
             load()
           }}
@@ -518,8 +541,11 @@ function RegistrantsPanel({ institutions, fieldsOfStudy }) {
       let flagged = false
       const display = displayValue(registrant, col.field)
       if (col.field === 'institution' || col.field === 'fieldOfStudy') {
+        // A null value here means "not currently a student" (isStudent is
+        // false), not a stale/legacy value — only flag an actual value
+        // that doesn't match the current admin-managed list.
         const list = col.field === 'institution' ? institutions : fieldsOfStudy
-        flagged = !list.includes(registrant[col.field])
+        flagged = Boolean(registrant[col.field]) && !list.includes(registrant[col.field])
       }
       return (
         <td
@@ -550,7 +576,11 @@ function RegistrantsPanel({ institutions, fieldsOfStudy }) {
         <td key={col.field}>
           <select
             autoFocus
-            defaultValue={registrant[col.field] ?? ''}
+            // String(...) since isStudent's stored value is a real boolean
+            // — a <select>'s defaultValue must match an <option>'s (always
+            // string) value attribute, and "true"/"false" strings are what
+            // IS_STUDENT_COLUMN_OPTIONS uses.
+            defaultValue={registrant[col.field] == null ? '' : String(registrant[col.field])}
             onChange={(e) => commitCell(registrant, col.field, e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Escape') cancelEdit()

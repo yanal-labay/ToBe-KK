@@ -12,14 +12,16 @@ import './Home.css'
  * The shared home page at "/" — the same page for guests and admins (see
  * Layout.jsx, which picks guest vs admin chrome around it but never a
  * different page). Admins get extra edit affordances layered directly onto
- * this page (adding/removing carousel photos, editing the title/body text)
- * rather than a separate admin-only view, matching the Events/Scholarships/
- * Jobs pattern used everywhere else in this app.
+ * this page (adding/removing carousel photos, editing the title/body text
+ * above the carousel and the independent caption title/text below it, via
+ * two `HomeContentEditor` instances) rather than a separate admin-only
+ * view, matching the Events/Scholarships/Jobs pattern used everywhere else
+ * in this app.
  */
 function Home() {
   const { isAdmin } = useAdminSession()
 
-  const [home, setHome] = useState({ title: '', body: '', photos: [] })
+  const [home, setHome] = useState({ title: '', body: '', captionTitle: '', captionText: '', photos: [] })
   const [homeLoadState, setHomeLoadState] = useState('loading') // loading | ready | error
 
   const [scheduleEntries, setScheduleEntries] = useState([])
@@ -68,6 +70,22 @@ function Home() {
     const data = await res.json()
     if (!data.success) throw new Error(data.message)
     setHome((current) => ({ ...current, title: data.content.title, body: data.content.body }))
+  }
+
+  const handleSaveCaption = async (values) => {
+    const res = await fetch(`${API_URL}/api/home/content`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ captionTitle: values.title, captionText: values.body }),
+    })
+    const data = await res.json()
+    if (!data.success) throw new Error(data.message)
+    setHome((current) => ({
+      ...current,
+      captionTitle: data.content.captionTitle,
+      captionText: data.content.captionText,
+    }))
   }
 
   const handleAddPhoto = async (file) => {
@@ -126,6 +144,18 @@ function Home() {
         onAddPhoto={handleAddPhoto}
         onDeletePhoto={handleDeletePhoto}
       />
+
+      {homeLoadState === 'ready' && (
+        <HomeContentEditor
+          title={home.captionTitle}
+          body={home.captionText}
+          isAdmin={isAdmin}
+          onSave={handleSaveCaption}
+          headingTag="h2"
+          className="home-content home-content-caption"
+          required={false}
+        />
+      )}
 
       <div>
         <h2 className="home-section-title">קיצורי דרך</h2>

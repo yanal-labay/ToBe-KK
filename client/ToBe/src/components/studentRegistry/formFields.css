@@ -44,3 +44,9 @@
   color: #c0392b;
   font-size: 14px;
 }
+
+.registrant-form input.is-invalid,
+.registrant-form select.is-invalid {
+  border-color: #c0392b;
+  border-width: 2px;
+}
