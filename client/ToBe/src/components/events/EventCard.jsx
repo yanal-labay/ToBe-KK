@@ -98,7 +98,9 @@ function EventCard({ event, isAdmin, isHighlighted, onEdit, onDelete, isViewingR
               {isViewingRegistrations ? 'הסתרת נרשמים' : 'נרשמים'}
             </button>
           </div>
-          {isViewingRegistrations && <RegistrationsPanel eventId={event._id} />}
+          {isViewingRegistrations && (
+            <RegistrationsPanel eventId={event._id} eventTitle={event.title} />
+          )}
         </>
       ) : registrationClosed ? (
         <button type="button" className="btn btn-outline event-register-disabled" disabled>

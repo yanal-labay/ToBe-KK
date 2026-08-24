@@ -77,11 +77,14 @@
   color: var(--color-text);
 }
 
-/* `text-align: left` (a physical, not logical, property) keeps this
-   button at the screen's top-left corner regardless of the app's RTL
+/* `justify-content: left` (a physical, not logical, value — unlike
+   `flex-start`, which would follow RTL and land on the right) keeps these
+   buttons at the screen's top-left corner regardless of the app's RTL
    layout direction. */
 .registrations-toolbar {
-  text-align: left;
+  display: flex;
+  justify-content: left;
+  gap: 8px;
   margin-bottom: 8px;
 }
 

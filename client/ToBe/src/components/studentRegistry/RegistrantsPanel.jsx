@@ -12,6 +12,8 @@ import {
 } from './constants'
 import PieChart from './PieChart'
 import RegistrantForm from './RegistrantForm'
+import ExportExcelButton from '../shared/ExportExcelButton'
+import { exportRowsToExcel } from '../../utils/exportToExcel'
 import './RegistrantsPanel.css'
 
 // The admin table's isStudent cell is a plain select like every other enum
@@ -447,6 +449,17 @@ function RegistrantsPanel({ institutions, fieldsOfStudy }) {
     load()
   }
 
+  /** Exports exactly what's currently visible in the table (search-filtered, same column set/labels) to an .xlsx file. */
+  const handleExport = () => {
+    const headers = ALL_COLUMNS.map((col) => col.label)
+    const rows = visibleRegistrants.map((r) => ALL_COLUMNS.map((col) => displayValue(r, col.field)))
+    exportRowsToExcel({
+      filename: `מאגר-צעירים-${new Date().toISOString().slice(0, 10)}.xlsx`,
+      headers,
+      rows,
+    })
+  }
+
   const chartToggle = (
     <div className="registrants-chart-toggle">
       <button type="button" className="btn btn-outline" onClick={() => setShowChart((v) => !v)}>
@@ -482,6 +495,7 @@ function RegistrantsPanel({ institutions, fieldsOfStudy }) {
       >
         מחיקה{selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}
       </button>
+      <ExportExcelButton onClick={handleExport} disabled={registrants.length === 0} />
     </div>
   )
 

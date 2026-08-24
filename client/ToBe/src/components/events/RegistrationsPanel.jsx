@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { API_URL } from '../../apiConfig'
+import ExportExcelButton from '../shared/ExportExcelButton'
+import { exportRowsToExcel } from '../../utils/exportToExcel'
 import './RegistrationsPanel.css'
 
 // Display order for both the chart rows and the per-row status <select>;
@@ -38,9 +40,9 @@ function TrashIcon() {
  * or the registrant removed entirely (with confirmation). Toggled
  * open/closed from `EventCard`.
  *
- * @param {{eventId: string}} props
+ * @param {{eventId: string, eventTitle: string}} props
  */
-function RegistrationsPanel({ eventId }) {
+function RegistrationsPanel({ eventId, eventTitle }) {
   const [registrations, setRegistrations] = useState([])
   const [loadState, setLoadState] = useState('loading') // loading | ready | error
   const [adding, setAdding] = useState(false)
@@ -123,6 +125,14 @@ function RegistrationsPanel({ eventId }) {
     }
   }
 
+  /** Exports exactly the visible table columns (name/email/phone/status) to an .xlsx file. */
+  const handleExport = () => {
+    const headers = ['שם', 'אימייל', 'טלפון', 'סטטוס']
+    const rows = registrations.map((r) => [r.name, r.email, r.phone, STATUS_META[r.status].label])
+    const safeTitle = eventTitle.replace(/[\\/:*?"<>|]/g, '')
+    exportRowsToExcel({ filename: `נרשמים-${safeTitle}.xlsx`, headers, rows })
+  }
+
   const statusCounts = STATUS_ORDER.reduce((acc, status) => {
     acc[status] = registrations.filter((r) => r.status === status).length
     return acc
@@ -159,6 +169,7 @@ function RegistrationsPanel({ eventId }) {
             + הוספת נרשם
           </button>
         )}
+        <ExportExcelButton onClick={handleExport} disabled={registrations.length === 0} />
       </div>
 
       {adding && (
