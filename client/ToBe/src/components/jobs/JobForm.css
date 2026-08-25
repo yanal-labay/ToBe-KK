@@ -17,10 +17,12 @@
 .job-form-row {
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .job-form-row label {
   flex: 1;
+  min-width: 160px;
 }
 
 .job-form-contact {

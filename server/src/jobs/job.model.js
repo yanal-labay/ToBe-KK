@@ -7,6 +7,15 @@ const mongoose = require("mongoose");
  *   else is nullable — `null` means "not specified," and the client hides
  *   that line entirely rather than showing a placeholder (same convention
  *   as `Event.price`/`Scholarship.amount`).
+ * - `fieldSelections` references admin-defined `JobField`/`JobFieldOption`
+ *   documents (e.g. a "סוג משרה" field with a "משרה חלקית" option
+ *   selected) — the admin can add new fields, rename one, and manage each
+ *   field's checkbox values entirely independently of any posting (see
+ *   `JobFieldsManager.jsx`/`jobField.model.js`). At most one option per
+ *   field is expected per job, enforced at the form/validation layer, not
+ *   here. `isStudentPosition` is a deliberately independent boolean, not
+ *   part of that field system — a job can be both a "משרה חלקית" and a
+ *   student position at once.
  * - `salary` is free text (a range, "לפי ניסיון", etc.), not a number —
  *   job salaries don't fit a single numeric field the way a scholarship
  *   amount does.
@@ -25,7 +34,8 @@ const JobSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true },
   company: { type: String, required: true, trim: true },
   location: { type: String, required: true, trim: true },
-  jobType: { type: String, enum: ["fulltime", "parttime"], default: null },
+  fieldSelections: [{ type: mongoose.Schema.Types.ObjectId, ref: "JobFieldOption" }],
+  isStudentPosition: { type: Boolean, default: false },
   description: { type: String, default: null },
   salary: { type: String, default: null },
   contactName: { type: String, default: null },

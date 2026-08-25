@@ -1,5 +1,5 @@
 .jobs-page {
-  max-width: 800px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 48px 24px;
 }
@@ -13,12 +13,77 @@
   margin-bottom: 24px;
 }
 
+.jobs-page-header-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .jobs-error {
   color: #c0392b;
+}
+
+.jobs-match-count {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+/* Sidebar first in `grid-template-columns` so it lands in track 1 — under
+   the app's global `direction: rtl` (see index.css), grid tracks are
+   placed starting from the inline-start edge, which is the physical right.
+   `.jobs-page-main`/`.jobs-filter-sidebar` are given explicit grid-column
+   values so this visual placement doesn't depend on DOM order — the main
+   content stays first in the markup (natural tab/reading order), only its
+   *visual* position is track 2.
+   Both also need an explicit `grid-row: 1` — without it, auto-placement
+   bumps the sidebar (column 1) down to a new row, since it comes *after*
+   the main content (column 2) in DOM order and auto-placement won't place
+   a later item at an earlier column than the previous one within the same
+   row. */
+.jobs-page-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.jobs-page-main {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+}
+
+.jobs-filter-sidebar {
+  grid-column: 1;
+  grid-row: 1;
 }
 
 .jobs-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+/* Matches Navbar.css's own mobile breakpoint, so the whole app's
+   "mobile" layout transition happens at the same viewport width. */
+@media (max-width: 900px) {
+  .jobs-page-layout {
+    grid-template-columns: 1fr;
+  }
+
+  /* Single column now, so both items must go back to separate auto rows
+     (grid-row: 1 on both would otherwise stack them on top of each other
+     in the same cell). `order: -1` puts the sidebar first visually
+     (filters above the list on mobile) without reordering the DOM/tab
+     order, which stays main-content-first. */
+  .jobs-page-main {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .jobs-filter-sidebar {
+    grid-column: 1;
+    grid-row: auto;
+    order: -1;
+  }
 }

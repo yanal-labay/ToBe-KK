@@ -2,11 +2,6 @@ import { useTheme } from '../../hooks/useTheme'
 import { API_URL } from '../../apiConfig'
 import './JobCard.css'
 
-const JOB_TYPE_LABELS = {
-  fulltime: 'משרה מלאה',
-  parttime: 'משרה חלקית',
-}
-
 /**
  * Read-only display of a single job posting — structurally the same as
  * `ScholarshipCard`: the photo sits beside the title/company/location/
@@ -17,6 +12,9 @@ const JOB_TYPE_LABELS = {
  * have no "apply" URL, guests just read the contact details off the card.
  * Admins get edit/delete plus an "לא פעיל" badge when `isActive` is false
  * (guests never receive inactive postings at all, see job.controller.js).
+ * `job.fieldSelections` (populated server-side, see job.controller.js) is
+ * an array of `{ _id, name, field: { _id, name } }` — one admin-defined
+ * field/value pair per entry, rendered as its own line.
  *
  * @param {{
  *   job: object,
@@ -40,8 +38,13 @@ function JobCard({ job, isAdmin, onEdit, onDelete }) {
           <h3>{job.title}</h3>
           <p className="job-company">🏢 {job.company}</p>
           <p className="job-company">📍 {job.location}</p>
-          {job.jobType && <p className="job-company">🕒 {JOB_TYPE_LABELS[job.jobType]}</p>}
+          {job.fieldSelections?.map((selection) => (
+            <p className="job-company" key={selection._id}>
+              🏷️ {selection.field.name}: {selection.name}
+            </p>
+          ))}
           {job.salary && <p className="job-company">💰 {job.salary}</p>}
+          {job.isStudentPosition && <p className="job-company">🎓 משרת סטודנטים</p>}
         </div>
         <img
           src={photoSrc}

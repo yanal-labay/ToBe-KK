@@ -15,22 +15,45 @@ const optionalTrimmedString = (max) =>
 /**
  * Validates the create/update job-posting payload. Arrives as
  * `multipart/form-data` (the photo shares the request), so every field is a
- * plain string — including `isActive`, which the client always sends
- * explicitly as `"true"`/`"false"` rather than relying on native checkbox
- * submission semantics.
+ * plain string — including `isActive`/`isStudentPosition`, which the
+ * client always sends explicitly as `"true"`/`"false"` rather than relying
+ * on native checkbox submission semantics.
+ *
+ * `fieldSelections` arrives as a JSON-encoded array of `JobFieldOption`
+ * ids (see jobField.model.js) — it has to be JSON-encoded because
+ * multipart/form-data can only carry flat string fields, not a real array.
+ * Each id is checked for being a syntactically valid ObjectId, but not
+ * checked for actually existing — a stale/removed id here would just fail
+ * to populate later, same soft-guidance-not-hard-constraint spirit as the
+ * rest of this app's admin-managed lists.
  */
+const objectIdString = z.string().refine((v) => mongoose.Types.ObjectId.isValid(v), {
+  message: "מזהה לא תקין",
+});
+
 const JobInputSchema = z.object({
   title: z.string().trim().min(1).max(200),
   company: z.string().trim().min(1).max(200),
   location: z.string().trim().min(1).max(200),
-  jobType: z
+  fieldSelections: z
     .string()
-    .trim()
     .optional()
-    .transform((v) => (v ? v : null))
-    .refine((v) => v === null || v === "fulltime" || v === "parttime", {
-      message: "היקף משרה לא תקין",
-    }),
+    .transform((v, ctx) => {
+      if (!v) return [];
+      try {
+        const parsed = JSON.parse(v);
+        if (!Array.isArray(parsed)) throw new Error();
+        return parsed;
+      } catch {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "בחירת שדות לא תקינה" });
+        return z.NEVER;
+      }
+    })
+    .pipe(z.array(objectIdString)),
+  isStudentPosition: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => v === "true"),
   description: optionalTrimmedString(5000),
   salary: optionalTrimmedString(200),
   contactName: optionalTrimmedString(200),
@@ -49,6 +72,11 @@ const JobInputSchema = z.object({
     .transform((v) => v !== "false"),
 });
 
+// Every job-listing query resolves `fieldSelections` down to
+// `{ _id, name, field: { _id, name } }` so the client can render/filter
+// by field+value without a separate round trip per job.
+const FIELD_SELECTIONS_POPULATE = { path: "fieldSelections", populate: { path: "field" } };
+
 /**
  * GET /api/jobs — public list of active postings only, newest first.
  * Inactive postings are excluded at the query level, not merely hidden in
@@ -56,7 +84,9 @@ const JobInputSchema = z.object({
  */
 async function listJobs(req, res) {
   try {
-    const jobs = await Job.find({ isActive: true }).sort({ createdAt: -1 });
+    const jobs = await Job.find({ isActive: true })
+      .sort({ createdAt: -1 })
+      .populate(FIELD_SELECTIONS_POPULATE);
     res.json(jobs);
   } catch (err) {
     res.status(500).json({ success: false, message: "Database error" });
@@ -69,7 +99,7 @@ async function listJobs(req, res) {
  */
 async function listJobsAdmin(req, res) {
   try {
-    const jobs = await Job.find().sort({ createdAt: -1 });
+    const jobs = await Job.find().sort({ createdAt: -1 }).populate(FIELD_SELECTIONS_POPULATE);
     res.json(jobs);
   } catch (err) {
     res.status(500).json({ success: false, message: "Database error" });

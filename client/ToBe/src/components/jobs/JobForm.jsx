@@ -7,7 +7,7 @@ const EMPTY_FORM = {
   title: '',
   company: '',
   location: '',
-  jobType: '',
+  isStudentPosition: false,
   description: '',
   salary: '',
   contactName: '',
@@ -19,19 +19,38 @@ const EMPTY_FORM = {
 /**
  * Create/edit form for a job posting, used both for "new posting" (no
  * `initialValues`) and for editing an existing one. Only title/company/
- * location are required — job type, description, salary, and the whole
- * contact block are optional, matching `Job`'s nullable-field convention.
+ * location are required — every admin-defined field, description, salary,
+ * and the whole contact block are optional, matching `Job`'s
+ * nullable-field convention.
+ *
+ * One `<select>` is rendered per entry in `fields` (see
+ * JobFieldsManager.jsx for how those fields/options are managed) — this
+ * form only ever *picks* an existing option per field, it never creates
+ * one inline. Selections are tracked separately from `values` as
+ * `fieldValues` (`{ [fieldId]: optionId }`) since the set of fields is
+ * dynamic, not a fixed shape.
  *
  * @param {{
- *   initialValues?: {title: string, company: string, location: string, jobType: string, description: string, salary: string, contactName: string, contactEmail: string, contactPhone: string, isActive: boolean},
+ *   initialValues?: {title: string, company: string, location: string, isStudentPosition: boolean, description: string, salary: string, contactName: string, contactEmail: string, contactPhone: string, isActive: boolean},
+ *   initialFieldValues?: Record<string, string>,
+ *   fields: Array<{_id: string, name: string, options: Array<{_id: string, name: string}>}>,
  *   existingPhotoUrl?: string|null,
  *   submitLabel: string,
  *   onSubmit: (formData: FormData) => Promise<void>,
  *   onCancel: () => void,
  * }} props
  */
-function JobForm({ initialValues, existingPhotoUrl, submitLabel, onSubmit, onCancel }) {
+function JobForm({
+  initialValues,
+  initialFieldValues,
+  fields,
+  existingPhotoUrl,
+  submitLabel,
+  onSubmit,
+  onCancel,
+}) {
   const [values, setValues] = useState(initialValues || EMPTY_FORM)
+  const [fieldValues, setFieldValues] = useState(initialFieldValues || {})
   const [photoFile, setPhotoFile] = useState(null)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -47,7 +66,8 @@ function JobForm({ initialValues, existingPhotoUrl, submitLabel, onSubmit, onCan
       formData.append('title', values.title)
       formData.append('company', values.company)
       formData.append('location', values.location)
-      formData.append('jobType', values.jobType)
+      formData.append('fieldSelections', JSON.stringify(Object.values(fieldValues).filter(Boolean)))
+      formData.append('isStudentPosition', values.isStudentPosition ? 'true' : 'false')
       formData.append('description', values.description)
       formData.append('salary', values.salary)
       formData.append('contactName', values.contactName)
@@ -79,15 +99,27 @@ function JobForm({ initialValues, existingPhotoUrl, submitLabel, onSubmit, onCan
           <input value={values.location} onChange={handleChange('location')} required />
         </label>
       </div>
+      {fields.length > 0 && (
+        <div className="job-form-row">
+          {fields.map((field) => (
+            <label key={field._id}>
+              {field.name} (לא חובה)
+              <select
+                value={fieldValues[field._id] || ''}
+                onChange={(e) => setFieldValues({ ...fieldValues, [field._id]: e.target.value })}
+              >
+                <option value="">לא צוין</option>
+                {field.options.map((option) => (
+                  <option value={option._id} key={option._id}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ))}
+        </div>
+      )}
       <div className="job-form-row">
-        <label>
-          היקף משרה (לא חובה)
-          <select value={values.jobType} onChange={handleChange('jobType')}>
-            <option value="">לא צוין</option>
-            <option value="fulltime">משרה מלאה</option>
-            <option value="parttime">משרה חלקית</option>
-          </select>
-        </label>
         <label>
           שכר (לא חובה)
           <input
@@ -95,6 +127,14 @@ function JobForm({ initialValues, existingPhotoUrl, submitLabel, onSubmit, onCan
             value={values.salary}
             onChange={handleChange('salary')}
           />
+        </label>
+        <label className="job-form-active">
+          <input
+            type="checkbox"
+            checked={values.isStudentPosition}
+            onChange={(e) => setValues({ ...values, isStudentPosition: e.target.checked })}
+          />
+          משרה זו מתאימה לסטודנטים
         </label>
       </div>
       <label>

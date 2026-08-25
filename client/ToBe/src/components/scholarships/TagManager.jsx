@@ -1,6 +1,5 @@
-import { useState } from 'react'
 import { API_URL } from '../../apiConfig'
-import './formFields.css'
+import OptionChipManager from '../shared/OptionChipManager'
 import './TagManager.css'
 
 /**
@@ -10,37 +9,26 @@ import './TagManager.css'
  * from every scholarship that had it (handled server-side, see
  * tag.controller.js's `deleteTag`).
  *
+ * The actual add-form-plus-chip-list UI lives in the shared
+ * `OptionChipManager` (this used to be its own near-identical copy of that
+ * same UI before it was extracted).
+ *
  * @param {{tags: Array<{_id: string, name: string}>, onTagsChanged: () => void}} props
  */
 function TagManager({ tags, onTagsChanged }) {
-  const [name, setName] = useState('')
-  const [error, setError] = useState('')
-  const [saving, setSaving] = useState(false)
-
-  const handleAdd = async (e) => {
-    e.preventDefault()
-    setSaving(true)
-    setError('')
-    try {
-      const res = await fetch(`${API_URL}/api/tags`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
-      })
-      const data = await res.json()
-      if (!data.success) throw new Error(data.message)
-      setName('')
-      onTagsChanged()
-    } catch (err) {
-      setError(err.message || 'הוספת התגית נכשלה')
-    } finally {
-      setSaving(false)
-    }
+  const handleAdd = async (name) => {
+    const res = await fetch(`${API_URL}/api/tags`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    })
+    const data = await res.json()
+    if (!data.success) throw new Error(data.message)
+    onTagsChanged()
   }
 
   const handleDelete = async (tag) => {
-    if (!window.confirm(`למחוק את התגית "${tag.name}"?`)) return
     const res = await fetch(`${API_URL}/api/tags/${tag._id}`, {
       method: 'DELETE',
       credentials: 'include',
@@ -52,36 +40,15 @@ function TagManager({ tags, onTagsChanged }) {
 
   return (
     <div className="tag-manager">
-      <form className="tag-manager-form" onSubmit={handleAdd}>
-        <label>
-          תגית חדשה
-          <input value={name} onChange={(e) => setName(e.target.value)} required />
-        </label>
-        <button type="submit" className="btn btn-primary" disabled={saving}>
-          {saving ? 'מוסיף...' : 'הוספה'}
-        </button>
-      </form>
-      {error && <p className="form-error">{error}</p>}
-
-      <div className="tag-manager-list">
-        {tags.length === 0 ? (
-          <p>אין עדיין תגיות.</p>
-        ) : (
-          tags.map((tag) => (
-            <span className="tag-manager-chip" key={tag._id}>
-              {tag.name}
-              <button
-                type="button"
-                className="tag-manager-remove"
-                onClick={() => handleDelete(tag)}
-                aria-label={`מחק את התגית ${tag.name}`}
-              >
-                ×
-              </button>
-            </span>
-          ))
-        )}
-      </div>
+      <OptionChipManager
+        inputLabel="תגית חדשה"
+        items={tags}
+        emptyMessage="אין עדיין תגיות."
+        onAdd={handleAdd}
+        onDelete={handleDelete}
+        getDeleteConfirmMessage={(tag) => `למחוק את התגית "${tag.name}"?`}
+        getDeleteAriaLabel={(tag) => `מחק את התגית ${tag.name}`}
+      />
     </div>
   )
 }
