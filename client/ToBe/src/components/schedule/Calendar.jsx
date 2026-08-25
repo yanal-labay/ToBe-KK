@@ -16,6 +16,13 @@ function dateKeyToDate(key) {
   return new Date(year, month - 1, day)
 }
 
+/** Midnight-normalized copy of an entry's `startDate`/`endDate` (arrive as ISO strings). */
+function dayOnly(value) {
+  const date = new Date(value)
+  date.setHours(0, 0, 0, 0)
+  return date
+}
+
 /** Every cell of a full 6-week grid for the given month, including the leading/trailing days borrowed from adjacent months so the grid is always a rectangle. */
 function buildMonthGrid(year, month) {
   const firstOfMonth = new Date(year, month, 1)
@@ -32,26 +39,54 @@ function buildMonthGrid(year, month) {
 }
 
 /**
- * Groups the flat `/api/schedule` entry list by every calendar day it
- * touches — a single-day entry (event/event-deadline/scholarship-deadline)
- * lands on one key, while a manual entry's `startDate`..`endDate` range
- * lands on every day in between.
+ * Groups single-day entries by the one calendar day they land on — genuinely
+ * multi-day entries are handled separately (see `computeWeekBandLanes`) so
+ * they render as one spanning bar instead of a repeated per-day pill.
  */
 function buildEntriesByDay(entries) {
   const map = new Map()
   for (const entry of entries) {
-    const start = new Date(entry.startDate)
-    start.setHours(0, 0, 0, 0)
-    const end = new Date(entry.endDate)
-    end.setHours(0, 0, 0, 0)
-
-    for (const cursor = new Date(start); cursor.getTime() <= end.getTime(); cursor.setDate(cursor.getDate() + 1)) {
-      const key = toDateKey(cursor)
-      if (!map.has(key)) map.set(key, [])
-      map.get(key).push(entry)
-    }
+    const key = toDateKey(dayOnly(entry.startDate))
+    if (!map.has(key)) map.set(key, [])
+    map.get(key).push(entry)
   }
   return map
+}
+
+/**
+ * True when `entry` spans more than one calendar day. Only manual entries
+ * can ever be true here — events/event-deadlines/scholarship-deadlines
+ * always carry the same `startDate`/`endDate`.
+ */
+function isSpanning(entry) {
+  return toDateKey(dayOnly(entry.startDate)) !== toDateKey(dayOnly(entry.endDate))
+}
+
+/**
+ * The spanning entries active on one specific day, each flagged for whether
+ * this is the entry's true first/last day — rendered as a same-colored
+ * segment inside that day's own box (see `.schedule-calendar-day-bands`),
+ * rounded only on the side that's a true range boundary so consecutive
+ * days' segments read as one continuous bar without ever leaving the day
+ * cells themselves. Sorted by the entry's own start date (a stable key
+ * independent of which day is asking), so on the rare day where two
+ * spanning entries overlap, they stack in the same relative order as every
+ * other day both are active on, instead of swapping lanes day to day.
+ */
+function computeDaySpanningSegments(day, spanningEntries) {
+  const dayTime = day.getTime()
+  return spanningEntries
+    .filter((entry) => {
+      const start = dayOnly(entry.startDate).getTime()
+      const end = dayOnly(entry.endDate).getTime()
+      return dayTime >= start && dayTime <= end
+    })
+    .map((entry) => ({
+      entry,
+      isRangeStart: dayTime === dayOnly(entry.startDate).getTime(),
+      isRangeEnd: dayTime === dayOnly(entry.endDate).getTime(),
+    }))
+    .sort((a, b) => new Date(a.entry.startDate) - new Date(b.entry.startDate) || a.entry.id.localeCompare(b.entry.id))
 }
 
 /**
@@ -67,12 +102,22 @@ function colorClassFor(entry) {
 }
 
 /**
- * The interactive month grid itself. Renders entries from
- * `GET /api/schedule` as small colored pills per day, each in its source's
- * color (event / scholarship / one of 3 admin-defined categories — see
- * `colorClassFor` and the legend below). Clicking a linked entry navigates
- * to its source page (and highlights the specific card there); clicking a
- * manual entry as an admin opens it for editing.
+ * The interactive month grid itself. Renders single-day entries from
+ * `GET /api/schedule` as small colored pills per day, and genuinely
+ * multi-day manual entries as a dedicated, always-visible row of segments
+ * inside each day box it covers (see `computeDaySpanningSegments`) — same
+ * color throughout, rounded only at the range's true start/end so it reads
+ * as one continuous bar without ever leaving the day cells themselves. This
+ * band row never counts against the regular 3-pill/"+N more" cap below it —
+ * each in its source's color (event / scholarship / one of 3 admin-defined
+ * categories — see `colorClassFor`). Clicking a linked entry navigates to
+ * its source page (and highlights the specific card there); clicking a
+ * manual entry (any of its segments) as an admin opens it for editing.
+ *
+ * The legend doubles as the filter control: unlike a plain read-only key,
+ * each row is a checkbox — `hiddenFilterKeys`/`onToggleFilterKey` are owned
+ * by the parent (see Schedule.jsx), which filters `entries` before handing
+ * them down, so this component stays a plain controlled display either way.
  *
  * @param {{
  *   entries: object[],
@@ -85,6 +130,8 @@ function colorClassFor(entry) {
  *   onToday: () => void,
  *   onSelectManual?: (entry: object) => void,
  *   onDeleteManual?: (entry: object) => void,
+ *   hiddenFilterKeys?: Set<string>,
+ *   onToggleFilterKey?: (key: string) => void,
  *   compact?: boolean,
  * }} props
  */
@@ -99,12 +146,21 @@ function Calendar({
   onToday,
   onSelectManual,
   onDeleteManual,
+  hiddenFilterKeys = new Set(),
+  onToggleFilterKey = () => {},
   compact = false,
 }) {
   const navigate = useNavigate()
   const [expandedDayKey, setExpandedDayKey] = useState(null)
 
-  const entriesByDay = useMemo(() => buildEntriesByDay(entries), [entries])
+  const { singleDayEntries, spanningEntries } = useMemo(() => {
+    const single = []
+    const spanning = []
+    for (const entry of entries) (isSpanning(entry) ? spanning : single).push(entry)
+    return { singleDayEntries: single, spanningEntries: spanning }
+  }, [entries])
+
+  const entriesByDay = useMemo(() => buildEntriesByDay(singleDayEntries), [singleDayEntries])
   const days = useMemo(() => buildMonthGrid(viewYear, viewMonth), [viewYear, viewMonth])
   const todayKey = useMemo(() => toDateKey(new Date()), [])
   const maxVisibleEntries = compact ? 1 : 3
@@ -117,6 +173,16 @@ function Calendar({
     }
     navigate(`${entry.linkTo}?highlight=${entry.refId}`)
   }
+
+  const popoverEntries = expandedDayKey
+    ? [
+        ...(entriesByDay.get(expandedDayKey) || []),
+        ...spanningEntries.filter((entry) => {
+          const day = dateKeyToDate(expandedDayKey).getTime()
+          return day >= dayOnly(entry.startDate).getTime() && day <= dayOnly(entry.endDate).getTime()
+        }),
+      ]
+    : []
 
   return (
     <div className={`schedule-calendar ${compact ? 'schedule-calendar--compact' : ''}`}>
@@ -140,19 +206,34 @@ function Calendar({
 
       {!compact && (
         <div className="schedule-calendar-legend">
-          <span className="schedule-legend-item">
+          <label className="schedule-legend-chip">
+            <input
+              type="checkbox"
+              checked={!hiddenFilterKeys.has('event')}
+              onChange={() => onToggleFilterKey('event')}
+            />
             <span className="schedule-legend-dot schedule-color-event" />
             אירועים
-          </span>
-          <span className="schedule-legend-item">
+          </label>
+          <label className="schedule-legend-chip">
+            <input
+              type="checkbox"
+              checked={!hiddenFilterKeys.has('scholarship')}
+              onChange={() => onToggleFilterKey('scholarship')}
+            />
             <span className="schedule-legend-dot schedule-color-scholarship" />
             מלגות
-          </span>
+          </label>
           {categories.map((category) => (
-            <span className="schedule-legend-item" key={category._id}>
+            <label className="schedule-legend-chip" key={category._id}>
+              <input
+                type="checkbox"
+                checked={!hiddenFilterKeys.has(`category-${category._id}`)}
+                onChange={() => onToggleFilterKey(`category-${category._id}`)}
+              />
               <span className={`schedule-legend-dot schedule-color-category-${category.colorSlot}`} />
               {category.name}
-            </span>
+            </label>
           ))}
         </div>
       )}
@@ -167,6 +248,7 @@ function Calendar({
         {days.map((day) => {
           const key = toDateKey(day)
           const dayEntries = entriesByDay.get(key) || []
+          const daySegments = computeDaySpanningSegments(day, spanningEntries)
           const isCurrentMonth = day.getMonth() === viewMonth
           const isToday = key === todayKey
           const visible = dayEntries.slice(0, maxVisibleEntries)
@@ -180,6 +262,25 @@ function Calendar({
               }`}
             >
               <span className="schedule-calendar-day-number">{day.getDate()}</span>
+
+              {daySegments.length > 0 && (
+                <div className="schedule-calendar-day-bands">
+                  {daySegments.map(({ entry, isRangeStart, isRangeEnd }) => (
+                    <button
+                      type="button"
+                      key={entry.id}
+                      className={`schedule-band-pill ${colorClassFor(entry)} ${
+                        isRangeStart ? 'is-range-start' : ''
+                      } ${isRangeEnd ? 'is-range-end' : ''}`}
+                      title={entry.title}
+                      onClick={() => handleEntryClick(entry)}
+                    >
+                      {isRangeStart ? entry.title : ''}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <div className="schedule-calendar-day-entries">
                 {visible.map((entry) => (
                   <button
@@ -223,7 +324,7 @@ function Calendar({
               </button>
             </div>
             <div className="schedule-day-popover-list">
-              {(entriesByDay.get(expandedDayKey) || []).map((entry) => (
+              {popoverEntries.map((entry) => (
                 <div key={entry.id} className="schedule-day-popover-row">
                   <button
                     type="button"

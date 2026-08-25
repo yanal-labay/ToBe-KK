@@ -14,7 +14,9 @@ import './Schedule.css'
  * schedule.controller.js). Guests can only view; the admin can create,
  * edit, and delete the manual entries and their categories (the
  * event/scholarship-derived entries are edited on their own pages, not
- * here).
+ * here). Anyone — guest or admin — can hide a whole category of entries
+ * from the grid via the calendar's legend/filter checkboxes
+ * (`hiddenFilterKeys`, purely client-side, nothing persisted).
  */
 function Schedule() {
   const { isAdmin } = useAdminSession()
@@ -39,6 +41,10 @@ function Schedule() {
   // skipping every other year when clicking "next month" repeatedly.
   const today = new Date()
   const [view, setView] = useState({ year: today.getFullYear(), month: today.getMonth() })
+
+  // Which of the legend's rows are unchecked, i.e. hidden from the grid —
+  // see `Calendar.jsx`, where the legend doubles as the filter control.
+  const [hiddenFilterKeys, setHiddenFilterKeys] = useState(() => new Set())
 
   const loadEntries = () => {
     setLoadState('loading')
@@ -128,6 +134,23 @@ function Schedule() {
     setView({ year: now.getFullYear(), month: now.getMonth() })
   }
 
+  const toggleFilterKey = (key) => {
+    setHiddenFilterKeys((current) => {
+      const next = new Set(current)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
+  const filterKeyFor = (entry) => {
+    if (entry.kind === 'event' || entry.kind === 'event-deadline') return 'event'
+    if (entry.kind === 'scholarship-deadline') return 'scholarship'
+    return `category-${entry.categoryId}`
+  }
+
+  const visibleEntries = entries.filter((entry) => !hiddenFilterKeys.has(filterKeyFor(entry)))
+
   return (
     <div className="schedule-page">
       <div className="schedule-page-header">
@@ -184,7 +207,7 @@ function Schedule() {
 
       {loadState === 'ready' && (
         <Calendar
-          entries={entries}
+          entries={visibleEntries}
           categories={categories}
           isAdmin={isAdmin}
           viewYear={view.year}
@@ -194,6 +217,8 @@ function Schedule() {
           onToday={handleToday}
           onSelectManual={handleSelectManual}
           onDeleteManual={handleDelete}
+          hiddenFilterKeys={hiddenFilterKeys}
+          onToggleFilterKey={toggleFilterKey}
         />
       )}
     </div>

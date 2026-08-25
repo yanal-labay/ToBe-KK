@@ -53,10 +53,30 @@
   color: var(--color-text-muted);
 }
 
-.schedule-legend-item {
+/* Each legend row doubles as a filter checkbox (see Calendar.jsx) — styled
+   as its own bordered chip so the filters read as clearly separate,
+   clickable controls rather than a plain inline key. */
+.schedule-legend-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 6px 14px;
+  background: var(--color-bg);
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.schedule-legend-chip:hover {
+  border-color: var(--color-primary);
+}
+
+.schedule-legend-chip input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
 }
 
 .schedule-legend-dot {
@@ -131,6 +151,49 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--color-text-muted);
+}
+
+/* Always-visible, dedicated row for genuinely multi-day manual entries —
+   never subject to the regular entries' 3-max/"+N more" cap below it (see
+   Calendar.jsx). Square by default so a "pass-through" day's segment sits
+   flush against its neighbors in adjacent day boxes; `.is-range-start`/
+   `.is-range-end` round only the side that's a true boundary of the whole
+   range, which is what makes the chain of per-day segments read as one
+   continuous bar while still living entirely inside each day's own box. */
+.schedule-calendar-day-bands {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.schedule-band-pill {
+  display: block;
+  width: 100%;
+  height: 14px;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 14px;
+  padding: 0 6px;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+  color: #fff;
+  min-width: 0;
+}
+
+.schedule-band-pill.is-range-start {
+  border-top-right-radius: 999px;
+  border-bottom-right-radius: 999px;
+}
+
+.schedule-band-pill.is-range-end {
+  border-top-left-radius: 999px;
+  border-bottom-left-radius: 999px;
 }
 
 .schedule-calendar-day-entries {
@@ -245,4 +308,61 @@
 .schedule-calendar--compact .schedule-entry-pill {
   font-size: 9px;
   padding: 1px 4px;
+}
+
+.schedule-calendar--compact .schedule-band-pill {
+  height: 10px;
+  font-size: 7px;
+  line-height: 10px;
+  padding: 0 4px;
+}
+
+/* Matches Navbar.css's own mobile breakpoint. The full (non-compact)
+   calendar had no responsive treatment at all before this — a 7-column
+   grid at desktop sizing just overflowed a phone-width screen. Shrinking
+   padding/gaps/font sizes here keeps everything on one screen width
+   without touching the fixed day-cell height itself. */
+@media (max-width: 900px) {
+  .schedule-calendar {
+    padding: 12px;
+  }
+
+  .schedule-calendar-header {
+    flex-wrap: wrap;
+  }
+
+  .schedule-calendar-header h2 {
+    min-width: auto;
+    font-size: 16px;
+  }
+
+  .schedule-legend-chip {
+    font-size: 12px;
+    gap: 4px;
+    padding: 4px 10px;
+  }
+
+  .schedule-calendar-grid {
+    gap: 2px;
+  }
+
+  .schedule-calendar-day {
+    padding: 2px;
+  }
+
+  .schedule-calendar-day-number {
+    font-size: 11px;
+  }
+
+  .schedule-entry-pill {
+    font-size: 9px;
+    padding: 1px 4px;
+  }
+
+  .schedule-band-pill {
+    height: 13px;
+    font-size: 8px;
+    line-height: 13px;
+    padding: 0 4px;
+  }
 }

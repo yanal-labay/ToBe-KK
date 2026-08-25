@@ -45,7 +45,9 @@ const CategoryInputSchema = z.object({
  *   event-date entry even though both share the same color (see
  *   `colorClassFor` in Calendar.jsx). Both carry `refId`/`linkTo` so the
  *   client can build `/events?highlight=<refId>`.
- * - Each scholarship contributes one `"scholarship-deadline"` entry.
+ * - Each scholarship contributes one `"scholarship-deadline"` entry,
+ *   similarly prefixed "אחרון להגשה:" (matching its own form's "תאריך אחרון
+ *   להגשה" label) so its pill reads as a deadline rather than a plain title.
  * - Each ScheduleEntry contributes one `"manual"` entry carrying its
  *   category's id/slot/name (entries whose category was somehow removed —
  *   category deletion is normally blocked while in use, see
@@ -88,7 +90,7 @@ async function listSchedule(req, res) {
       entries.push({
         id: `scholarship-deadline-${scholarship._id}`,
         kind: "scholarship-deadline",
-        title: scholarship.title,
+        title: `אחרון להגשה: ${scholarship.title}`,
         startDate: scholarship.deadline,
         endDate: scholarship.deadline,
         refId: scholarship._id,
