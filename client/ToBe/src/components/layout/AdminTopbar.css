@@ -29,3 +29,24 @@
   align-items: center;
   gap: 12px;
 }
+
+/* Matches Navbar.css's own mobile breakpoint. Unlike the guest Header (just
+   logo + theme toggle, which already fits one row), the admin topbar has
+   two extra pieces — the "אזור ניהול" badge and the logout button — that
+   don't fit alongside the full brand title on a narrow screen; without
+   this, the row never wraps and squeezes the title into several cramped
+   lines instead. Wrapping the two halves onto their own centered rows
+   keeps every piece fully readable instead. */
+@media (max-width: 900px) {
+  .admin-topbar {
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 10px;
+    padding: 12px 16px;
+  }
+
+  .admin-topbar-brand,
+  .admin-topbar-actions {
+    justify-content: center;
+  }
+}

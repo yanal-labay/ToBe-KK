@@ -101,8 +101,14 @@
   gap: 4px;
 }
 
+/* A fixed (not min-) height so every day cell is exactly the same size
+   regardless of how many entries land on it — a day with 4 entries clips
+   the overflow via the "+N נוספים" pill (see Calendar.jsx) instead of
+   growing the box; a day with 0 entries just has empty space below. */
 .schedule-calendar-day {
-  min-height: 88px;
+  height: 112px;
+  min-width: 0;
+  overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 4px;
@@ -121,6 +127,7 @@
 }
 
 .schedule-calendar-day-number {
+  flex-shrink: 0;
   font-size: 13px;
   font-weight: 600;
   color: var(--color-text-muted);
@@ -130,8 +137,14 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
+/* `min-width: 0` overrides the flex-item default of `min-width: auto`,
+   which otherwise refuses to shrink a nowrap button below its untruncated
+   text width — without it, a long title (e.g. "אחרון להרשמה: ...") pushes
+   past the pill's own box instead of actually eliding, which is what made
+   day cells look inconsistently sized in the first place. */
 .schedule-entry-pill {
   font: inherit;
   font-size: 11px;
@@ -145,6 +158,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   color: #fff;
+  min-width: 0;
 }
 
 .schedule-entry-pill.schedule-entry-more {
@@ -220,7 +234,7 @@
 }
 
 .schedule-calendar--compact .schedule-calendar-day {
-  min-height: 44px;
+  height: 54px;
   padding: 2px;
 }
 
