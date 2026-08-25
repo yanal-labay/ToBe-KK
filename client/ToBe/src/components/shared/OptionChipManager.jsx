@@ -5,9 +5,10 @@ import './OptionChipManager.css'
  * Generic admin-managed named list: an add-form (single text input) plus a
  * removable-chip list below it. Every "admin adds/removes named values
  * independently of any post" list in this app shares this exact UI —
- * student registry's institutions/fields of study, scholarship tags, and
- * job types/industries — so this replaces three near-identical hand-rolled
- * copies with one. Copy (labels, confirm/aria-label wording, empty-state
+ * student registry's institutions/fields of study, and each admin-defined
+ * field's options for both Jobs and Scholarships — so this replaces several
+ * near-identical hand-rolled copies with one. Copy (labels, confirm/
+ * aria-label wording, empty-state
  * message) stays fully parameterized so each caller's existing wording is
  * unchanged.
  *

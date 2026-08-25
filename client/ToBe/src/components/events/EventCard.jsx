@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { API_URL } from '../../apiConfig'
 import RegisterForm from './RegisterForm'
 import RegistrationsPanel from './RegistrationsPanel'
 import './EventCard.css'
+
+const DESCRIPTION_PREVIEW_SENTENCES = 4
 
 /** Formats an event's `date` (ISO string from the API) for display in Hebrew. */
 function formatDate(value) {
@@ -10,6 +13,21 @@ function formatDate(value) {
     month: 'long',
     day: 'numeric',
   })
+}
+
+/**
+ * Splits `text` into a leading preview of `sentenceCount` sentences (a
+ * simple `.`/`!`/`?`-terminator split — approximate, not full Hebrew
+ * grammar, but good enough for a "read more" cutoff) plus whether it was
+ * actually longer than that, so the card can offer to expand only when
+ * there's really more to show.
+ */
+function previewDescription(text, sentenceCount) {
+  const sentences = text.match(/[^.!?]+[.!?]*/g) || [text]
+  if (sentences.length <= sentenceCount) {
+    return { preview: text, isTruncated: false }
+  }
+  return { preview: sentences.slice(0, sentenceCount).join('').trim(), isTruncated: true }
 }
 
 /**
@@ -26,11 +44,12 @@ export function isEventExpired(event) {
 
 /**
  * True once registration is no longer possible: either the event itself has
- * already happened, or (when the admin set one) its optional
- * `registrationDeadline` day has fully passed — a cutoff that can close
- * sign-ups earlier than the event itself. Mirrors the day-only comparison
- * in `event.controller.js`'s `isRegistrationClosed`, which is the one that
- * actually enforces this server-side.
+ * already happened, or its `registrationDeadline` day has fully passed — a
+ * cutoff that can close sign-ups earlier than the event itself. Mirrors
+ * the day-only comparison in `event.controller.js`'s
+ * `isRegistrationClosed`, which is the one that actually enforces this
+ * server-side. The `!event.registrationDeadline` guard is a defensive
+ * fallback for any event created before this field became required.
  */
 export function isRegistrationClosed(event) {
   if (isEventExpired(event)) return true
@@ -52,6 +71,11 @@ export function isRegistrationClosed(event) {
  * component only needs to know *whether* it's being viewed by an admin, not
  * whether it's currently in edit mode.
  *
+ * Descriptions are clipped to a 4-sentence preview by default (so every
+ * card's height stays consistent regardless of how long its description
+ * is) with a "קרא עוד"/"הצג פחות" toggle to expand/collapse the full text
+ * in place.
+ *
  * @param {{
  *   event: object,
  *   isAdmin: boolean,
@@ -65,6 +89,8 @@ export function isRegistrationClosed(event) {
 function EventCard({ event, isAdmin, isHighlighted, onEdit, onDelete, isViewingRegistrations, onToggleRegistrations }) {
   const expired = isEventExpired(event)
   const registrationClosed = isRegistrationClosed(event)
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false)
+  const { preview, isTruncated } = previewDescription(event.description, DESCRIPTION_PREVIEW_SENTENCES)
 
   return (
     <div id={`event-${event._id}`} className={`card event-card ${isHighlighted ? 'is-highlighted' : ''}`}>
@@ -78,12 +104,23 @@ function EventCard({ event, isAdmin, isHighlighted, onEdit, onDelete, isViewingR
         <p>📅 {formatDate(event.date)}</p>
         <p>🕒 {event.time}</p>
         <p>📍 {event.location}</p>
-        {event.price != null && <p> עלות : {event.price} ₪</p>}
+        <p> עלות : {event.price != null ? `${event.price} ₪` : 'חינם'}</p>
         {event.registrationDeadline && (
           <p>⏳ הרשמה עד: {formatDate(event.registrationDeadline)}</p>
         )}
       </div>
-      <p>{event.description}</p>
+      <p className="event-description">
+        {descriptionExpanded || !isTruncated ? event.description : `${preview}…`}
+      </p>
+      {isTruncated && (
+        <button
+          type="button"
+          className="event-description-toggle"
+          onClick={() => setDescriptionExpanded((current) => !current)}
+        >
+          {descriptionExpanded ? 'הצג פחות' : 'קרא עוד'}
+        </button>
+      )}
 
       {isAdmin ? (
         <>

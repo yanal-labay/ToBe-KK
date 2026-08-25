@@ -69,13 +69,13 @@
   padding: 24px;
 }
 
-.scholarship-tags {
+.scholarship-tag-bubbles {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.scholarship-tag-chip {
+.scholarship-tag-bubble {
   font-size: 12px;
   font-weight: 600;
   padding: 3px 10px;

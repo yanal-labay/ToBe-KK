@@ -27,13 +27,16 @@ export function isScholarshipExpired(scholarship) {
 
 /**
  * Read-only display of a single scholarship: the photo sits beside the
- * title/tags/deadline/amount/hours block only (top row), while the
- * description and action buttons span the full card width below it. The
- * photo is the last flex child in `.scholarship-card-top`, which lands on
- * the right side in this app's RTL layout (see Layout.jsx). Falls back to
- * the site logo (theme-appropriate, same assets as BrandLogo) when no photo
- * was uploaded. Admins get edit/delete buttons alongside the "לפרטים
- * ולהגשה" link in the same action row; guests only see the link.
+ * title/deadline/amount/hours block only (top row), while the description
+ * and action buttons span the full card width below it. The photo is the
+ * last flex child in `.scholarship-card-top`, which lands on the right side
+ * in this app's RTL layout (see Layout.jsx). Falls back to the site logo
+ * (theme-appropriate, same assets as BrandLogo) when no photo was uploaded.
+ * Admins get edit/delete buttons alongside the "לפרטים ולהגשה" link in the
+ * same action row; guests only see the link. `scholarship.fieldSelections`
+ * (populated server-side, see scholarship.controller.js) is rendered as a
+ * row of small pill-shaped bubbles (one per selected option, field name not
+ * shown) just above that action row.
  *
  * @param {{
  *   scholarship: object,
@@ -58,15 +61,6 @@ function ScholarshipCard({ scholarship, isAdmin, isHighlighted, onEdit, onDelete
       <div className="scholarship-card-top">
         <div className="scholarship-card-info">
           <h3>{scholarship.title}</h3>
-          {scholarship.tags?.length > 0 && (
-            <div className="scholarship-tags">
-              {scholarship.tags.map((tag) => (
-                <span className="scholarship-tag-chip" key={tag._id}>
-                  {tag.name}
-                </span>
-              ))}
-            </div>
-          )}
           <p className="scholarship-deadline">📅 הגשה עד: {formatDate(scholarship.deadline)}</p>
           {scholarship.amount != null && <p>💰 סכום המלגה: ₪{scholarship.amount}</p>}
           {scholarship.volunteerHours != null && (
@@ -81,6 +75,16 @@ function ScholarshipCard({ scholarship, isAdmin, isHighlighted, onEdit, onDelete
       </div>
 
       <p className="scholarship-description">{scholarship.description}</p>
+
+      {scholarship.fieldSelections?.length > 0 && (
+        <div className="scholarship-tag-bubbles">
+          {scholarship.fieldSelections.map((selection) => (
+            <span className="scholarship-tag-bubble" key={selection._id}>
+              {selection.name}
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="scholarship-card-actions">
         {isAdmin || !expired ? (

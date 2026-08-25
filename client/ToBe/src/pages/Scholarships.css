@@ -1,5 +1,5 @@
 .scholarships-page {
-  max-width: 800px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 48px 24px;
 }
@@ -23,38 +23,67 @@
   color: #c0392b;
 }
 
-.tag-filter-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 24px;
+.scholarships-match-count {
+  color: var(--color-text-muted);
+  font-size: 14px;
 }
 
-.tag-filter-chip {
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 6px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text);
-  cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
+/* Sidebar first in `grid-template-columns` so it lands in track 1 — under
+   the app's global `direction: rtl` (see index.css), grid tracks are
+   placed starting from the inline-start edge, which is the physical right.
+   `.scholarships-page-main`/`.scholarships-filter-sidebar` are given
+   explicit grid-column values so this visual placement doesn't depend on
+   DOM order — the main content stays first in the markup (natural tab/
+   reading order), only its *visual* position is track 2.
+   Both also need an explicit `grid-row: 1` — without it, auto-placement
+   bumps the sidebar (column 1) down to a new row, since it comes *after*
+   the main content (column 2) in DOM order and auto-placement won't place
+   a later item at an earlier column than the previous one within the same
+   row. Mirrors Jobs.css's `.jobs-page-layout` exactly. */
+.scholarships-page-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  align-items: start;
 }
 
-.tag-filter-chip:hover {
-  border-color: var(--color-primary);
+.scholarships-page-main {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
 }
 
-.tag-filter-chip.is-active {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--color-on-primary);
+.scholarships-filter-sidebar {
+  grid-column: 1;
+  grid-row: 1;
 }
 
 .scholarships-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+/* Matches Navbar.css's own mobile breakpoint, so the whole app's
+   "mobile" layout transition happens at the same viewport width. */
+@media (max-width: 900px) {
+  .scholarships-page-layout {
+    grid-template-columns: 1fr;
+  }
+
+  /* Single column now, so both items must go back to separate auto rows
+     (grid-row: 1 on both would otherwise stack them on top of each other
+     in the same cell). `order: -1` puts the sidebar first visually
+     (filters above the list on mobile) without reordering the DOM/tab
+     order, which stays main-content-first. */
+  .scholarships-page-main {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .scholarships-filter-sidebar {
+    grid-column: 1;
+    grid-row: auto;
+    order: -1;
+  }
 }

@@ -4,15 +4,28 @@ import { useAdminSession } from '../hooks/useAdminSession'
 import { API_URL } from '../apiConfig'
 import ScholarshipForm from '../components/scholarships/ScholarshipForm'
 import ScholarshipCard, { isScholarshipExpired } from '../components/scholarships/ScholarshipCard'
-import TagManager from '../components/scholarships/TagManager'
+import ScholarshipFieldsManager from '../components/scholarships/ScholarshipFieldsManager'
+import ScholarshipFilterSidebar from '../components/scholarships/ScholarshipFilterSidebar'
 import './Scholarships.css'
+
+/** Groups a scholarship's populated `fieldSelections` into `{ [fieldId]: optionId[] }`, for seeding ScholarshipForm's edit state. */
+function fieldSelectionsToFieldValues(fieldSelections) {
+  const values = {}
+  for (const selection of fieldSelections) {
+    const key = selection.field._id
+    if (!values[key]) values[key] = []
+    values[key].push(selection._id)
+  }
+  return values
+}
 
 /**
  * The /scholarships page — same admin-CRUD / guest-view pattern as Events
- * (see pages/Events.jsx), with two additions: a shared Tag list admins
- * manage independently of any post (see TagManager), and a multi-select
- * tag filter for guests, applied client-side against the already-fetched
- * list.
+ * (see pages/Events.jsx), with the same filtering system as Jobs (see
+ * pages/Jobs.jsx): a shared admin-defined field/option list managed
+ * independently of any post (see ScholarshipFieldsManager), and a
+ * search-by-title + per-field checkbox filter sidebar for guests, applied
+ * client-side against the already-fetched list.
  */
 function Scholarships() {
   const { isAdmin } = useAdminSession()
@@ -20,14 +33,17 @@ function Scholarships() {
   const highlightParam = searchParams.get('highlight')
 
   const [scholarships, setScholarships] = useState([])
-  const [tags, setTags] = useState([])
   const [loadState, setLoadState] = useState('loading') // loading | ready | error
   const [highlightedId, setHighlightedId] = useState(null)
 
+  const [fields, setFields] = useState([])
+
   const [creating, setCreating] = useState(false)
   const [editingId, setEditingId] = useState(null)
-  const [showTagManager, setShowTagManager] = useState(false)
-  const [selectedTagIds, setSelectedTagIds] = useState([])
+  const [showFieldsManager, setShowFieldsManager] = useState(false)
+
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedOptionIds, setSelectedOptionIds] = useState({}) // { [fieldId]: optionId[] }
 
   const loadScholarships = () => {
     setLoadState('loading')
@@ -43,16 +59,16 @@ function Scholarships() {
       .catch(() => setLoadState('error'))
   }
 
-  const loadTags = () => {
-    fetch(`${API_URL}/api/tags`)
+  const loadFields = () => {
+    fetch(`${API_URL}/api/scholarship-fields`)
       .then((res) => (res.ok ? res.json() : []))
-      .then(setTags)
+      .then(setFields)
       .catch(() => {})
   }
 
   useEffect(() => {
     loadScholarships()
-    loadTags()
+    loadFields()
   }, [])
 
   // Scrolls to and briefly highlights the scholarship named by
@@ -105,16 +121,34 @@ function Scholarships() {
     loadScholarships()
   }
 
-  const toggleTagFilter = (tagId) => {
-    setSelectedTagIds((current) =>
-      current.includes(tagId) ? current.filter((id) => id !== tagId) : [...current, tagId]
-    )
+  const toggleOption = (fieldId, optionId) => {
+    setSelectedOptionIds((current) => {
+      const currentForField = current[fieldId] || []
+      const nextForField = currentForField.includes(optionId)
+        ? currentForField.filter((id) => id !== optionId)
+        : [...currentForField, optionId]
+      return { ...current, [fieldId]: nextForField }
+    })
   }
 
-  const visibleScholarships =
-    selectedTagIds.length === 0
-      ? scholarships
-      : scholarships.filter((s) => s.tags.some((tag) => selectedTagIds.includes(tag._id)))
+  const hasActiveFilters =
+    searchTerm.trim() !== '' || Object.values(selectedOptionIds).some((ids) => ids.length > 0)
+
+  const clearFilters = () => {
+    setSearchTerm('')
+    setSelectedOptionIds({})
+  }
+
+  const visibleScholarships = scholarships.filter((scholarship) => {
+    const term = searchTerm.trim().toLowerCase()
+    if (term && !scholarship.title.toLowerCase().includes(term)) return false
+    for (const field of fields) {
+      const selected = selectedOptionIds[field._id]
+      if (!selected || selected.length === 0) continue
+      if (!scholarship.fieldSelections.some((sel) => selected.includes(sel._id))) return false
+    }
+    return true
+  })
 
   return (
     <div className="scholarships-page">
@@ -125,9 +159,9 @@ function Scholarships() {
             <button
               type="button"
               className="btn btn-outline"
-              onClick={() => setShowTagManager((current) => !current)}
+              onClick={() => setShowFieldsManager((current) => !current)}
             >
-              {showTagManager ? 'סגירת ניהול תגיות' : 'ניהול תגיות'}
+              {showFieldsManager ? 'סגירת ניהול שדות' : 'ניהול שדות'}
             </button>
           )}
           {isAdmin && !creating && (
@@ -138,81 +172,85 @@ function Scholarships() {
         </div>
       </div>
 
-      {isAdmin && showTagManager && <TagManager tags={tags} onTagsChanged={loadTags} />}
-
-      {tags.length > 0 && (
-        <div className="tag-filter-bar">
-          <button
-            type="button"
-            className={`tag-filter-chip ${selectedTagIds.length === 0 ? 'is-active' : ''}`}
-            onClick={() => setSelectedTagIds([])}
-          >
-            הכל
-          </button>
-          {tags.map((tag) => (
-            <button
-              type="button"
-              key={tag._id}
-              className={`tag-filter-chip ${selectedTagIds.includes(tag._id) ? 'is-active' : ''}`}
-              onClick={() => toggleTagFilter(tag._id)}
-            >
-              {tag.name}
-            </button>
-          ))}
-        </div>
+      {isAdmin && showFieldsManager && (
+        <ScholarshipFieldsManager fields={fields} onFieldsChanged={loadFields} />
       )}
 
       {isAdmin && creating && (
         <ScholarshipForm
-          tags={tags}
+          fields={fields}
           submitLabel="שמירה"
           onSubmit={handleCreate}
           onCancel={() => setCreating(false)}
         />
       )}
 
-      {loadState === 'loading' && <p>טוען מלגות...</p>}
-      {loadState === 'error' && <p className="scholarships-error">לא ניתן לטעון את המלגות כרגע</p>}
-      {loadState === 'ready' && visibleScholarships.length === 0 && (
-        <p>אין מלגות להצגה כרגע.</p>
-      )}
+      <div className="scholarships-page-layout">
+        <div className="scholarships-page-main">
+          {loadState === 'loading' && <p>טוען מלגות...</p>}
+          {loadState === 'error' && (
+            <p className="scholarships-error">לא ניתן לטעון את המלגות כרגע</p>
+          )}
+          {loadState === 'ready' && scholarships.length === 0 && <p>אין מלגות להצגה כרגע.</p>}
+          {loadState === 'ready' && scholarships.length > 0 && hasActiveFilters && (
+            <p className="scholarships-match-count">{visibleScholarships.length} מלגות נמצאו</p>
+          )}
+          {loadState === 'ready' && scholarships.length > 0 && visibleScholarships.length === 0 && (
+            <p>אין מלגות התואמות את החיפוש/הסינון.</p>
+          )}
 
-      <div className="scholarships-list">
-        {/* Stable sort: groups expired scholarships after active ones while
-            preserving each group's original order. */}
-        {[...visibleScholarships]
-          .sort((a, b) => Number(isScholarshipExpired(a)) - Number(isScholarshipExpired(b)))
-          .map((scholarship) =>
-          isAdmin && editingId === scholarship._id ? (
-            <ScholarshipForm
-              key={scholarship._id}
-              tags={tags}
-              initialValues={{
-                title: scholarship.title,
-                description: scholarship.description,
-                deadline: scholarship.deadline.slice(0, 10),
-                url: scholarship.url,
-                amount: scholarship.amount != null ? String(scholarship.amount) : '',
-                volunteerHours:
-                  scholarship.volunteerHours != null ? String(scholarship.volunteerHours) : '',
-              }}
-              initialTagIds={scholarship.tags.map((tag) => tag._id)}
-              existingPhotoUrl={scholarship.photoUrl}
-              submitLabel="עדכון"
-              onSubmit={(formData) => handleUpdate(scholarship._id, formData)}
-              onCancel={() => setEditingId(null)}
-            />
-          ) : (
-            <ScholarshipCard
-              key={scholarship._id}
-              scholarship={scholarship}
-              isAdmin={isAdmin}
-              isHighlighted={highlightedId === scholarship._id}
-              onEdit={() => setEditingId(scholarship._id)}
-              onDelete={() => handleDelete(scholarship)}
-            />
-          )
-        )}
+          <div className="scholarships-list">
+            {/* Stable sort: groups expired scholarships after active ones while
+                preserving each group's original order. */}
+            {[...visibleScholarships]
+              .sort((a, b) => Number(isScholarshipExpired(a)) - Number(isScholarshipExpired(b)))
+              .map((scholarship) =>
+                isAdmin && editingId === scholarship._id ? (
+                  <ScholarshipForm
+                    key={scholarship._id}
+                    fields={fields}
+                    initialValues={{
+                      title: scholarship.title,
+                      description: scholarship.description,
+                      deadline: scholarship.deadline.slice(0, 10),
+                      url: scholarship.url,
+                      amount: scholarship.amount != null ? String(scholarship.amount) : '',
+                      volunteerHours:
+                        scholarship.volunteerHours != null
+                          ? String(scholarship.volunteerHours)
+                          : '',
+                    }}
+                    initialFieldValues={fieldSelectionsToFieldValues(scholarship.fieldSelections)}
+                    existingPhotoUrl={scholarship.photoUrl}
+                    submitLabel="עדכון"
+                    onSubmit={(formData) => handleUpdate(scholarship._id, formData)}
+                    onCancel={() => setEditingId(null)}
+                  />
+                ) : (
+                  <ScholarshipCard
+                    key={scholarship._id}
+                    scholarship={scholarship}
+                    isAdmin={isAdmin}
+                    isHighlighted={highlightedId === scholarship._id}
+                    onEdit={() => setEditingId(scholarship._id)}
+                    onDelete={() => handleDelete(scholarship)}
+                  />
+                )
+              )}
+          </div>
+        </div>
+
+        <aside className="scholarships-filter-sidebar">
+          <ScholarshipFilterSidebar
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            fields={fields}
+            selectedOptionIds={selectedOptionIds}
+            onToggleOption={toggleOption}
+            hasActiveFilters={hasActiveFilters}
+            onClearFilters={clearFilters}
+          />
+        </aside>
       </div>
     </div>
   )

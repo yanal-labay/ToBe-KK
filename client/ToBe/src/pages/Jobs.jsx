@@ -7,6 +7,17 @@ import JobFieldsManager from '../components/jobs/JobFieldsManager'
 import JobFilterSidebar from '../components/jobs/JobFilterSidebar'
 import './Jobs.css'
 
+/** Groups a job's populated `fieldSelections` into `{ [fieldId]: optionId[] }`, for seeding JobForm's edit state. */
+function fieldSelectionsToFieldValues(fieldSelections) {
+  const values = {}
+  for (const selection of fieldSelections) {
+    const key = selection.field._id
+    if (!values[key]) values[key] = []
+    values[key].push(selection._id)
+  }
+  return values
+}
+
 /**
  * The /jobs page ("לוח משרות") — same admin-CRUD / guest-view pattern as
  * Scholarships. Admins fetch every posting (including inactive ones, via
@@ -201,9 +212,7 @@ function Jobs() {
                     contactPhone: job.contactPhone || '',
                     isActive: job.isActive,
                   }}
-                  initialFieldValues={Object.fromEntries(
-                    job.fieldSelections.map((sel) => [sel.field._id, sel._id])
-                  )}
+                  initialFieldValues={fieldSelectionsToFieldValues(job.fieldSelections)}
                   existingPhotoUrl={job.photoUrl}
                   submitLabel="עדכון"
                   onSubmit={(formData) => handleUpdate(job._id, formData)}

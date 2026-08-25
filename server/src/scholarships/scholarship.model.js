@@ -8,9 +8,14 @@ const mongoose = require("mongoose");
  * - `photoUrl` is optional (same nullable convention as Event.photoUrl) —
  *   when null, the client shows the site logo instead (see
  *   ScholarshipCard.jsx).
- * - `tags` references existing Tag documents; admins choose from the
- *   existing list when creating/editing a scholarship rather than typing
- *   free text (see tag.model.js).
+ * - `fieldSelections` references admin-defined `ScholarshipField`/
+ *   `ScholarshipFieldOption` documents (e.g. a "תגיות" field with a
+ *   "צבא" option selected) — the admin can add new fields, rename one, and
+ *   manage each field's checkbox values entirely independently of any
+ *   listing (see `ScholarshipFieldsManager.jsx`/`scholarshipField.model.js`).
+ *   Unlike Job's fields, a scholarship can hold multiple selections from the
+ *   same field at once (e.g. several tags together) — nothing enforces
+ *   one-per-field here.
  * - `amount` (סכום המלגה) and `volunteerHours` (שעות התנדבות נדרשות) are
  *   both nullable, same convention as `photoUrl`/Event.price — null means
  *   "not specified for this scholarship" and the client hides that line
@@ -24,7 +29,7 @@ const ScholarshipSchema = new mongoose.Schema({
   amount: { type: Number, default: null },
   volunteerHours: { type: Number, default: null },
   photoUrl: { type: String, default: null },
-  tags: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tag" }],
+  fieldSelections: [{ type: mongoose.Schema.Types.ObjectId, ref: "ScholarshipFieldOption" }],
   createdAt: { type: Date, default: Date.now },
 });
 

@@ -11,11 +11,12 @@ const mongoose = require("mongoose");
  *   documents (e.g. a "סוג משרה" field with a "משרה חלקית" option
  *   selected) — the admin can add new fields, rename one, and manage each
  *   field's checkbox values entirely independently of any posting (see
- *   `JobFieldsManager.jsx`/`jobField.model.js`). At most one option per
- *   field is expected per job, enforced at the form/validation layer, not
- *   here. `isStudentPosition` is a deliberately independent boolean, not
- *   part of that field system — a job can be both a "משרה חלקית" and a
- *   student position at once.
+ *   `JobFieldsManager.jsx`/`jobField.model.js`). A job can hold multiple
+ *   selections from the same field at once (same convention as
+ *   `Scholarship.fieldSelections`) — nothing enforces one-per-field here.
+ *   `isStudentPosition` is a deliberately independent boolean, not part of
+ *   that field system — a job can be both a "משרה חלקית" and a student
+ *   position at once.
  * - `salary` is free text (a range, "לפי ניסיון", etc.), not a number —
  *   job salaries don't fit a single numeric field the way a scholarship
  *   amount does.

@@ -6,9 +6,16 @@ const { deletePhoto } = require("./upload");
 /**
  * Validates the create/update scholarship payload. Arrives as
  * `multipart/form-data` (the photo shares the request), so every field is a
- * plain string — `tags` in particular may show up as a single string (one
- * checkbox checked) or an array of strings (multiple), and is normalized
- * into an array here.
+ * plain string.
+ *
+ * `fieldSelections` arrives as a JSON-encoded array of `ScholarshipFieldOption`
+ * ids (see scholarshipField.model.js) — it has to be JSON-encoded because
+ * multipart/form-data can only carry flat string fields, not a real array.
+ * Each id is checked for being a syntactically valid ObjectId, but not
+ * checked for actually existing — a stale/removed id here would just fail
+ * to populate later, same soft-guidance-not-hard-constraint spirit as the
+ * rest of this app's admin-managed lists (mirrors job.controller.js's
+ * `JobInputSchema.fieldSelections`).
  */
 const optionalNonNegativeNumber = (message) =>
   z
@@ -18,6 +25,10 @@ const optionalNonNegativeNumber = (message) =>
     .transform((v) => (v ? Number(v) : null))
     .refine((v) => v === null || (Number.isFinite(v) && v >= 0), { message });
 
+const objectIdString = z.string().refine((v) => mongoose.Types.ObjectId.isValid(v), {
+  message: "מזהה לא תקין",
+});
+
 const ScholarshipInputSchema = z.object({
   title: z.string().trim().min(1).max(200),
   description: z.string().trim().min(1).max(5000),
@@ -25,20 +36,33 @@ const ScholarshipInputSchema = z.object({
   url: z.string().trim().url("קישור לא תקין"),
   amount: optionalNonNegativeNumber("סכום המלגה לא תקין"),
   volunteerHours: optionalNonNegativeNumber("מספר שעות ההתנדבות לא תקין"),
-  tags: z
-    .union([z.string(), z.array(z.string())])
+  fieldSelections: z
+    .string()
     .optional()
-    .transform((v) => (v ? (Array.isArray(v) ? v : [v]) : []))
-    .refine((arr) => arr.every((id) => mongoose.Types.ObjectId.isValid(id)), {
-      message: "תגית לא תקינה",
-    }),
+    .transform((v, ctx) => {
+      if (!v) return [];
+      try {
+        const parsed = JSON.parse(v);
+        if (!Array.isArray(parsed)) throw new Error();
+        return parsed;
+      } catch {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "בחירת שדות לא תקינה" });
+        return z.NEVER;
+      }
+    })
+    .pipe(z.array(objectIdString)),
 });
 
-/** GET /api/scholarships — public list, newest first, with tags populated. */
+// Every scholarship-listing query resolves `fieldSelections` down to
+// `{ _id, name, field: { _id, name } }` so the client can render/filter by
+// field+value without a separate round trip per scholarship.
+const FIELD_SELECTIONS_POPULATE = { path: "fieldSelections", populate: { path: "field" } };
+
+/** GET /api/scholarships — public list, newest first, with fields populated. */
 async function listScholarships(req, res) {
   try {
     const scholarships = await Scholarship.find()
-      .populate("tags")
+      .populate(FIELD_SELECTIONS_POPULATE)
       .sort({ createdAt: -1 });
     res.json(scholarships);
   } catch (err) {
@@ -64,7 +88,7 @@ async function createScholarship(req, res) {
       ...result.data,
       ...(photoUrl && { photoUrl }),
     }).save();
-    await scholarship.populate("tags");
+    await scholarship.populate(FIELD_SELECTIONS_POPULATE);
     res.status(201).json({ success: true, scholarship });
   } catch (err) {
     res.status(500).json({ success: false, message: "Database error" });
@@ -103,7 +127,7 @@ async function updateScholarship(req, res) {
     const scholarship = await Scholarship.findByIdAndUpdate(id, updates, {
       new: true,
       runValidators: true,
-    }).populate("tags");
+    }).populate(FIELD_SELECTIONS_POPULATE);
     res.json({ success: true, scholarship });
   } catch (err) {
     res.status(500).json({ success: false, message: "Database error" });

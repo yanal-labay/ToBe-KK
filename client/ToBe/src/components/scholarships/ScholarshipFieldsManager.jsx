@@ -1,23 +1,21 @@
 import { useState } from 'react'
 import { API_URL } from '../../apiConfig'
 import OptionChipManager from '../shared/OptionChipManager'
-import './JobFieldsManager.css'
+import './ScholarshipFieldsManager.css'
 
 /**
- * Admin-only management of job posting fields — e.g. "סוג משרה", "תחום",
- * or any new field the admin creates. Each field's checkbox values are
- * managed via the shared `OptionChipManager` (same as the student
- * registry's institution/field-of-study lists and scholarship fields), but
- * a field's own NAME can also be renamed here, unlike those other
- * admin-managed lists — mirrors `components/links/LinkGroupCard.jsx`'s
- * inline card-title rename pattern.
+ * Admin-only management of scholarship fields — e.g. "תגיות", or any new
+ * field the admin creates. Each field's checkbox values are managed via the
+ * shared `OptionChipManager` (same as the student registry's institution/
+ * field-of-study lists and Job's fields), but a field's own NAME can also be
+ * renamed here — mirrors `components/jobs/JobFieldsManager.jsx` exactly.
  *
  * @param {{
  *   fields: Array<{_id: string, name: string, options: Array<{_id: string, name: string}>}>,
  *   onFieldsChanged: () => void,
  * }} props
  */
-function JobFieldsManager({ fields, onFieldsChanged }) {
+function ScholarshipFieldsManager({ fields, onFieldsChanged }) {
   const [newFieldName, setNewFieldName] = useState('')
   const [addError, setAddError] = useState('')
   const [addSaving, setAddSaving] = useState(false)
@@ -27,7 +25,7 @@ function JobFieldsManager({ fields, onFieldsChanged }) {
     setAddSaving(true)
     setAddError('')
     try {
-      const res = await fetch(`${API_URL}/api/job-fields`, {
+      const res = await fetch(`${API_URL}/api/scholarship-fields`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -45,7 +43,7 @@ function JobFieldsManager({ fields, onFieldsChanged }) {
   }
 
   const handleRenameField = async (fieldId, name) => {
-    const res = await fetch(`${API_URL}/api/job-fields/${fieldId}`, {
+    const res = await fetch(`${API_URL}/api/scholarship-fields/${fieldId}`, {
       method: 'PATCH',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -58,7 +56,7 @@ function JobFieldsManager({ fields, onFieldsChanged }) {
 
   const handleDeleteField = async (field) => {
     if (!window.confirm(`למחוק את השדה "${field.name}" ואת כל האפשרויות שבו?`)) return
-    const res = await fetch(`${API_URL}/api/job-fields/${field._id}`, {
+    const res = await fetch(`${API_URL}/api/scholarship-fields/${field._id}`, {
       method: 'DELETE',
       credentials: 'include',
     })
@@ -68,7 +66,7 @@ function JobFieldsManager({ fields, onFieldsChanged }) {
   }
 
   const handleAddOption = async (fieldId, name) => {
-    const res = await fetch(`${API_URL}/api/job-fields/${fieldId}/options`, {
+    const res = await fetch(`${API_URL}/api/scholarship-fields/${fieldId}/options`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -80,7 +78,7 @@ function JobFieldsManager({ fields, onFieldsChanged }) {
   }
 
   const handleDeleteOption = async (fieldId, option) => {
-    const res = await fetch(`${API_URL}/api/job-fields/${fieldId}/options/${option._id}`, {
+    const res = await fetch(`${API_URL}/api/scholarship-fields/${fieldId}/options/${option._id}`, {
       method: 'DELETE',
       credentials: 'include',
     })
@@ -90,8 +88,8 @@ function JobFieldsManager({ fields, onFieldsChanged }) {
   }
 
   return (
-    <div className="job-fields-manager">
-      <form className="job-fields-add-form" onSubmit={handleAddField}>
+    <div className="scholarship-fields-manager">
+      <form className="scholarship-fields-add-form" onSubmit={handleAddField}>
         <label>
           שדה חדש
           <input value={newFieldName} onChange={(e) => setNewFieldName(e.target.value)} required />
@@ -100,10 +98,10 @@ function JobFieldsManager({ fields, onFieldsChanged }) {
           {addSaving ? 'מוסיף...' : 'הוספת שדה'}
         </button>
       </form>
-      {addError && <p className="job-fields-error">{addError}</p>}
+      {addError && <p className="scholarship-fields-error">{addError}</p>}
 
       {fields.map((field) => (
-        <JobFieldSection
+        <ScholarshipFieldSection
           key={field._id}
           field={field}
           onRename={(name) => handleRenameField(field._id, name)}
@@ -116,7 +114,7 @@ function JobFieldsManager({ fields, onFieldsChanged }) {
   )
 }
 
-function JobFieldSection({ field, onRename, onDeleteField, onAddOption, onDeleteOption }) {
+function ScholarshipFieldSection({ field, onRename, onDeleteField, onAddOption, onDeleteOption }) {
   const [renaming, setRenaming] = useState(false)
   const [nameDraft, setNameDraft] = useState(field.name)
   const [renameError, setRenameError] = useState('')
@@ -137,10 +135,10 @@ function JobFieldSection({ field, onRename, onDeleteField, onAddOption, onDelete
   }
 
   return (
-    <div className="job-field-section">
-      <div className="job-field-section-header">
+    <div className="scholarship-field-section">
+      <div className="scholarship-field-section-header">
         {renaming ? (
-          <form className="job-field-rename-form" onSubmit={handleRenameSubmit}>
+          <form className="scholarship-field-rename-form" onSubmit={handleRenameSubmit}>
             <input value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} required />
             <button type="submit" className="btn btn-primary" disabled={renameSaving}>
               {renameSaving ? 'שומר...' : 'שמירה'}
@@ -159,7 +157,7 @@ function JobFieldSection({ field, onRename, onDeleteField, onAddOption, onDelete
         ) : (
           <>
             <h3>{field.name}</h3>
-            <div className="job-field-section-actions">
+            <div className="scholarship-field-section-actions">
               <button
                 type="button"
                 className="btn btn-outline"
@@ -177,7 +175,7 @@ function JobFieldSection({ field, onRename, onDeleteField, onAddOption, onDelete
           </>
         )}
       </div>
-      {renameError && <p className="job-fields-error">{renameError}</p>}
+      {renameError && <p className="scholarship-fields-error">{renameError}</p>}
 
       <OptionChipManager
         inputLabel="הוספת אפשרות חדשה"
@@ -192,4 +190,4 @@ function JobFieldSection({ field, onRename, onDeleteField, onAddOption, onDelete
   )
 }
 
-export default JobFieldsManager
+export default ScholarshipFieldsManager

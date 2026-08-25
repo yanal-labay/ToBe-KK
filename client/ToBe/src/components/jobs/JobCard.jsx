@@ -5,16 +5,17 @@ import './JobCard.css'
 /**
  * Read-only display of a single job posting — structurally the same as
  * `ScholarshipCard`: the photo sits beside the title/company/location/
- * job-type/salary block only (top row), while the description and contact
- * line span the full card width below it. Falls back to the site logo
+ * salary block only (top row), while the description and contact line span
+ * the full card width below it. Falls back to the site logo
  * (theme-appropriate, same as `ScholarshipCard`) when no photo was
  * uploaded. Unlike scholarships, there's no guest-facing action — jobs
  * have no "apply" URL, guests just read the contact details off the card.
  * Admins get edit/delete plus an "לא פעיל" badge when `isActive` is false
  * (guests never receive inactive postings at all, see job.controller.js).
  * `job.fieldSelections` (populated server-side, see job.controller.js) is
- * an array of `{ _id, name, field: { _id, name } }` — one admin-defined
- * field/value pair per entry, rendered as its own line.
+ * an array of `{ _id, name, field: { _id, name } }` — rendered as a row of
+ * small pill-shaped bubbles (one per selected option, field name not
+ * shown) just above the action buttons.
  *
  * @param {{
  *   job: object,
@@ -38,11 +39,6 @@ function JobCard({ job, isAdmin, onEdit, onDelete }) {
           <h3>{job.title}</h3>
           <p className="job-company">🏢 {job.company}</p>
           <p className="job-company">📍 {job.location}</p>
-          {job.fieldSelections?.map((selection) => (
-            <p className="job-company" key={selection._id}>
-              🏷️ {selection.field.name}: {selection.name}
-            </p>
-          ))}
           {job.salary && <p className="job-company">💰 {job.salary}</p>}
           {job.isStudentPosition && <p className="job-company">🎓 משרת סטודנטים</p>}
         </div>
@@ -61,6 +57,16 @@ function JobCard({ job, isAdmin, onEdit, onDelete }) {
           {job.contactEmail ? ` · 📧 ${job.contactEmail}` : ''}
           {job.contactPhone ? ` · 📞 ${job.contactPhone}` : ''}
         </p>
+      )}
+
+      {job.fieldSelections?.length > 0 && (
+        <div className="job-tag-bubbles">
+          {job.fieldSelections.map((selection) => (
+            <span className="job-tag-bubble" key={selection._id}>
+              {selection.name}
+            </span>
+          ))}
+        </div>
       )}
 
       {isAdmin && (

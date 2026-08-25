@@ -23,16 +23,17 @@ const EMPTY_FORM = {
  * and the whole contact block are optional, matching `Job`'s
  * nullable-field convention.
  *
- * One `<select>` is rendered per entry in `fields` (see
+ * One `<fieldset>` of checkboxes is rendered per entry in `fields` (see
  * JobFieldsManager.jsx for how those fields/options are managed) — this
- * form only ever *picks* an existing option per field, it never creates
- * one inline. Selections are tracked separately from `values` as
- * `fieldValues` (`{ [fieldId]: optionId }`) since the set of fields is
- * dynamic, not a fixed shape.
+ * form only ever *picks* existing options per field, it never creates one
+ * inline. A job can hold multiple selections within the same field at once
+ * (same convention as ScholarshipForm), so selections are tracked
+ * separately from `values` as `fieldValues` (`{ [fieldId]: optionId[] }`)
+ * since the set of fields is dynamic, not a fixed shape.
  *
  * @param {{
  *   initialValues?: {title: string, company: string, location: string, isStudentPosition: boolean, description: string, salary: string, contactName: string, contactEmail: string, contactPhone: string, isActive: boolean},
- *   initialFieldValues?: Record<string, string>,
+ *   initialFieldValues?: Record<string, string[]>,
  *   fields: Array<{_id: string, name: string, options: Array<{_id: string, name: string}>}>,
  *   existingPhotoUrl?: string|null,
  *   submitLabel: string,
@@ -57,6 +58,16 @@ function JobForm({
 
   const handleChange = (field) => (e) => setValues({ ...values, [field]: e.target.value })
 
+  const toggleFieldOption = (fieldId, optionId) => {
+    setFieldValues((current) => {
+      const currentForField = current[fieldId] || []
+      const nextForField = currentForField.includes(optionId)
+        ? currentForField.filter((id) => id !== optionId)
+        : [...currentForField, optionId]
+      return { ...current, [fieldId]: nextForField }
+    })
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSaving(true)
@@ -66,7 +77,7 @@ function JobForm({
       formData.append('title', values.title)
       formData.append('company', values.company)
       formData.append('location', values.location)
-      formData.append('fieldSelections', JSON.stringify(Object.values(fieldValues).filter(Boolean)))
+      formData.append('fieldSelections', JSON.stringify(Object.values(fieldValues).flat()))
       formData.append('isStudentPosition', values.isStudentPosition ? 'true' : 'false')
       formData.append('description', values.description)
       formData.append('salary', values.salary)
@@ -99,26 +110,27 @@ function JobForm({
           <input value={values.location} onChange={handleChange('location')} required />
         </label>
       </div>
-      {fields.length > 0 && (
-        <div className="job-form-row">
-          {fields.map((field) => (
-            <label key={field._id}>
-              {field.name} (לא חובה)
-              <select
-                value={fieldValues[field._id] || ''}
-                onChange={(e) => setFieldValues({ ...fieldValues, [field._id]: e.target.value })}
-              >
-                <option value="">לא צוין</option>
-                {field.options.map((option) => (
-                  <option value={option._id} key={option._id}>
-                    {option.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ))}
-        </div>
-      )}
+      {fields.map((field) => (
+        <fieldset className="job-field-picker" key={field._id}>
+          <legend>{field.name}</legend>
+          {field.options.length === 0 ? (
+            <p className="job-form-hint">אין עדיין אפשרויות בשדה זה.</p>
+          ) : (
+            <div className="job-field-checkboxes">
+              {field.options.map((option) => (
+                <label key={option._id} className="job-field-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={(fieldValues[field._id] || []).includes(option._id)}
+                    onChange={() => toggleFieldOption(field._id, option._id)}
+                  />
+                  {option.name}
+                </label>
+              ))}
+            </div>
+          )}
+        </fieldset>
+      ))}
       <div className="job-form-row">
         <label>
           שכר (לא חובה)

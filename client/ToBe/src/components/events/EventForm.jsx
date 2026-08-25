@@ -103,12 +103,13 @@ function EventForm({ initialValues, existingPhotoUrl, submitLabel, onSubmit, onC
         />
       </label>
       <label>
-        תאריך אחרון להרשמה (לא חובה)
+        תאריך אחרון להרשמה
         <input
           type="date"
           value={values.registrationDeadline}
           onChange={handleChange('registrationDeadline')}
           max={values.date || undefined}
+          required
         />
       </label>
       <label>

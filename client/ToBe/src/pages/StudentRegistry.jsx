@@ -13,7 +13,8 @@ import './StudentRegistry.css'
  * viewing/editing who signed up (RegistrantsPanel) and managing the
  * institution/field-of-study dropdown lists (ListOptionsManager),
  * independent of any registrant submission — same separation as
- * Scholarships' TagManager. `isAdmin` alone decides which branch renders.
+ * Scholarships' ScholarshipFieldsManager. `isAdmin` alone decides which
+ * branch renders.
  */
 function StudentRegistry() {
   const { isAdmin } = useAdminSession()

@@ -23,14 +23,9 @@ const EventInputSchema = z.object({
     .optional()
     .transform((v) => (v ? Number(v) : null))
     .refine((v) => v === null || (Number.isFinite(v) && v >= 0), { message: "מחיר לא תקין" }),
-  registrationDeadline: z
-    .string()
-    .trim()
-    .optional()
-    .transform((v) => (v ? new Date(v) : null))
-    .refine((v) => v === null || !isNaN(v.getTime()), { message: "תאריך סגירת ההרשמה לא תקין" }),
+  registrationDeadline: z.coerce.date({ invalid_type_error: "תאריך סגירת ההרשמה לא תקין" }),
 }).refine(
-  (data) => data.registrationDeadline === null || data.registrationDeadline.getTime() <= data.date.getTime(),
+  (data) => data.registrationDeadline.getTime() <= data.date.getTime(),
   {
     message: "תאריך סגירת ההרשמה לא יכול להיות מאוחר מתאריך האירוע",
     path: ["registrationDeadline"],

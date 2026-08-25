@@ -7,15 +7,24 @@ const EMPTY_FORM = { title: '', description: '', deadline: '', url: '', amount: 
 
 /**
  * Create/edit form for a scholarship, used both for "new scholarship" (no
- * `initialValues`) and for editing an existing one. Tags are chosen from
- * the existing list only — creating a new tag is a separate admin action
- * (see TagManager), not part of this form.
+ * `initialValues`) and for editing an existing one. Options are chosen from
+ * the existing admin-defined fields only — creating a new field/option is a
+ * separate admin action (see ScholarshipFieldsManager), not part of this
+ * form.
+ *
+ * One `<fieldset>` of checkboxes is rendered per entry in `fields` (see
+ * ScholarshipFieldsManager.jsx for how those fields/options are managed) —
+ * unlike Job's one-`<select>`-per-field (single choice), a scholarship can
+ * pick several options within the same field at once, so each field stays
+ * checkboxes. Selections are tracked separately from `values` as
+ * `fieldValues` (`{ [fieldId]: optionId[] }`) since the set of fields is
+ * dynamic, not a fixed shape.
  *
  * @param {{
  *   initialValues?: {title: string, description: string, deadline: string, url: string, amount: string, volunteerHours: string},
- *   initialTagIds?: string[],
+ *   initialFieldValues?: Record<string, string[]>,
+ *   fields: Array<{_id: string, name: string, options: Array<{_id: string, name: string}>}>,
  *   existingPhotoUrl?: string|null,
- *   tags: Array<{_id: string, name: string}>,
  *   submitLabel: string,
  *   onSubmit: (formData: FormData) => Promise<void>,
  *   onCancel: () => void,
@@ -23,25 +32,29 @@ const EMPTY_FORM = { title: '', description: '', deadline: '', url: '', amount: 
  */
 function ScholarshipForm({
   initialValues,
-  initialTagIds,
+  initialFieldValues,
+  fields,
   existingPhotoUrl,
-  tags,
   submitLabel,
   onSubmit,
   onCancel,
 }) {
   const [values, setValues] = useState(initialValues || EMPTY_FORM)
-  const [selectedTagIds, setSelectedTagIds] = useState(initialTagIds || [])
+  const [fieldValues, setFieldValues] = useState(initialFieldValues || {})
   const [photoFile, setPhotoFile] = useState(null)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
   const handleChange = (field) => (e) => setValues({ ...values, [field]: e.target.value })
 
-  const toggleTag = (tagId) => {
-    setSelectedTagIds((current) =>
-      current.includes(tagId) ? current.filter((id) => id !== tagId) : [...current, tagId]
-    )
+  const toggleOption = (fieldId, optionId) => {
+    setFieldValues((current) => {
+      const currentForField = current[fieldId] || []
+      const nextForField = currentForField.includes(optionId)
+        ? currentForField.filter((id) => id !== optionId)
+        : [...currentForField, optionId]
+      return { ...current, [fieldId]: nextForField }
+    })
   }
 
   const handleSubmit = async (e) => {
@@ -56,7 +69,7 @@ function ScholarshipForm({
       formData.append('url', values.url)
       formData.append('amount', values.amount)
       formData.append('volunteerHours', values.volunteerHours)
-      selectedTagIds.forEach((tagId) => formData.append('tags', tagId))
+      formData.append('fieldSelections', JSON.stringify(Object.values(fieldValues).flat()))
       if (photoFile) formData.append('photo', photoFile)
       await onSubmit(formData)
     } catch (err) {
@@ -120,27 +133,27 @@ function ScholarshipForm({
         </label>
       </div>
 
-      <fieldset className="scholarship-tag-picker">
-        <legend>תגיות</legend>
-        {tags.length === 0 ? (
-          <p className="scholarship-form-hint">
-            אין עדיין תגיות — ניתן להוסיף דרך "ניהול תגיות".
-          </p>
-        ) : (
-          <div className="scholarship-tag-checkboxes">
-            {tags.map((tag) => (
-              <label key={tag._id} className="scholarship-tag-checkbox">
-                <input
-                  type="checkbox"
-                  checked={selectedTagIds.includes(tag._id)}
-                  onChange={() => toggleTag(tag._id)}
-                />
-                {tag.name}
-              </label>
-            ))}
-          </div>
-        )}
-      </fieldset>
+      {fields.map((field) => (
+        <fieldset className="scholarship-tag-picker" key={field._id}>
+          <legend>{field.name}</legend>
+          {field.options.length === 0 ? (
+            <p className="scholarship-form-hint">אין עדיין אפשרויות בשדה זה.</p>
+          ) : (
+            <div className="scholarship-tag-checkboxes">
+              {field.options.map((option) => (
+                <label key={option._id} className="scholarship-tag-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={(fieldValues[field._id] || []).includes(option._id)}
+                    onChange={() => toggleOption(field._id, option._id)}
+                  />
+                  {option.name}
+                </label>
+              ))}
+            </div>
+          )}
+        </fieldset>
+      ))}
 
       <label>
         תמונה (לא חובה)
