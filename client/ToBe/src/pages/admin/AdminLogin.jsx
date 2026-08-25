@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../../hooks/useTheme'
 import { useAdminSession } from '../../hooks/useAdminSession'
-import { API_URL } from '../../apiConfig'
+import { login } from '../../services/authService'
 import BrandLogo from '../../components/layout/BrandLogo'
 import ThemeToggleButton from '../../components/layout/ThemeToggleButton'
 import './AdminLogin.css'
@@ -28,12 +28,7 @@ function AdminLogin() {
     setError('')
     setLoading(true)
     try {
-      const res = await fetch(`${API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email, password }),
-      })
+      const res = await login({ email, password })
       const data = await res.json()
       if (data.success) {
         markAuthed(data.admin)
@@ -41,7 +36,7 @@ function AdminLogin() {
       } else {
         setError(data.message || 'שגיאה בהתחברות')
       }
-    } catch (err) {
+    } catch {
       setError('לא ניתן להתחבר לשרת')
     } finally {
       setLoading(false)

@@ -1,6 +1,6 @@
 import { useTheme } from '../../hooks/useTheme'
 import { useAdminSession } from '../../hooks/useAdminSession'
-import { API_URL } from '../../apiConfig'
+import { logout } from '../../services/authService'
 import BrandLogo from './BrandLogo'
 import ThemeToggleButton from './ThemeToggleButton'
 import './AdminTopbar.css'
@@ -14,7 +14,7 @@ function AdminTopbar() {
   // session flips Layout back to guest chrome in place on whatever page the
   // admin was viewing.
   const handleLogout = async () => {
-    await fetch(`${API_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' })
+    await logout()
     clearSession()
   }
 

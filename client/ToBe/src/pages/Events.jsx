@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAdminSession } from '../hooks/useAdminSession'
-import { API_URL } from '../apiConfig'
+import { listEvents, createEvent, updateEvent, deleteEvent } from '../services/eventsService'
 import EventForm from '../components/events/EventForm'
 import EventCard, { isEventExpired } from '../components/events/EventCard'
 import './Events.css'
@@ -32,7 +32,7 @@ function Events() {
 
   const loadEvents = () => {
     setLoadState('loading')
-    fetch(`${API_URL}/api/events`)
+    listEvents()
       .then((res) => {
         if (!res.ok) throw new Error('failed')
         return res.json()
@@ -64,11 +64,7 @@ function Events() {
   }, [highlightParam, loadState])
 
   const handleCreate = async (formData) => {
-    const res = await fetch(`${API_URL}/api/events`, {
-      method: 'POST',
-      credentials: 'include',
-      body: formData,
-    })
+    const res = await createEvent(formData)
     const data = await res.json()
     if (!data.success) throw new Error(data.message)
     setCreating(false)
@@ -76,11 +72,7 @@ function Events() {
   }
 
   const handleUpdate = async (id, formData) => {
-    const res = await fetch(`${API_URL}/api/events/${id}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      body: formData,
-    })
+    const res = await updateEvent(id, formData)
     const data = await res.json()
     if (!data.success) throw new Error(data.message)
     setEditingId(null)
@@ -89,10 +81,7 @@ function Events() {
 
   const handleDelete = async (event) => {
     if (!window.confirm(`למחוק את האירוע "${event.title}"?`)) return
-    const res = await fetch(`${API_URL}/api/events/${event._id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
+    const res = await deleteEvent(event._id)
     const data = await res.json()
     if (!data.success) return
     loadEvents()

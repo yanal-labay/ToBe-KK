@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useAdminSession } from '../hooks/useAdminSession'
-import { API_URL } from '../apiConfig'
+import {
+  getContact,
+  createContactGroup,
+  renameContactGroup,
+  deleteContactGroup,
+  createContactPerson,
+  updateContactPerson,
+  deleteContactPerson,
+} from '../services/contactService'
 import ContactGroupCard from '../components/contact/ContactGroupCard'
 import './Contact.css'
 
@@ -20,7 +28,7 @@ function Contact() {
 
   const loadContact = () => {
     setLoadState('loading')
-    fetch(`${API_URL}/api/contact`)
+    getContact()
       .then((res) => {
         if (!res.ok) throw new Error('failed')
         return res.json()
@@ -38,12 +46,7 @@ function Contact() {
 
   const handleCreateGroup = async (e) => {
     e.preventDefault()
-    const res = await fetch(`${API_URL}/api/contact/groups`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: newGroupTitle }),
-    })
+    const res = await createContactGroup({ title: newGroupTitle })
     const data = await res.json()
     if (!data.success) return
     setNewGroupTitle('')
@@ -52,12 +55,7 @@ function Contact() {
   }
 
   const handleRenameGroup = async (groupId, title) => {
-    const res = await fetch(`${API_URL}/api/contact/groups/${groupId}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title }),
-    })
+    const res = await renameContactGroup(groupId, { title })
     const data = await res.json()
     if (!data.success) return
     loadContact()
@@ -65,34 +63,21 @@ function Contact() {
 
   const handleDeleteGroup = async (group) => {
     if (!window.confirm(`למחוק את הקבוצה "${group.title}" וכל אנשי הקשר שבה?`)) return
-    const res = await fetch(`${API_URL}/api/contact/groups/${group._id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
+    const res = await deleteContactGroup(group._id)
     const data = await res.json()
     if (!data.success) return
     loadContact()
   }
 
   const handleAddPerson = async (groupId, values) => {
-    const res = await fetch(`${API_URL}/api/contact/people`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...values, group: groupId }),
-    })
+    const res = await createContactPerson({ ...values, group: groupId })
     const data = await res.json()
     if (!data.success) throw new Error(data.message)
     loadContact()
   }
 
   const handleUpdatePerson = async (personId, values) => {
-    const res = await fetch(`${API_URL}/api/contact/people/${personId}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(values),
-    })
+    const res = await updateContactPerson(personId, values)
     const data = await res.json()
     if (!data.success) throw new Error(data.message)
     loadContact()
@@ -100,10 +85,7 @@ function Contact() {
 
   const handleDeletePerson = async (person) => {
     if (!window.confirm(`למחוק את "${person.name}"?`)) return
-    const res = await fetch(`${API_URL}/api/contact/people/${person._id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
+    const res = await deleteContactPerson(person._id)
     const data = await res.json()
     if (!data.success) return
     loadContact()

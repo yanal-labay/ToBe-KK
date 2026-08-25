@@ -1,5 +1,11 @@
 import { useState } from 'react'
-import { API_URL } from '../../apiConfig'
+import {
+  createScholarshipField,
+  renameScholarshipField,
+  deleteScholarshipField,
+  addScholarshipFieldOption,
+  deleteScholarshipFieldOption,
+} from '../../services/scholarshipFieldsService'
 import OptionChipManager from '../shared/OptionChipManager'
 import './ScholarshipFieldsManager.css'
 
@@ -25,12 +31,7 @@ function ScholarshipFieldsManager({ fields, onFieldsChanged }) {
     setAddSaving(true)
     setAddError('')
     try {
-      const res = await fetch(`${API_URL}/api/scholarship-fields`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newFieldName }),
-      })
+      const res = await createScholarshipField({ name: newFieldName })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
       setNewFieldName('')
@@ -43,12 +44,7 @@ function ScholarshipFieldsManager({ fields, onFieldsChanged }) {
   }
 
   const handleRenameField = async (fieldId, name) => {
-    const res = await fetch(`${API_URL}/api/scholarship-fields/${fieldId}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
-    })
+    const res = await renameScholarshipField(fieldId, { name })
     const data = await res.json()
     if (!data.success) throw new Error(data.message)
     onFieldsChanged()
@@ -56,32 +52,21 @@ function ScholarshipFieldsManager({ fields, onFieldsChanged }) {
 
   const handleDeleteField = async (field) => {
     if (!window.confirm(`למחוק את השדה "${field.name}" ואת כל האפשרויות שבו?`)) return
-    const res = await fetch(`${API_URL}/api/scholarship-fields/${field._id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
+    const res = await deleteScholarshipField(field._id)
     const data = await res.json()
     if (!data.success) return
     onFieldsChanged()
   }
 
   const handleAddOption = async (fieldId, name) => {
-    const res = await fetch(`${API_URL}/api/scholarship-fields/${fieldId}/options`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
-    })
+    const res = await addScholarshipFieldOption(fieldId, { name })
     const data = await res.json()
     if (!data.success) throw new Error(data.message)
     onFieldsChanged()
   }
 
   const handleDeleteOption = async (fieldId, option) => {
-    const res = await fetch(`${API_URL}/api/scholarship-fields/${fieldId}/options/${option._id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
+    const res = await deleteScholarshipFieldOption(fieldId, option._id)
     const data = await res.json()
     if (!data.success) return
     onFieldsChanged()

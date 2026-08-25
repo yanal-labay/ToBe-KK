@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAdminSession } from '../hooks/useAdminSession'
-import { API_URL } from '../apiConfig'
+import { listScholarships, createScholarship, updateScholarship, deleteScholarship } from '../services/scholarshipsService'
+import { listScholarshipFields } from '../services/scholarshipFieldsService'
 import ScholarshipForm from '../components/scholarships/ScholarshipForm'
 import ScholarshipCard, { isScholarshipExpired } from '../components/scholarships/ScholarshipCard'
 import ScholarshipFieldsManager from '../components/scholarships/ScholarshipFieldsManager'
@@ -47,7 +48,7 @@ function Scholarships() {
 
   const loadScholarships = () => {
     setLoadState('loading')
-    fetch(`${API_URL}/api/scholarships`)
+    listScholarships()
       .then((res) => {
         if (!res.ok) throw new Error('failed')
         return res.json()
@@ -60,7 +61,7 @@ function Scholarships() {
   }
 
   const loadFields = () => {
-    fetch(`${API_URL}/api/scholarship-fields`)
+    listScholarshipFields()
       .then((res) => (res.ok ? res.json() : []))
       .then(setFields)
       .catch(() => {})
@@ -87,11 +88,7 @@ function Scholarships() {
   }, [highlightParam, loadState])
 
   const handleCreate = async (formData) => {
-    const res = await fetch(`${API_URL}/api/scholarships`, {
-      method: 'POST',
-      credentials: 'include',
-      body: formData,
-    })
+    const res = await createScholarship(formData)
     const data = await res.json()
     if (!data.success) throw new Error(data.message)
     setCreating(false)
@@ -99,11 +96,7 @@ function Scholarships() {
   }
 
   const handleUpdate = async (id, formData) => {
-    const res = await fetch(`${API_URL}/api/scholarships/${id}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      body: formData,
-    })
+    const res = await updateScholarship(id, formData)
     const data = await res.json()
     if (!data.success) throw new Error(data.message)
     setEditingId(null)
@@ -112,10 +105,7 @@ function Scholarships() {
 
   const handleDelete = async (scholarship) => {
     if (!window.confirm(`למחוק את המלגה "${scholarship.title}"?`)) return
-    const res = await fetch(`${API_URL}/api/scholarships/${scholarship._id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
+    const res = await deleteScholarship(scholarship._id)
     const data = await res.json()
     if (!data.success) return
     loadScholarships()

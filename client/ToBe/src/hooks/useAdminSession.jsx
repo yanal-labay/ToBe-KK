@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { API_URL } from '../apiConfig'
+import { getCurrentAdmin } from '../services/authService'
 
 const AdminSessionContext = createContext(null)
 
@@ -19,7 +19,7 @@ export function AdminSessionProvider({ children }) {
   const [admin, setAdmin] = useState(null)
 
   const refresh = useCallback(() => {
-    return fetch(`${API_URL}/api/auth/me`, { credentials: 'include' })
+    return getCurrentAdmin()
       .then((res) => {
         if (!res.ok) throw new Error('not authenticated')
         return res.json()

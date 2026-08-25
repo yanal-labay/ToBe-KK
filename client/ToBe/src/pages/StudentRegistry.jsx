@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAdminSession } from '../hooks/useAdminSession'
-import { API_URL } from '../apiConfig'
+import { getRegistryOptions } from '../services/studentRegistryOptionsService'
 import RegistrantForm from '../components/studentRegistry/RegistrantForm'
 import RegistrantsPanel from '../components/studentRegistry/RegistrantsPanel'
 import ListOptionsManager from '../components/studentRegistry/ListOptionsManager'
@@ -24,7 +24,7 @@ function StudentRegistry() {
   const [fieldsOfStudy, setFieldsOfStudy] = useState([])
 
   const loadOptions = () => {
-    fetch(`${API_URL}/api/student-registry-options`)
+    getRegistryOptions()
       .then((res) => (res.ok ? res.json() : { institutions: [], fieldsOfStudy: [] }))
       .then((data) => {
         setInstitutions(data.institutions)

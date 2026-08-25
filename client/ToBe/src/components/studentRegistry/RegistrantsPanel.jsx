@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { API_URL } from '../../apiConfig'
+import { listRegistrants, updateRegistrant, deleteRegistrant } from '../../services/studentRegistryService'
 import {
   OTHER_OPTION,
   INTEREST_OPTIONS,
@@ -327,7 +327,7 @@ function RegistrantsPanel({ institutions, fieldsOfStudy }) {
 
   const load = () => {
     setLoadState('loading')
-    fetch(`${API_URL}/api/student-registry`, { credentials: 'include' })
+    listRegistrants()
       .then((res) => {
         if (!res.ok) throw new Error('failed')
         return res.json()
@@ -401,12 +401,7 @@ function RegistrantsPanel({ institutions, fieldsOfStudy }) {
     if (!payload.militaryStatus) delete payload.militaryStatus
 
     try {
-      const res = await fetch(`${API_URL}/api/student-registry/${_id}`, {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
+      const res = await updateRegistrant(_id, payload)
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
       setRegistrants((current) => current.map((r) => (r._id === _id ? data.registrant : r)))
@@ -437,14 +432,7 @@ function RegistrantsPanel({ institutions, fieldsOfStudy }) {
   const handleDeleteSelected = async () => {
     if (selectedIds.size === 0) return
     if (!window.confirm(`למחוק ${selectedIds.size} רשומות נבחרות מהמאגר?`)) return
-    await Promise.all(
-      [...selectedIds].map((id) =>
-        fetch(`${API_URL}/api/student-registry/${id}`, {
-          method: 'DELETE',
-          credentials: 'include',
-        })
-      )
-    )
+    await Promise.all([...selectedIds].map((id) => deleteRegistrant(id)))
     setSelectedIds(new Set())
     load()
   }

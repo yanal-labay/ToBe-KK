@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAdminSession } from '../hooks/useAdminSession'
-import { API_URL } from '../apiConfig'
+import { listJobs, createJob, updateJob, deleteJob } from '../services/jobsService'
+import { listJobFields } from '../services/jobFieldsService'
 import JobForm from '../components/jobs/JobForm'
 import JobCard from '../components/jobs/JobCard'
 import JobFieldsManager from '../components/jobs/JobFieldsManager'
@@ -51,7 +52,7 @@ function Jobs() {
 
   const loadJobs = () => {
     setLoadState('loading')
-    fetch(`${API_URL}/api/jobs${isAdmin ? '/admin' : ''}`, { credentials: 'include' })
+    listJobs({ isAdmin })
       .then((res) => {
         if (!res.ok) throw new Error('failed')
         return res.json()
@@ -64,7 +65,7 @@ function Jobs() {
   }
 
   const loadFields = () => {
-    fetch(`${API_URL}/api/job-fields`)
+    listJobFields()
       .then((res) => (res.ok ? res.json() : []))
       .then(setFields)
       .catch(() => {})
@@ -80,11 +81,7 @@ function Jobs() {
   }, [])
 
   const handleCreate = async (formData) => {
-    const res = await fetch(`${API_URL}/api/jobs`, {
-      method: 'POST',
-      credentials: 'include',
-      body: formData,
-    })
+    const res = await createJob(formData)
     const data = await res.json()
     if (!data.success) throw new Error(data.message)
     setCreating(false)
@@ -92,11 +89,7 @@ function Jobs() {
   }
 
   const handleUpdate = async (id, formData) => {
-    const res = await fetch(`${API_URL}/api/jobs/${id}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      body: formData,
-    })
+    const res = await updateJob(id, formData)
     const data = await res.json()
     if (!data.success) throw new Error(data.message)
     setEditingId(null)
@@ -105,10 +98,7 @@ function Jobs() {
 
   const handleDelete = async (job) => {
     if (!window.confirm(`למחוק את המשרה "${job.title}"?`)) return
-    const res = await fetch(`${API_URL}/api/jobs/${job._id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
+    const res = await deleteJob(job._id)
     const data = await res.json()
     if (!data.success) return
     loadJobs()

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { API_URL } from '../../apiConfig'
+import { registerForEvent } from '../../services/eventsService'
 import './formFields.css'
 import './RegisterForm.css'
 
@@ -27,11 +27,7 @@ function RegisterForm({ eventId }) {
     setStatus('submitting')
     setError('')
     try {
-      const res = await fetch(`${API_URL}/api/events/${eventId}/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values),
-      })
+      const res = await registerForEvent(eventId, values)
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
       setStatus('success')

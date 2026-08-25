@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAdminSession } from '../hooks/useAdminSession'
-import { API_URL } from '../apiConfig'
+import { getScheduleEntries, createScheduleEntry, updateScheduleEntry, deleteScheduleEntry, getScheduleCategories } from '../services/scheduleService'
 import Calendar from '../components/schedule/Calendar'
 import ScheduleEntryForm from '../components/schedule/ScheduleEntryForm'
 import CategoryManager from '../components/schedule/CategoryManager'
@@ -48,7 +48,7 @@ function Schedule() {
 
   const loadEntries = () => {
     setLoadState('loading')
-    fetch(`${API_URL}/api/schedule`)
+    getScheduleEntries()
       .then((res) => {
         if (!res.ok) throw new Error('failed')
         return res.json()
@@ -61,7 +61,7 @@ function Schedule() {
   }
 
   const loadCategories = () => {
-    fetch(`${API_URL}/api/schedule/categories`)
+    getScheduleCategories()
       .then((res) => (res.ok ? res.json() : []))
       .then(setCategories)
       .catch(() => {})
@@ -73,12 +73,7 @@ function Schedule() {
   }, [])
 
   const handleCreate = async (values) => {
-    const res = await fetch(`${API_URL}/api/schedule`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(values),
-    })
+    const res = await createScheduleEntry(values)
     const data = await res.json()
     if (!data.success) throw new Error(data.message)
     setCreating(false)
@@ -86,12 +81,7 @@ function Schedule() {
   }
 
   const handleUpdate = async (id, values) => {
-    const res = await fetch(`${API_URL}/api/schedule/${id}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(values),
-    })
+    const res = await updateScheduleEntry(id, values)
     const data = await res.json()
     if (!data.success) throw new Error(data.message)
     setEditingEntry(null)
@@ -100,10 +90,7 @@ function Schedule() {
 
   const handleDelete = async (entry) => {
     if (!window.confirm(`למחוק את "${entry.title}" מלוח השנה?`)) return
-    const res = await fetch(`${API_URL}/api/schedule/${entry.refId}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
+    const res = await deleteScheduleEntry(entry.refId)
     const data = await res.json()
     if (!data.success) return
     setEditingEntry(null)

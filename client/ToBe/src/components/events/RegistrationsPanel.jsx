@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react'
-import { API_URL } from '../../apiConfig'
+import {
+  listRegistrations,
+  updateRegistrationStatus,
+  deleteRegistration,
+  registerForEvent,
+} from '../../services/eventsService'
 import ExportExcelButton from '../shared/ExportExcelButton'
 import { exportRowsToExcel } from '../../utils/exportToExcel'
 import './RegistrationsPanel.css'
@@ -52,7 +57,7 @@ function RegistrationsPanel({ eventId, eventTitle }) {
 
   const load = () => {
     setLoadState('loading')
-    fetch(`${API_URL}/api/events/${eventId}/registrations`, { credentials: 'include' })
+    listRegistrations(eventId)
       .then((res) => {
         if (!res.ok) throw new Error('failed')
         return res.json()
@@ -76,15 +81,7 @@ function RegistrationsPanel({ eventId, eventTitle }) {
       current.map((r) => (r._id === registrationId ? { ...r, status } : r))
     )
     try {
-      const res = await fetch(
-        `${API_URL}/api/events/${eventId}/registrations/${registrationId}`,
-        {
-          method: 'PATCH',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status }),
-        }
-      )
+      const res = await updateRegistrationStatus(eventId, registrationId, { status })
       const data = await res.json()
       if (!data.success) throw new Error()
     } catch {
@@ -94,10 +91,7 @@ function RegistrationsPanel({ eventId, eventTitle }) {
 
   const handleDelete = async (registration) => {
     if (!window.confirm(`למחוק את ${registration.name} מרשימת הנרשמים?`)) return
-    const res = await fetch(
-      `${API_URL}/api/events/${eventId}/registrations/${registration._id}`,
-      { method: 'DELETE', credentials: 'include' }
-    )
+    const res = await deleteRegistration(eventId, registration._id)
     const data = await res.json()
     if (!data.success) return
     load()
@@ -108,11 +102,7 @@ function RegistrationsPanel({ eventId, eventTitle }) {
     setSaving(true)
     setAddError('')
     try {
-      const res = await fetch(`${API_URL}/api/events/${eventId}/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newRegistrant),
-      })
+      const res = await registerForEvent(eventId, newRegistrant)
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
       setNewRegistrant(EMPTY_REGISTRANT)

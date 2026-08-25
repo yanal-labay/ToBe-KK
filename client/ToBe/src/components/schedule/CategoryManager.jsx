@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { API_URL } from '../../apiConfig'
+import { createScheduleCategory, renameScheduleCategory, deleteScheduleCategory } from '../../services/scheduleService'
 import './CategoryManager.css'
 
 const SLOTS = [0, 1, 2]
@@ -31,12 +31,7 @@ function CategoryManager({ categories, onCategoriesChanged }) {
     setSavingSlot(slot)
     setError('')
     try {
-      const res = await fetch(`${API_URL}/api/schedule/categories`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, colorSlot: slot }),
-      })
+      const res = await createScheduleCategory({ name, colorSlot: slot })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
       setDrafts((current) => ({ ...current, [slot]: '' }))
@@ -54,12 +49,7 @@ function CategoryManager({ categories, onCategoriesChanged }) {
     setSavingSlot(category.colorSlot)
     setError('')
     try {
-      const res = await fetch(`${API_URL}/api/schedule/categories/${category._id}`, {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, colorSlot: category.colorSlot }),
-      })
+      const res = await renameScheduleCategory(category._id, { name, colorSlot: category.colorSlot })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
       setEditingSlot(null)
@@ -74,10 +64,7 @@ function CategoryManager({ categories, onCategoriesChanged }) {
   const handleDelete = async (category) => {
     if (!window.confirm(`למחוק את הקטגוריה "${category.name}"?`)) return
     setError('')
-    const res = await fetch(`${API_URL}/api/schedule/categories/${category._id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
+    const res = await deleteScheduleCategory(category._id)
     const data = await res.json()
     if (!data.success) {
       setError(data.message || 'מחיקת הקטגוריה נכשלה')

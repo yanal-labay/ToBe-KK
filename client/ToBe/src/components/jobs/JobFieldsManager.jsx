@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { API_URL } from '../../apiConfig'
+import { createJobField, renameJobField, deleteJobField, addJobFieldOption, deleteJobFieldOption } from '../../services/jobFieldsService'
 import OptionChipManager from '../shared/OptionChipManager'
 import './JobFieldsManager.css'
 
@@ -27,12 +27,7 @@ function JobFieldsManager({ fields, onFieldsChanged }) {
     setAddSaving(true)
     setAddError('')
     try {
-      const res = await fetch(`${API_URL}/api/job-fields`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newFieldName }),
-      })
+      const res = await createJobField({ name: newFieldName })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
       setNewFieldName('')
@@ -45,12 +40,7 @@ function JobFieldsManager({ fields, onFieldsChanged }) {
   }
 
   const handleRenameField = async (fieldId, name) => {
-    const res = await fetch(`${API_URL}/api/job-fields/${fieldId}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
-    })
+    const res = await renameJobField(fieldId, { name })
     const data = await res.json()
     if (!data.success) throw new Error(data.message)
     onFieldsChanged()
@@ -58,32 +48,21 @@ function JobFieldsManager({ fields, onFieldsChanged }) {
 
   const handleDeleteField = async (field) => {
     if (!window.confirm(`למחוק את השדה "${field.name}" ואת כל האפשרויות שבו?`)) return
-    const res = await fetch(`${API_URL}/api/job-fields/${field._id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
+    const res = await deleteJobField(field._id)
     const data = await res.json()
     if (!data.success) return
     onFieldsChanged()
   }
 
   const handleAddOption = async (fieldId, name) => {
-    const res = await fetch(`${API_URL}/api/job-fields/${fieldId}/options`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
-    })
+    const res = await addJobFieldOption(fieldId, { name })
     const data = await res.json()
     if (!data.success) throw new Error(data.message)
     onFieldsChanged()
   }
 
   const handleDeleteOption = async (fieldId, option) => {
-    const res = await fetch(`${API_URL}/api/job-fields/${fieldId}/options/${option._id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
+    const res = await deleteJobFieldOption(fieldId, option._id)
     const data = await res.json()
     if (!data.success) return
     onFieldsChanged()

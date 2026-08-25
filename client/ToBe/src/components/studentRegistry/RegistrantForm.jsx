@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { API_URL } from '../../apiConfig'
+import { getRegistryOptions } from '../../services/studentRegistryOptionsService'
+import { createRegistrant } from '../../services/studentRegistryService'
 import { buildRegistrantPayload, validateRegistrant } from './constants'
 import RegistrantFormFields from './RegistrantFormFields'
 import './formFields.css'
@@ -52,7 +53,7 @@ function RegistrantForm({ onSuccess, onCancel }) {
   const [fieldErrors, setFieldErrors] = useState({})
 
   useEffect(() => {
-    fetch(`${API_URL}/api/student-registry-options`)
+    getRegistryOptions()
       .then((res) => (res.ok ? res.json() : { institutions: [], fieldsOfStudy: [] }))
       .then((data) => {
         setInstitutions(data.institutions.map((o) => o.name))
@@ -90,12 +91,7 @@ function RegistrantForm({ onSuccess, onCancel }) {
     setStatus('submitting')
 
     try {
-      const res = await fetch(`${API_URL}/api/student-registry`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildRegistrantPayload(values)),
-      })
+      const res = await createRegistrant(buildRegistrantPayload(values))
       const data = await res.json()
       if (!data.success) {
         // The one server-side check the client can't replicate is email

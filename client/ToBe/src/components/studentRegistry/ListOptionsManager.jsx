@@ -1,4 +1,4 @@
-import { API_URL } from '../../apiConfig'
+import { addRegistryOption, deleteRegistryOption } from '../../services/studentRegistryOptionsService'
 import OptionChipManager from '../shared/OptionChipManager'
 import './ListOptionsManager.css'
 
@@ -22,22 +22,14 @@ import './ListOptionsManager.css'
  */
 function ListOptionsManager({ institutions, fieldsOfStudy, onOptionsChanged }) {
   const addOption = async (category, name) => {
-    const res = await fetch(`${API_URL}/api/student-registry-options`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ category, name }),
-    })
+    const res = await addRegistryOption({ category, name })
     const data = await res.json()
     if (!data.success) throw new Error(data.message)
     onOptionsChanged()
   }
 
   const deleteOption = async (option) => {
-    const res = await fetch(`${API_URL}/api/student-registry-options/${option._id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
+    const res = await deleteRegistryOption(option._id)
     const data = await res.json()
     if (!data.success) return
     onOptionsChanged()

@@ -1,6 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useAdminSession } from '../hooks/useAdminSession'
-import { API_URL } from '../apiConfig'
+import {
+  getLinks,
+  createLinkGroup,
+  renameLinkGroup,
+  deleteLinkGroup,
+  createLinkItem,
+  updateLinkItem,
+  deleteLinkItem,
+  reorderLinkGroups,
+  reorderLinkItems,
+} from '../services/linksService'
 import LinkGroupCard from '../components/links/LinkGroupCard'
 import './Links.css'
 
@@ -21,7 +31,7 @@ function Links() {
 
   const loadLinks = () => {
     setLoadState('loading')
-    fetch(`${API_URL}/api/links`)
+    getLinks()
       .then((res) => {
         if (!res.ok) throw new Error('failed')
         return res.json()
@@ -39,12 +49,7 @@ function Links() {
 
   const handleCreateGroup = async (e) => {
     e.preventDefault()
-    const res = await fetch(`${API_URL}/api/links/groups`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: newGroupTitle }),
-    })
+    const res = await createLinkGroup({ title: newGroupTitle })
     const data = await res.json()
     if (!data.success) return
     setNewGroupTitle('')
@@ -53,12 +58,7 @@ function Links() {
   }
 
   const handleRenameGroup = async (groupId, title) => {
-    const res = await fetch(`${API_URL}/api/links/groups/${groupId}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title }),
-    })
+    const res = await renameLinkGroup(groupId, { title })
     const data = await res.json()
     if (!data.success) return
     loadLinks()
@@ -66,34 +66,21 @@ function Links() {
 
   const handleDeleteGroup = async (group) => {
     if (!window.confirm(`למחוק את הכרטיס "${group.title}" וכל הקישורים שבו?`)) return
-    const res = await fetch(`${API_URL}/api/links/groups/${group._id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
+    const res = await deleteLinkGroup(group._id)
     const data = await res.json()
     if (!data.success) return
     loadLinks()
   }
 
   const handleAddItem = async (groupId, values) => {
-    const res = await fetch(`${API_URL}/api/links/items`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...values, group: groupId }),
-    })
+    const res = await createLinkItem({ ...values, group: groupId })
     const data = await res.json()
     if (!data.success) throw new Error(data.message)
     loadLinks()
   }
 
   const handleUpdateItem = async (itemId, values) => {
-    const res = await fetch(`${API_URL}/api/links/items/${itemId}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(values),
-    })
+    const res = await updateLinkItem(itemId, values)
     const data = await res.json()
     if (!data.success) throw new Error(data.message)
     loadLinks()
@@ -101,10 +88,7 @@ function Links() {
 
   const handleDeleteItem = async (item) => {
     if (!window.confirm(`למחוק את "${item.headline}"?`)) return
-    const res = await fetch(`${API_URL}/api/links/items/${item._id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
+    const res = await deleteLinkItem(item._id)
     const data = await res.json()
     if (!data.success) return
     loadLinks()
@@ -128,12 +112,7 @@ function Links() {
     next.splice(dropIndex, 0, moved)
     setGroups(next)
 
-    fetch(`${API_URL}/api/links/groups/reorder`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderedIds: next.map((g) => g._id) }),
-    })
+    reorderLinkGroups(next.map((g) => g._id))
   }
 
   // Drag-to-reorder for items within one card — same immediate-local-update
@@ -147,12 +126,7 @@ function Links() {
       })
     )
 
-    fetch(`${API_URL}/api/links/items/reorder`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderedIds: orderedItemIds }),
-    })
+    reorderLinkItems(orderedItemIds)
   }
 
   return (

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAdminSession } from '../hooks/useAdminSession'
-import { API_URL } from '../apiConfig'
+import { getHome, saveHomeContent, saveHomeCaption, addHomePhoto, deleteHomePhoto } from '../services/homeService'
+import { getScheduleEntries, getScheduleCategories } from '../services/scheduleService'
 import PhotoCarousel from '../components/home/PhotoCarousel'
 import HomeContentEditor from '../components/home/HomeContentEditor'
 import QuickLinks from '../components/home/QuickLinks'
@@ -32,7 +33,7 @@ function Home() {
 
   const loadHome = () => {
     setHomeLoadState('loading')
-    fetch(`${API_URL}/api/home`)
+    getHome()
       .then((res) => {
         if (!res.ok) throw new Error('failed')
         return res.json()
@@ -45,11 +46,11 @@ function Home() {
   }
 
   const loadSchedule = () => {
-    fetch(`${API_URL}/api/schedule`)
+    getScheduleEntries()
       .then((res) => (res.ok ? res.json() : []))
       .then(setScheduleEntries)
       .catch(() => {})
-    fetch(`${API_URL}/api/schedule/categories`)
+    getScheduleCategories()
       .then((res) => (res.ok ? res.json() : []))
       .then(setScheduleCategories)
       .catch(() => {})
@@ -61,24 +62,14 @@ function Home() {
   }, [])
 
   const handleSaveContent = async (values) => {
-    const res = await fetch(`${API_URL}/api/home/content`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(values),
-    })
+    const res = await saveHomeContent(values)
     const data = await res.json()
     if (!data.success) throw new Error(data.message)
     setHome((current) => ({ ...current, title: data.content.title, body: data.content.body }))
   }
 
   const handleSaveCaption = async (values) => {
-    const res = await fetch(`${API_URL}/api/home/content`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ captionTitle: values.title, captionText: values.body }),
-    })
+    const res = await saveHomeCaption({ captionTitle: values.title, captionText: values.body })
     const data = await res.json()
     if (!data.success) throw new Error(data.message)
     setHome((current) => ({
@@ -91,11 +82,7 @@ function Home() {
   const handleAddPhoto = async (file) => {
     const formData = new FormData()
     formData.append('photo', file)
-    const res = await fetch(`${API_URL}/api/home/photos`, {
-      method: 'POST',
-      credentials: 'include',
-      body: formData,
-    })
+    const res = await addHomePhoto(formData)
     const data = await res.json()
     if (!data.success) return
     loadHome()
@@ -103,10 +90,7 @@ function Home() {
 
   const handleDeletePhoto = async (photo) => {
     if (!window.confirm('למחוק את התמונה?')) return
-    const res = await fetch(`${API_URL}/api/home/photos/${photo._id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
+    const res = await deleteHomePhoto(photo._id)
     const data = await res.json()
     if (!data.success) return
     loadHome()
