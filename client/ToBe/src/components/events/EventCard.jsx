@@ -4,7 +4,7 @@ import RegisterForm from './RegisterForm'
 import RegistrationsPanel from './RegistrationsPanel'
 import './EventCard.css'
 
-const DESCRIPTION_PREVIEW_SENTENCES = 4
+const DESCRIPTION_PREVIEW_CHARS = 90
 
 /** Formats an event's `date` (ISO string from the API) for display in Hebrew. */
 function formatDate(value) {
@@ -16,18 +16,15 @@ function formatDate(value) {
 }
 
 /**
- * Splits `text` into a leading preview of `sentenceCount` sentences (a
- * simple `.`/`!`/`?`-terminator split — approximate, not full Hebrew
- * grammar, but good enough for a "read more" cutoff) plus whether it was
- * actually longer than that, so the card can offer to expand only when
- * there's really more to show.
+ * Splits `text` into a leading preview of at most `maxChars` characters
+ * (including spaces) plus whether it was actually longer than that, so the
+ * card can offer to expand only when there's really more to show.
  */
-function previewDescription(text, sentenceCount) {
-  const sentences = text.match(/[^.!?]+[.!?]*/g) || [text]
-  if (sentences.length <= sentenceCount) {
+function previewDescription(text, maxChars) {
+  if (text.length <= maxChars) {
     return { preview: text, isTruncated: false }
   }
-  return { preview: sentences.slice(0, sentenceCount).join('').trim(), isTruncated: true }
+  return { preview: text.slice(0, maxChars), isTruncated: true }
 }
 
 /**
@@ -71,7 +68,7 @@ export function isRegistrationClosed(event) {
  * component only needs to know *whether* it's being viewed by an admin, not
  * whether it's currently in edit mode.
  *
- * Descriptions are clipped to a 4-sentence preview by default (so every
+ * Descriptions are clipped to a 90-character preview by default (so every
  * card's height stays consistent regardless of how long its description
  * is) with a "קרא עוד"/"הצג פחות" toggle to expand/collapse the full text
  * in place.
@@ -90,7 +87,7 @@ function EventCard({ event, isAdmin, isHighlighted, onEdit, onDelete, isViewingR
   const expired = isEventExpired(event)
   const registrationClosed = isRegistrationClosed(event)
   const [descriptionExpanded, setDescriptionExpanded] = useState(false)
-  const { preview, isTruncated } = previewDescription(event.description, DESCRIPTION_PREVIEW_SENTENCES)
+  const { preview, isTruncated } = previewDescription(event.description, DESCRIPTION_PREVIEW_CHARS)
 
   return (
     <div id={`event-${event._id}`} className={`card event-card ${isHighlighted ? 'is-highlighted' : ''}`}>
