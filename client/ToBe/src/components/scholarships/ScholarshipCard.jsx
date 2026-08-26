@@ -1,5 +1,8 @@
+import { useState } from 'react'
 import { useTheme } from '../../hooks/useTheme'
 import { API_URL } from '../../apiConfig'
+import { buildScholarshipShareText } from '../../utils/shareText'
+import ShareBox from '../shared/ShareBox'
 import './ScholarshipCard.css'
 
 /** Formats a scholarship's `deadline` (ISO string from the API) for display in Hebrew. */
@@ -47,6 +50,7 @@ export function isScholarshipExpired(scholarship) {
  * }} props
  */
 function ScholarshipCard({ scholarship, isAdmin, isHighlighted, onEdit, onDelete }) {
+  const [sharing, setSharing] = useState(false)
   const { theme } = useTheme()
   const fallbackLogo = theme === 'dark' ? '/logodark.png' : '/logo.png'
   const photoSrc = scholarship.photoUrl ? `${API_URL}${scholarship.photoUrl}` : fallbackLogo
@@ -109,9 +113,17 @@ function ScholarshipCard({ scholarship, isAdmin, isHighlighted, onEdit, onDelete
             <button type="button" className="btn btn-secondary" onClick={onDelete}>
               מחיקה
             </button>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => setSharing((current) => !current)}
+            >
+              {sharing ? 'סגירת שיתוף' : 'שיתוף'}
+            </button>
           </>
         )}
       </div>
+      {isAdmin && sharing && <ShareBox text={buildScholarshipShareText(scholarship)} />}
     </div>
   )
 }

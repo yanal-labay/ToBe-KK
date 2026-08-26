@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { API_URL } from '../../apiConfig'
+import { buildEventShareText } from '../../utils/shareText'
+import ShareBox from '../shared/ShareBox'
 import RegisterForm from './RegisterForm'
 import RegistrationsPanel from './RegistrationsPanel'
 import './EventCard.css'
@@ -87,6 +89,7 @@ function EventCard({ event, isAdmin, isHighlighted, onEdit, onDelete, isViewingR
   const expired = isEventExpired(event)
   const registrationClosed = isRegistrationClosed(event)
   const [descriptionExpanded, setDescriptionExpanded] = useState(false)
+  const [sharing, setSharing] = useState(false)
   const { preview, isTruncated } = previewDescription(event.description, DESCRIPTION_PREVIEW_CHARS)
 
   return (
@@ -131,10 +134,18 @@ function EventCard({ event, isAdmin, isHighlighted, onEdit, onDelete, isViewingR
             <button type="button" className="btn btn-outline" onClick={onToggleRegistrations}>
               {isViewingRegistrations ? 'הסתרת נרשמים' : 'נרשמים'}
             </button>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => setSharing((current) => !current)}
+            >
+              {sharing ? 'סגירת שיתוף' : 'שיתוף'}
+            </button>
           </div>
           {isViewingRegistrations && (
             <RegistrationsPanel eventId={event._id} eventTitle={event.title} />
           )}
+          {sharing && <ShareBox text={buildEventShareText(event)} />}
         </>
       ) : registrationClosed ? (
         <button type="button" className="btn btn-outline event-register-disabled" disabled>

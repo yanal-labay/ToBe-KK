@@ -1,5 +1,8 @@
+import { useState } from 'react'
 import { useTheme } from '../../hooks/useTheme'
 import { API_URL } from '../../apiConfig'
+import { buildJobShareText } from '../../utils/shareText'
+import ShareBox from '../shared/ShareBox'
 import './JobCard.css'
 
 /**
@@ -20,11 +23,13 @@ import './JobCard.css'
  * @param {{
  *   job: object,
  *   isAdmin: boolean,
+ *   isHighlighted?: boolean,
  *   onEdit: () => void,
  *   onDelete: () => void,
  * }} props
  */
-function JobCard({ job, isAdmin, onEdit, onDelete }) {
+function JobCard({ job, isAdmin, isHighlighted, onEdit, onDelete }) {
+  const [sharing, setSharing] = useState(false)
   const { theme } = useTheme()
   const fallbackLogo = theme === 'dark' ? '/logodark.png' : '/logo.png'
   const photoSrc = job.photoUrl ? `${API_URL}${job.photoUrl}` : fallbackLogo
@@ -32,7 +37,7 @@ function JobCard({ job, isAdmin, onEdit, onDelete }) {
   const hasContact = job.contactName || job.contactEmail || job.contactPhone
 
   return (
-    <div className="card job-card">
+    <div id={`job-${job._id}`} className={`card job-card ${isHighlighted ? 'is-highlighted' : ''}`}>
       {isAdmin && !job.isActive && <span className="job-inactive-badge">לא פעיל</span>}
       <div className="job-card-top">
         <div className="job-card-info">
@@ -70,14 +75,24 @@ function JobCard({ job, isAdmin, onEdit, onDelete }) {
       )}
 
       {isAdmin && (
-        <div className="job-card-actions">
-          <button type="button" className="btn btn-outline" onClick={onEdit}>
-            עריכה
-          </button>
-          <button type="button" className="btn btn-secondary" onClick={onDelete}>
-            מחיקה
-          </button>
-        </div>
+        <>
+          <div className="job-card-actions">
+            <button type="button" className="btn btn-outline" onClick={onEdit}>
+              עריכה
+            </button>
+            <button type="button" className="btn btn-secondary" onClick={onDelete}>
+              מחיקה
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => setSharing((current) => !current)}
+            >
+              {sharing ? 'סגירת שיתוף' : 'שיתוף'}
+            </button>
+          </div>
+          {sharing && <ShareBox text={buildJobShareText(job)} />}
+        </>
       )}
     </div>
   )

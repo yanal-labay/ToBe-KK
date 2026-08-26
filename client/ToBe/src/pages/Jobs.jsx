@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAdminSession } from '../hooks/useAdminSession'
 import { listJobs, createJob, updateJob, deleteJob } from '../services/jobsService'
 import { listJobFields } from '../services/jobFieldsService'
@@ -36,9 +37,12 @@ function fieldSelectionsToFieldValues(fieldSelections) {
  */
 function Jobs() {
   const { isAdmin } = useAdminSession()
+  const [searchParams] = useSearchParams()
+  const highlightParam = searchParams.get('highlight')
 
   const [jobs, setJobs] = useState([])
   const [loadState, setLoadState] = useState('loading') // loading | ready | error
+  const [highlightedId, setHighlightedId] = useState(null)
 
   const [fields, setFields] = useState([])
 
@@ -79,6 +83,22 @@ function Jobs() {
   useEffect(() => {
     loadFields()
   }, [])
+
+  // Scrolls to and briefly highlights the job named by ?highlight=<id>
+  // (arriving from an admin's share link) once the list has loaded. Same
+  // shape as the equivalent effects in Events.jsx and Scholarships.jsx.
+  useEffect(() => {
+    if (!highlightParam || loadState !== 'ready') return
+    if (!jobs.some((job) => job._id === highlightParam)) return
+
+    setHighlightedId(highlightParam)
+    const card = document.getElementById(`job-${highlightParam}`)
+    card?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
+    const timeout = setTimeout(() => setHighlightedId(null), 2500)
+    return () => clearTimeout(timeout)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [highlightParam, loadState])
 
   const handleCreate = async (formData) => {
     const res = await createJob(formData)
@@ -213,6 +233,7 @@ function Jobs() {
                   key={job._id}
                   job={job}
                   isAdmin={isAdmin}
+                  isHighlighted={highlightedId === job._id}
                   onEdit={() => setEditingId(job._id)}
                   onDelete={() => handleDelete(job)}
                 />

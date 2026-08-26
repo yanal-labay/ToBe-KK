@@ -21,6 +21,22 @@
   z-index: 1;
 }
 
+/* Arriving with ?highlight=<id> (from an admin's share link) — a brief pulse
+   around the matching card so the visitor can find it after the scroll.
+   Mirrors EventCard.css/ScholarshipCard.css. */
+.job-card.is-highlighted {
+  animation: job-card-highlight-pulse 2.5s ease-out;
+}
+
+@keyframes job-card-highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 4px var(--color-primary-light);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
 .job-card-top {
   display: flex;
   gap: 20px;
