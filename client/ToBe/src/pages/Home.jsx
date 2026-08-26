@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAdminSession } from '../hooks/useAdminSession'
+import { useCalendarView } from '../hooks/useCalendarView'
 import { getHome, saveHomeContent, saveHomeCaption, addHomePhoto, deleteHomePhoto } from '../services/homeService'
 import { getScheduleEntries, getScheduleCategories } from '../services/scheduleService'
 import PhotoCarousel from '../components/home/PhotoCarousel'
@@ -28,8 +29,14 @@ function Home() {
   const [scheduleEntries, setScheduleEntries] = useState([])
   const [scheduleCategories, setScheduleCategories] = useState([])
 
-  const today = new Date()
-  const [view, setView] = useState({ year: today.getFullYear(), month: today.getMonth() })
+  // This preview always opens on a short range regardless of what the
+  // /schedule page has saved — a whole month is too dense to read at this
+  // size — and switching it here stays local to the visit rather than
+  // changing what /schedule opens with.
+  const { viewType, selectViewType, anchor, handlePrev, handleNext, handleToday } = useCalendarView({
+    persist: false,
+    defaultViewType: (isMobile) => (isMobile ? 'threeDay' : 'sevenDay'),
+  })
 
   const loadHome = () => {
     setHomeLoadState('loading')
@@ -96,19 +103,6 @@ function Home() {
     loadHome()
   }
 
-  const handlePrevMonth = () => {
-    setView(({ year, month }) => (month === 0 ? { year: year - 1, month: 11 } : { year, month: month - 1 }))
-  }
-
-  const handleNextMonth = () => {
-    setView(({ year, month }) => (month === 11 ? { year: year + 1, month: 0 } : { year, month: month + 1 }))
-  }
-
-  const handleToday = () => {
-    const now = new Date()
-    setView({ year: now.getFullYear(), month: now.getMonth() })
-  }
-
   return (
     <div className="home-page">
       {homeLoadState === 'loading' && <p className="home-loading">טוען תוכן...</p>}
@@ -152,10 +146,11 @@ function Home() {
           entries={scheduleEntries}
           categories={scheduleCategories}
           isAdmin={isAdmin}
-          viewYear={view.year}
-          viewMonth={view.month}
-          onPrevMonth={handlePrevMonth}
-          onNextMonth={handleNextMonth}
+          anchor={anchor}
+          viewType={viewType}
+          onSelectViewType={selectViewType}
+          onPrev={handlePrev}
+          onNext={handleNext}
           onToday={handleToday}
           compact
         />

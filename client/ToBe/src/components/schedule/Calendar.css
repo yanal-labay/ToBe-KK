@@ -75,6 +75,28 @@
   margin-inline-start: 8px;
 }
 
+/* Month / 7-day / 3-day switcher — a segmented control built from buttons
+   (see VIEW_OPTIONS in Calendar.jsx). `flex-wrap` rather than a media query:
+   three short labels wrap on their own if a narrow screen needs it. */
+.schedule-calendar-views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.schedule-view-button {
+  padding: clamp(4px, 1vw, 6px) clamp(10px, 2vw, 16px);
+  font-size: clamp(12px, 1.8vw, 14px);
+}
+
+.schedule-view-button.is-active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+
 .schedule-calendar-legend {
   display: flex;
   flex-wrap: wrap;
@@ -169,7 +191,7 @@
 
 .schedule-calendar-weekdays {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(var(--schedule-columns, 7), 1fr);
   text-align: center;
   font-weight: 600;
   color: var(--color-text-muted);
@@ -178,7 +200,7 @@
 
 .schedule-calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(var(--schedule-columns, 7), 1fr);
   gap: var(--schedule-grid-gap);
 }
 
@@ -206,6 +228,21 @@
   display: flex;
   flex-direction: column;
   gap: clamp(2px, 0.6vw, 6px);
+}
+
+/* The day views put one row on screen instead of six, so each cell has far
+   more vertical budget to spend. Only `min-height` is overridden here: the
+   bridging math behind the continuous multi-day bars reads
+   `--schedule-day-padding` and `--schedule-grid-gap` (see
+   `--schedule-band-bridge` above), so a view variant that changed either
+   would silently desync every band segment — the compact variant below has
+   to redeclare the padding for exactly that reason. */
+.schedule-calendar--sevenDay .schedule-calendar-day {
+  min-height: clamp(150px, 18vw, 260px);
+}
+
+.schedule-calendar--threeDay .schedule-calendar-day {
+  min-height: clamp(160px, 20vw, 280px);
 }
 
 .schedule-calendar-day.is-outside-month {
@@ -290,7 +327,7 @@
    over by it, since later siblings normally paint on top in plain flow.
    RTL: chronologically-earlier is visually to the right (see is-range-
    start/-end above), so "continues backward" (toward yesterday) extends
-   right and "continues forward" (toward tomorrow) extends left. A week
+   right and "continues forward" (toward tomorrow) extends left. A row
    boundary is never bridged — Calendar.jsx only sets these classes when a
    same-row neighbor exists. */
 .schedule-band-pill.is-continuing-backward,
@@ -319,19 +356,20 @@
   width: calc(100% + 2 * var(--schedule-band-bridge));
 }
 
-/* The title only ever renders on the is-range-start segment, but that
-   segment's own box is just one day-column wide — `overflow: visible` lets
-   it spill onto the following same-colored bridged segment(s) instead of
-   eliding, so a title reads as one line across the whole merged bar rather
-   than truncating early. Still governed by `white-space: nowrap` (never
-   wraps to a 2nd line) — this only affects how the *overflow* is handled.
-   `z-index: 2` (above the `z-index: 1` on plain continuing segments) makes
-   sure the spilled text paints over the next segment's own box instead of
-   being covered by it, since same-z-index later DOM siblings normally paint
-   on top. Only reachable via `is-continuing-forward`, which covers every
-   start day of a 2+-day span except the rare one landing on the row's last
-   column (nothing to spill onto there — falls back to eliding, unchanged). */
-.schedule-band-pill.is-range-start.is-continuing-forward {
+/* The title only renders on one segment per row (see `showsTitle` in
+   Calendar.jsx), but that segment's own box is just one day-column wide —
+   `overflow: visible` lets it spill onto the following same-colored bridged
+   segment(s) instead of eliding, so a title reads as one line across the
+   whole merged bar rather than truncating early. Still governed by
+   `white-space: nowrap` (never wraps to a 2nd line) — this only affects how
+   the *overflow* is handled. `z-index: 2` (above the `z-index: 1` on plain
+   continuing segments) makes sure the spilled text paints over the next
+   segment's own box instead of being covered by it, since same-z-index later
+   DOM siblings normally paint on top. Only reachable via
+   `is-continuing-forward`, which covers every title segment except the rare
+   one landing on the row's last column (nothing to spill onto there — falls
+   back to eliding, unchanged). */
+.schedule-band-pill.is-title-segment.is-continuing-forward {
   overflow: visible;
   z-index: 2;
 }
@@ -343,17 +381,22 @@
   min-width: 0;
 }
 
-/* `min-width: 0` overrides the flex-item default of `min-width: auto`,
-   which otherwise refuses to shrink a nowrap button below its untruncated
-   text width — without it, a long title (e.g. "אחרון להרשמה: ...") pushes
-   past the pill's own box instead of actually eliding, which is what made
-   day cells look inconsistently sized in the first place.
-   Text wraps across up to 2 lines (the `-webkit-line-clamp` block) instead
-   of forcing everything onto one truncated line — a title only gets an
-   ellipsis if it still doesn't fit in 2. `border-radius` is a smaller
+/* `min-width: 0` overrides the flex-item default of `min-width: auto` so the
+   pill can shrink to the day column's own width instead of forcing an
+   overflow. `width: 100%` makes it explicit (a `-webkit-box` display used to
+   sit here for line-clamping and, on some engines, quietly opted the button
+   out of the flex column's default stretch — the pill just followed its
+   own content width instead of filling the day cell).
+   This rule must never clip via `overflow`/`text-overflow`/line-clamp — a
+   title always renders in full here (see Calendar.jsx, which no longer
+   truncates entry-pill titles at all, unlike band-pills), so the pill just
+   wraps and lets its day cell grow instead — same "let it grow" approach as
+   the band-pill's `is-expanded` state. `border-radius` is a smaller
    rounded-rectangle instead of a full capsule, since a fully-rounded pill
-   looks odd once its content can span two lines. */
+   looks odd once its content can span multiple lines. */
 .schedule-entry-pill {
+  display: block;
+  width: 100%;
   font: inherit;
   font-size: clamp(10px, 1.6vw, 12px);
   line-height: 1.3;
@@ -362,14 +405,24 @@
   border-radius: 10px;
   border: none;
   cursor: pointer;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
   white-space: normal;
-  overflow: hidden;
-  text-overflow: ellipsis;
   color: #fff;
   min-width: 0;
+}
+
+/* An event/scholarship deadline pill's title arrives from the server as one
+   "label: title" string (see splitDeadlineTitle in Calendar.jsx) — rendered
+   as two separate block-level elements so the label always starts its own
+   line instead of wrapping wherever happens to fit, regardless of the
+   day column's width. */
+.schedule-entry-pill-deadline-label {
+  display: block;
+  font-size: 0.85em;
+  opacity: 0.85;
+}
+
+.schedule-entry-pill-deadline-title {
+  display: block;
 }
 
 .schedule-entry-pill.schedule-entry-more {
@@ -421,9 +474,10 @@
   gap: 8px;
 }
 
-/* Unlike the grid's pill, the popover exists specifically to show full
-   detail — `display: block` overrides the base class's 2-line clamp so a
-   long title wraps completely instead of still eliding here. */
+/* The popover exists specifically to show full, untruncated detail —
+   `white-space: normal` (the base rule already wraps too, but this stays
+   explicit here since the popover's correctness doesn't depend on the base
+   rule's own behavior) plus its own centered/larger-padding presentation. */
 .schedule-day-popover-row .schedule-entry-pill {
   display: block;
   flex: 1;
@@ -459,12 +513,37 @@
   padding: 2px;
 }
 
+/* Same reasoning as the full-size day-view overrides above — one row instead
+   of six leaves room to be taller — kept proportional to this variant's own
+   smaller scale. `min-height` only, for the bridging reason documented there. */
+.schedule-calendar--compact.schedule-calendar--sevenDay .schedule-calendar-day {
+  min-height: 90px;
+}
+
+.schedule-calendar--compact.schedule-calendar--threeDay .schedule-calendar-day {
+  min-height: 110px;
+}
+
+.schedule-calendar--compact .schedule-view-button {
+  font-size: 11px;
+  padding: 2px 8px;
+}
+
+.schedule-calendar--compact .schedule-calendar-views {
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
 .schedule-calendar--compact .schedule-calendar-day-number {
   font-size: 11px;
 }
 
-/* Restores the base class's original single-line truncation — this tiny
-   preview widget has no room for 2-line wrapping, unlike the main calendar. */
+/* Forces single-line CSS truncation regardless of the base rule (which
+   otherwise wraps freely) — this tiny preview widget has no room to grow,
+   unlike the main calendar's day cells. Unlike the main calendar, a title can
+   still get silently clipped here with no way to expand it — accepted for
+   now since this widget is meant to stay small, not grow; revisit if it's
+   ever reported here too. */
 .schedule-calendar--compact .schedule-entry-pill {
   display: block;
   white-space: nowrap;
@@ -504,4 +583,20 @@
   .schedule-calendar-header h2 {
     min-width: auto;
   }
+}
+
+/* Reveals a truncated band-pill title in full on click (see
+   PILL_TITLE_PREVIEW_CHARS in Calendar.jsx) by wrapping instead of eliding,
+   growing the day cell to fit (it uses `min-height` with no
+   `overflow: hidden`, so nothing clips) — `.schedule-entry-pill` needs no
+   such override since it wraps unconditionally in its base rule already.
+   Placed last in the cascade and matched at 3 classes so it reliably wins
+   regardless of the compact overrides above or the continuing-forward spill
+   rule earlier in this file (both same-specificity ties would otherwise be
+   ambiguous). */
+.schedule-band-pill.is-title-segment.is-expanded {
+  height: auto;
+  white-space: normal;
+  overflow: visible;
+  z-index: 4;
 }

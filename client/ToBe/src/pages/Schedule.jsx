@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAdminSession } from '../hooks/useAdminSession'
+import { useCalendarView } from '../hooks/useCalendarView'
 import { getScheduleEntries, createScheduleEntry, updateScheduleEntry, deleteScheduleEntry, getScheduleCategories } from '../services/scheduleService'
 import Calendar from '../components/schedule/Calendar'
 import ScheduleEntryForm from '../components/schedule/ScheduleEntryForm'
@@ -7,7 +8,8 @@ import CategoryManager from '../components/schedule/CategoryManager'
 import './Schedule.css'
 
 /**
- * The /schedule page ("לוח זמנים") — an interactive month calendar that
+ * The /schedule page ("לוח זמנים") — an interactive calendar (month, 7-day,
+ * or 3-day; see `useCalendarView`) that
  * combines every date-bearing record the app already has (event dates,
  * event registration deadlines, scholarship deadlines) with admin-added
  * manual entries, all served pre-merged by `GET /api/schedule` (see
@@ -32,15 +34,7 @@ function Schedule() {
   // date-only strings), or null when nothing is being edited.
   const [editingEntry, setEditingEntry] = useState(null)
 
-  // Year and month are one atomic state, not two separate `useState`s —
-  // updating them together in a single setter avoids a real bug: with two
-  // separate setters, React 19's StrictMode double-invokes a functional
-  // updater to check for purity, and the old code called `setViewYear` as
-  // a *side effect* inside `setViewMonth`'s updater — so wrapping from
-  // December to January silently bumped the year by 2 instead of 1,
-  // skipping every other year when clicking "next month" repeatedly.
-  const today = new Date()
-  const [view, setView] = useState({ year: today.getFullYear(), month: today.getMonth() })
+  const { viewType, selectViewType, anchor, handlePrev, handleNext, handleToday } = useCalendarView()
 
   // Which of the legend's rows are unchecked, i.e. hidden from the grid —
   // see `Calendar.jsx`, where the legend doubles as the filter control.
@@ -137,19 +131,6 @@ function Schedule() {
     return () => clearTimeout(timeout)
   }, [editingEntry])
 
-  const handlePrevMonth = () => {
-    setView(({ year, month }) => (month === 0 ? { year: year - 1, month: 11 } : { year, month: month - 1 }))
-  }
-
-  const handleNextMonth = () => {
-    setView(({ year, month }) => (month === 11 ? { year: year + 1, month: 0 } : { year, month: month + 1 }))
-  }
-
-  const handleToday = () => {
-    const now = new Date()
-    setView({ year: now.getFullYear(), month: now.getMonth() })
-  }
-
   const toggleFilterKey = (key) => {
     setHiddenFilterKeys((current) => {
       const next = new Set(current)
@@ -228,10 +209,11 @@ function Schedule() {
           entries={visibleEntries}
           categories={categories}
           isAdmin={isAdmin}
-          viewYear={view.year}
-          viewMonth={view.month}
-          onPrevMonth={handlePrevMonth}
-          onNextMonth={handleNextMonth}
+          anchor={anchor}
+          viewType={viewType}
+          onSelectViewType={selectViewType}
+          onPrev={handlePrev}
+          onNext={handleNext}
           onToday={handleToday}
           onSelectManual={handleSelectManual}
           onDeleteManual={handleDelete}

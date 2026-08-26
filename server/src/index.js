@@ -5,9 +5,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const helmet = require("helmet");
 const morgan = require("morgan");
-const rateLimit = require("express-rate-limit");
 const cookieParser = require("cookie-parser");
-const { z } = require("zod");
 const authRoutes = require("./userManagement/auth.routes");
 const eventRoutes = require("./events/event.routes");
 const scholarshipRoutes = require("./scholarships/scholarship.routes");
@@ -26,16 +24,6 @@ const linkRoutes = require("./links/link.routes");
 dotenv.config();
 
 const app = express();
-
-const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
-// ZOD VALIDATION
-const BuySchema = z.object({
-  email: z
-    .string()
-    .trim()
-    .regex(emailRegex, { message: "Please enter a valid email address" }),
-});
 
 app.use(helmet());
 app.use(morgan("dev"));
@@ -84,17 +72,6 @@ app.use("/api/home", homeRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/links", linkRoutes);
 
-const buyActionLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 10,
-  message: {
-    success: false,
-    message: "Too many attempts. Please wait 1 minute.",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
 const MONGO_URI = process.env.MONGO_URI || "";
 if (!MONGO_URI) {
   console.error("CRITICAL: MONGO_URI is missing from .env!");
@@ -107,103 +84,6 @@ if (!MONGO_URI) {
     })
     .catch((err) => console.error("DB CONNECTION ERROR:", err.message));
 }
-
-// --- Legacy scaffolding below ---
-// Order/TestEntry and their /api/test, /api/status, /api/orders, /api/buy,
-// /api/reset routes are leftover boilerplate from an earlier "limited spots"
-// campaign template. They are not part of the current app (events, auth) and
-// aren't wired into any page — left as-is rather than removed since that's
-// outside the scope of whatever asked for changes near them.
-const Order = mongoose.model(
-  "Order",
-  new mongoose.Schema({
-    email: { type: String, required: true },
-    createdAt: { type: Date, default: Date.now },
-  })
-);
-
-// Simple model used only to sanity-check the DB connection end-to-end.
-const TestEntry = mongoose.model(
-  "TestEntry",
-  new mongoose.Schema({
-    name: { type: String, required: true },
-    number: { type: Number, required: true },
-    createdAt: { type: Date, default: Date.now },
-  })
-);
-
-app.post("/api/test", async (req, res) => {
-  try {
-    const { name, number } = req.body;
-    if (!name || typeof number !== "number") {
-      return res
-        .status(400)
-        .json({ success: false, message: "name (string) and number (number) are required" });
-    }
-    const entry = await new TestEntry({ name, number }).save();
-    res.json({ success: true, entry });
-  } catch (err) {
-    res.status(500).json({ success: false, message: "Database Error" });
-  }
-});
-
-app.get("/api/test", async (req, res) => {
-  try {
-    const entries = await TestEntry.find().sort({ createdAt: -1 });
-    res.json(entries);
-  } catch (err) {
-    res.status(500).json([]);
-  }
-});
-
-app.get("/api/status", async (req, res) => {
-  try {
-    const count = await Order.countDocuments();
-    res.json({ remaining: Math.max(0, 5 - count), soldOut: count >= 5 });
-  } catch (err) {
-    res.status(500).json({ error: "Sync failed" });
-  }
-});
-
-app.get("/api/orders", async (req, res) => {
-  try {
-    const orders = await Order.find().sort({ createdAt: -1 });
-    res.json(orders);
-  } catch (err) {
-    res.status(500).json([]);
-  }
-});
-
-app.post("/api/buy", buyActionLimiter, async (req, res) => {
-  try {
-    const result = BuySchema.safeParse(req.body);
-    if (!result.success) {
-      return res.status(400).json({
-        success: false,
-        message: result.error.message,
-      });
-    }
-
-    const { email } = result.data;
-    const count = await Order.countDocuments();
-    if (count >= 5)
-      return res.status(400).json({ message: "Campaign Sold Out!" });
-
-    await new Order({ email }).save();
-    res.json({ success: true, message: "Spot Secured!" });
-  } catch (err) {
-    res.status(500).json({ message: "Database Error" });
-  }
-});
-
-app.post("/api/reset", async (req, res) => {
-  try {
-    await Order.deleteMany({});
-    res.json({ message: "System Reset Successful" });
-  } catch (err) {
-    res.status(500).json({ message: "Reset Failed" });
-  }
-});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, "127.0.0.1", () => {

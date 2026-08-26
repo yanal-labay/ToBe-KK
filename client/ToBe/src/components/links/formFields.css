@@ -1,15 +1,23 @@
 /* Shared field styling for LinkItemForm */
 
+.link-item-form {
+  width: 100%;
+  align-self: stretch;
+}
+
 .link-item-form label {
   display: flex;
   flex-direction: column;
   gap: 4px;
   font-weight: 600;
   font-size: 14px;
+  width: 100%;
 }
 
 .link-item-form input,
 .link-item-form textarea {
+  width: 100%;
+  box-sizing: border-box;
   font: inherit;
   padding: 8px 10px;
   border-radius: 6px;
