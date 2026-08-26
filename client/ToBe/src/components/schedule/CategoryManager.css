@@ -58,3 +58,40 @@
   color: #c0392b;
   font-size: 14px;
 }
+
+.category-manager-empty {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.category-swatch-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Bigger and click-affording compared to the read-only 16px dot elsewhere
+   in this file (.category-manager-swatch) — this one is a control, not just
+   a label, so it needs to look pressable and show which one is selected. */
+.category-swatch-option {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.category-swatch-option:hover {
+  transform: scale(1.1);
+}
+
+.category-swatch-option.is-selected {
+  border-color: var(--color-text);
+  box-shadow: 0 0 0 2px var(--color-surface);
+}
+
+.category-manager-add-toggle {
+  align-self: flex-start;
+}

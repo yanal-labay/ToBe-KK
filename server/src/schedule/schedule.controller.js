@@ -29,14 +29,14 @@ const ScheduleEntryInputSchema = z
 /** Validates the create/update payload for a manual-entry category. */
 const CategoryInputSchema = z.object({
   name: z.string().trim().min(1).max(100),
-  colorSlot: z.coerce.number().int().min(0).max(2),
+  colorKey: z.enum(["orange", "teal", "pink", "purple", "red", "fuchsia", "indigo", "slate", "cyan", "stone"]),
 });
 
 /**
  * GET /api/schedule — public. Combines every date-bearing record from
  * Events, Scholarships, and the admin's own categorized manual entries into
  * one flat list the calendar can render directly. `kind` (plus, for manual
- * entries, `categorySlot`) is what the client uses to pick a pill color —
+ * entries, `categoryKey`) is what the client uses to pick a pill color —
  * see Calendar.jsx.
  *
  * - Each event contributes an `"event"` entry for its date, and — only when
@@ -109,7 +109,7 @@ async function listSchedule(req, res) {
         refId: entry._id,
         linkTo: null,
         categoryId: entry.category._id,
-        categorySlot: entry.category.colorSlot,
+        categoryKey: entry.category.colorKey,
         categoryName: entry.category.name,
       });
     }
@@ -188,7 +188,7 @@ async function deleteScheduleEntry(req, res) {
  */
 async function listCategories(req, res) {
   try {
-    const categories = await ScheduleCategory.find().sort({ colorSlot: 1 });
+    const categories = await ScheduleCategory.find().sort({ createdAt: 1 });
     res.json(categories);
   } catch (err) {
     res.status(500).json({ success: false, message: "Database error" });
@@ -196,9 +196,10 @@ async function listCategories(req, res) {
 }
 
 /**
- * POST /api/schedule/categories — admin-only. Names one of the 3 free
- * color slots. `colorSlot` has a unique index, so this fails with a clean
- * message if that slot is already taken rather than silently overwriting it.
+ * POST /api/schedule/categories — admin-only. Creates a category with an
+ * admin-chosen `colorKey` (see categoryPalette.js on the client for the
+ * fixed list the admin picks from) — unlike the old `colorSlot`, this isn't
+ * unique, so any number of categories may share a swatch.
  */
 async function createCategory(req, res) {
   const result = CategoryInputSchema.safeParse(req.body);
@@ -213,7 +214,7 @@ async function createCategory(req, res) {
     if (err.code === 11000) {
       return res.status(400).json({
         success: false,
-        message: "הצבע הזה כבר משויך לקטגוריה אחרת, או שקיימת כבר קטגוריה בשם זה",
+        message: "קיימת כבר קטגוריה בשם זה",
       });
     }
     res.status(500).json({ success: false, message: "Database error" });
@@ -245,7 +246,7 @@ async function updateCategory(req, res) {
     if (err.code === 11000) {
       return res.status(400).json({
         success: false,
-        message: "הצבע הזה כבר משויך לקטגוריה אחרת, או שקיימת כבר קטגוריה בשם זה",
+        message: "קיימת כבר קטגוריה בשם זה",
       });
     }
     res.status(500).json({ success: false, message: "Database error" });

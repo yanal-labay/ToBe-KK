@@ -40,8 +40,9 @@ function buildMonthGrid(year, month) {
 
 /**
  * Groups single-day entries by the one calendar day they land on — genuinely
- * multi-day entries are handled separately (see `computeWeekBandLanes`) so
- * they render as one spanning bar instead of a repeated per-day pill.
+ * multi-day entries are handled separately (see `computeWeekLaneAssignments`
+ * and `computeDaySpanningSegments`) so they render as one spanning bar
+ * instead of a repeated per-day pill.
  */
 function buildEntriesByDay(entries) {
   const map = new Map()
@@ -63,17 +64,79 @@ function isSpanning(entry) {
 }
 
 /**
+ * Assigns every spanning entry touching this 7-day week a stable lane index
+ * (0, 1, 2, ...), shared across every day in the week it's active on — so a
+ * continuing entry's segment stays in the same row of the day-bands stack
+ * instead of jumping to a different one just because some other entry
+ * started or ended on a neighboring day (which otherwise breaks the
+ * "continuous bar" illusion with a visible vertical step at that boundary,
+ * even though the color itself bridges seamlessly — see
+ * `.is-continuing-backward`/`-forward` in Calendar.css). A week is scoped
+ * independently since it's already a separate visual row — an entry
+ * spanning multiple weeks is free to land in a different lane on each
+ * week's row; no continuity is expected or attempted across that boundary
+ * anyway (see `computeDaySpanningSegments`'s `columnIndex` checks below).
+ *
+ * Classic greedy interval-coloring ("meeting rooms"): entries are
+ * considered in the same stable order used everywhere else (start date,
+ * then id), each claiming the lowest lane whose current occupant has
+ * already ended before this entry starts.
+ */
+function computeWeekLaneAssignments(weekDays, spanningEntries) {
+  const weekStart = weekDays[0].getTime()
+  const weekEnd = weekDays[weekDays.length - 1].getTime()
+
+  const activeEntries = spanningEntries
+    .filter((entry) => {
+      const start = dayOnly(entry.startDate).getTime()
+      const end = dayOnly(entry.endDate).getTime()
+      return start <= weekEnd && end >= weekStart
+    })
+    .sort((a, b) => new Date(a.startDate) - new Date(b.startDate) || a.id.localeCompare(b.id))
+
+  const laneEndTimes = []
+  const laneByEntryId = new Map()
+
+  for (const entry of activeEntries) {
+    const start = Math.max(dayOnly(entry.startDate).getTime(), weekStart)
+    const end = Math.min(dayOnly(entry.endDate).getTime(), weekEnd)
+
+    let lane = laneEndTimes.findIndex((endTime) => endTime < start)
+    if (lane === -1) {
+      lane = laneEndTimes.length
+      laneEndTimes.push(end)
+    } else {
+      laneEndTimes[lane] = end
+    }
+    laneByEntryId.set(entry.id, lane)
+  }
+
+  return laneByEntryId
+}
+
+/**
  * The spanning entries active on one specific day, each flagged for whether
  * this is the entry's true first/last day — rendered as a same-colored
  * segment inside that day's own box (see `.schedule-calendar-day-bands`),
  * rounded only on the side that's a true range boundary so consecutive
  * days' segments read as one continuous bar without ever leaving the day
- * cells themselves. Sorted by the entry's own start date (a stable key
- * independent of which day is asking), so on the rare day where two
- * spanning entries overlap, they stack in the same relative order as every
- * other day both are active on, instead of swapping lanes day to day.
+ * cells themselves. `lane` (from `computeWeekLaneAssignments`) is what
+ * actually determines vertical stacking order in the render — see the
+ * `laneSlots` construction in Calendar's grid loop, which fills any lower,
+ * unoccupied lane with a placeholder so a day where this entry isn't the
+ * *only* active one still lines its segment up with its lane on neighboring
+ * days.
+ *
+ * `isContinuingBackward`/`-Forward` additionally flag whether yesterday or
+ * tomorrow (within the same visual week-row — `columnIndex` is 0 at
+ * Sunday, 6 at Saturday) also carries this same entry, so its segment's CSS
+ * can bridge the gap into that neighbor rather than just rounding a square
+ * edge — see `.is-continuing-backward`/`-forward` in Calendar.css. A week
+ * boundary never bridges (there's no adjacent gap to bridge, it's a whole
+ * row away), which the `columnIndex` checks enforce regardless of whether
+ * the entry itself continues past that day.
  */
-function computeDaySpanningSegments(day, spanningEntries) {
+function computeDaySpanningSegments(day, spanningEntries, columnIndex, laneByEntryId) {
   const dayTime = day.getTime()
   return spanningEntries
     .filter((entry) => {
@@ -81,24 +144,30 @@ function computeDaySpanningSegments(day, spanningEntries) {
       const end = dayOnly(entry.endDate).getTime()
       return dayTime >= start && dayTime <= end
     })
-    .map((entry) => ({
-      entry,
-      isRangeStart: dayTime === dayOnly(entry.startDate).getTime(),
-      isRangeEnd: dayTime === dayOnly(entry.endDate).getTime(),
-    }))
-    .sort((a, b) => new Date(a.entry.startDate) - new Date(b.entry.startDate) || a.entry.id.localeCompare(b.entry.id))
+    .map((entry) => {
+      const isRangeStart = dayTime === dayOnly(entry.startDate).getTime()
+      const isRangeEnd = dayTime === dayOnly(entry.endDate).getTime()
+      return {
+        entry,
+        isRangeStart,
+        isRangeEnd,
+        isContinuingBackward: !isRangeStart && columnIndex !== 0,
+        isContinuingForward: !isRangeEnd && columnIndex !== 6,
+        lane: laneByEntryId.get(entry.id) ?? 0,
+      }
+    })
 }
 
 /**
  * The pill/legend-dot color class for one entry. Events and Scholarships
  * each have their own permanently-reserved color; a manual entry's color
  * comes from whichever category it was assigned (see CategoryManager) —
- * `categorySlot` is one of the 3 remaining free slots (0/1/2).
+ * `categoryKey` is one of the fixed palette keys in categoryPalette.js.
  */
 function colorClassFor(entry) {
   if (entry.kind === 'event' || entry.kind === 'event-deadline') return 'schedule-color-event'
   if (entry.kind === 'scholarship-deadline') return 'schedule-color-scholarship'
-  return `schedule-color-category-${entry.categorySlot}`
+  return `schedule-color-category-${entry.categoryKey}`
 }
 
 /**
@@ -121,7 +190,7 @@ function colorClassFor(entry) {
  *
  * @param {{
  *   entries: object[],
- *   categories: Array<{_id: string, name: string, colorSlot: number}>,
+ *   categories: Array<{_id: string, name: string, colorKey: string}>,
  *   isAdmin: boolean,
  *   viewYear: number,
  *   viewMonth: number,
@@ -162,6 +231,16 @@ function Calendar({
 
   const entriesByDay = useMemo(() => buildEntriesByDay(singleDayEntries), [singleDayEntries])
   const days = useMemo(() => buildMonthGrid(viewYear, viewMonth), [viewYear, viewMonth])
+  // One lane-assignment map per calendar week (6 weeks in a 42-day grid),
+  // computed once per render rather than independently per day — see
+  // `computeWeekLaneAssignments` for why per-day assignment alone isn't enough.
+  const laneByEntryIdPerWeek = useMemo(() => {
+    const perWeek = []
+    for (let w = 0; w < days.length / 7; w++) {
+      perWeek.push(computeWeekLaneAssignments(days.slice(w * 7, w * 7 + 7), spanningEntries))
+    }
+    return perWeek
+  }, [days, spanningEntries])
   const todayKey = useMemo(() => toDateKey(new Date()), [])
   const maxVisibleEntries = compact ? 1 : 3
   const allowManualEdit = isAdmin && Boolean(onSelectManual)
@@ -231,7 +310,7 @@ function Calendar({
                 checked={!hiddenFilterKeys.has(`category-${category._id}`)}
                 onChange={() => onToggleFilterKey(`category-${category._id}`)}
               />
-              <span className={`schedule-legend-dot schedule-color-category-${category.colorSlot}`} />
+              <span className={`schedule-legend-dot schedule-color-category-${category.colorKey}`} />
               {category.name}
             </label>
           ))}
@@ -245,10 +324,24 @@ function Calendar({
       </div>
 
       <div className="schedule-calendar-grid">
-        {days.map((day) => {
+        {days.map((day, index) => {
           const key = toDateKey(day)
           const dayEntries = entriesByDay.get(key) || []
-          const daySegments = computeDaySpanningSegments(day, spanningEntries)
+          const daySegments = computeDaySpanningSegments(
+            day,
+            spanningEntries,
+            index % 7,
+            laneByEntryIdPerWeek[Math.floor(index / 7)]
+          )
+          // Slots run from lane 0 up to this day's own highest active lane;
+          // a lower lane with nothing active today still renders an empty
+          // placeholder so a higher-lane segment stays vertically aligned
+          // with where it sits on neighboring days (see
+          // `computeWeekLaneAssignments`) — there's no need to pad past this
+          // day's own max lane, since nothing below it needs the alignment.
+          const segmentsByLane = new Map(daySegments.map((segment) => [segment.lane, segment]))
+          const maxLane = daySegments.length > 0 ? Math.max(...daySegments.map((segment) => segment.lane)) : -1
+          const laneSlots = Array.from({ length: maxLane + 1 }, (_, lane) => segmentsByLane.get(lane) ?? null)
           const isCurrentMonth = day.getMonth() === viewMonth
           const isToday = key === todayKey
           const visible = dayEntries.slice(0, maxVisibleEntries)
@@ -263,21 +356,27 @@ function Calendar({
             >
               <span className="schedule-calendar-day-number">{day.getDate()}</span>
 
-              {daySegments.length > 0 && (
+              {laneSlots.length > 0 && (
                 <div className="schedule-calendar-day-bands">
-                  {daySegments.map(({ entry, isRangeStart, isRangeEnd }) => (
-                    <button
-                      type="button"
-                      key={entry.id}
-                      className={`schedule-band-pill ${colorClassFor(entry)} ${
-                        isRangeStart ? 'is-range-start' : ''
-                      } ${isRangeEnd ? 'is-range-end' : ''}`}
-                      title={entry.title}
-                      onClick={() => handleEntryClick(entry)}
-                    >
-                      {isRangeStart ? entry.title : ''}
-                    </button>
-                  ))}
+                  {laneSlots.map((segment, lane) =>
+                    segment ? (
+                      <button
+                        type="button"
+                        key={segment.entry.id}
+                        className={`schedule-band-pill ${colorClassFor(segment.entry)} ${
+                          segment.isRangeStart ? 'is-range-start' : ''
+                        } ${segment.isRangeEnd ? 'is-range-end' : ''} ${
+                          segment.isContinuingBackward ? 'is-continuing-backward' : ''
+                        } ${segment.isContinuingForward ? 'is-continuing-forward' : ''}`}
+                        title={segment.entry.title}
+                        onClick={() => handleEntryClick(segment.entry)}
+                      >
+                        {segment.isRangeStart ? segment.entry.title : ''}
+                      </button>
+                    ) : (
+                      <div className="schedule-band-pill-placeholder" key={`empty-lane-${lane}`} aria-hidden="true" />
+                    )
+                  )}
                 </div>
               )}
 

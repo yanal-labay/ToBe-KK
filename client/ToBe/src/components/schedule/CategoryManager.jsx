@@ -1,63 +1,100 @@
 import { useState } from 'react'
 import { createScheduleCategory, renameScheduleCategory, deleteScheduleCategory } from '../../services/scheduleService'
+import { CATEGORY_COLOR_KEYS } from './categoryPalette'
 import './CategoryManager.css'
 
-const SLOTS = [0, 1, 2]
+/**
+ * A row of clickable color swatches (see categoryPalette.js for the fixed
+ * list) — shared by both the "new category" form and each row's own edit
+ * form below, so create and recolor use the exact same picker.
+ */
+function SwatchPicker({ value, onChange }) {
+  return (
+    <div className="category-swatch-picker">
+      {CATEGORY_COLOR_KEYS.map(({ key, labelHe }) => (
+        <button
+          type="button"
+          key={key}
+          className={`category-swatch-option schedule-color-category-${key} ${value === key ? 'is-selected' : ''}`}
+          title={labelHe}
+          aria-label={labelHe}
+          aria-pressed={value === key}
+          onClick={() => onChange(key)}
+        />
+      ))}
+    </div>
+  )
+}
 
 /**
- * Admin-only management of the calendar's 3 free color slots. The
- * calendar has exactly 5 colors total: 2 are permanently reserved for
- * Events and Scholarships (never shown here), and these 3 remaining ones
- * must each be named as a category before any manual calendar entry can
- * use that color — see `ScheduleEntryForm`'s category select, which only
- * ever offers categories created here, and `ScheduleCategory` on the
- * server (colorSlot is unique, so at most one category per slot).
+ * Admin-only management of manual-entry categories — a genuine dynamic list
+ * (any number of categories, no fixed cap), each with a name and a color
+ * chosen from `CATEGORY_COLOR_KEYS`. Multiple categories may share a color;
+ * nothing here treats a color as a scarce resource. See `ScheduleEntryForm`'s
+ * category select, which only ever offers categories created here.
  *
  * @param {{
- *   categories: Array<{_id: string, name: string, colorSlot: number}>,
+ *   categories: Array<{_id: string, name: string, colorKey: string}>,
  *   onCategoriesChanged: () => void,
  * }} props
  */
 function CategoryManager({ categories, onCategoriesChanged }) {
-  const bySlot = new Map(categories.map((category) => [category.colorSlot, category]))
-  const [drafts, setDrafts] = useState({}) // { [slot]: nameBeingTyped }
-  const [editingSlot, setEditingSlot] = useState(null)
-  const [error, setError] = useState('')
-  const [savingSlot, setSavingSlot] = useState(null)
+  const [creating, setCreating] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newColorKey, setNewColorKey] = useState(CATEGORY_COLOR_KEYS[0].key)
 
-  const handleCreate = async (slot) => {
-    const name = (drafts[slot] || '').trim()
+  const [editingId, setEditingId] = useState(null)
+  const [editName, setEditName] = useState('')
+  const [editColorKey, setEditColorKey] = useState('')
+
+  const [error, setError] = useState('')
+  // Which single button is mid-request — 'new' for the create form, or a
+  // category's own _id for that row's rename form — so only that one button
+  // shows "שומר..." even if another row's form happens to be open too.
+  const [savingTarget, setSavingTarget] = useState(null)
+
+  const startEditing = (category) => {
+    setEditingId(category._id)
+    setEditName(category.name)
+    setEditColorKey(category.colorKey)
+    setError('')
+  }
+
+  const handleCreate = async () => {
+    const name = newName.trim()
     if (!name) return
-    setSavingSlot(slot)
+    setSavingTarget('new')
     setError('')
     try {
-      const res = await createScheduleCategory({ name, colorSlot: slot })
+      const res = await createScheduleCategory({ name, colorKey: newColorKey })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
-      setDrafts((current) => ({ ...current, [slot]: '' }))
+      setNewName('')
+      setNewColorKey(CATEGORY_COLOR_KEYS[0].key)
+      setCreating(false)
       onCategoriesChanged()
     } catch (err) {
       setError(err.message || 'הוספת הקטגוריה נכשלה')
     } finally {
-      setSavingSlot(null)
+      setSavingTarget(null)
     }
   }
 
   const handleRename = async (category) => {
-    const name = (drafts[category.colorSlot] ?? category.name).trim()
+    const name = editName.trim()
     if (!name) return
-    setSavingSlot(category.colorSlot)
+    setSavingTarget(category._id)
     setError('')
     try {
-      const res = await renameScheduleCategory(category._id, { name, colorSlot: category.colorSlot })
+      const res = await renameScheduleCategory(category._id, { name, colorKey: editColorKey })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
-      setEditingSlot(null)
+      setEditingId(null)
       onCategoriesChanged()
     } catch (err) {
       setError(err.message || 'עדכון הקטגוריה נכשל')
     } finally {
-      setSavingSlot(null)
+      setSavingTarget(null)
     }
   }
 
@@ -75,55 +112,75 @@ function CategoryManager({ categories, onCategoriesChanged }) {
 
   return (
     <div className="category-manager">
-      {SLOTS.map((slot) => {
-        const category = bySlot.get(slot)
-        const isEditing = editingSlot === slot
+      {categories.map((category) => {
+        const isEditing = editingId === category._id
 
         return (
-          <div className="category-manager-row" key={slot}>
-            <span className={`category-manager-swatch schedule-color-category-${slot}`} />
-            {category && !isEditing ? (
-              <div className="category-manager-row-content">
-                <span className="category-manager-name">{category.name}</span>
+          <div className="category-manager-row" key={category._id}>
+            <span className={`category-manager-swatch schedule-color-category-${category.colorKey}`} />
+            {isEditing ? (
+              <div className="category-manager-form">
+                <input
+                  placeholder="שם קטגוריה (למשל: חופשות)"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                />
+                <SwatchPicker value={editColorKey} onChange={setEditColorKey} />
                 <button
                   type="button"
-                  className="btn btn-outline"
-                  onClick={() => {
-                    setEditingSlot(slot)
-                    setDrafts((current) => ({ ...current, [slot]: category.name }))
-                  }}
+                  className="btn btn-primary"
+                  disabled={savingTarget === category._id}
+                  onClick={() => handleRename(category)}
                 >
+                  {savingTarget === category._id ? 'שומר...' : 'שמירה'}
+                </button>
+                <button type="button" className="btn btn-outline" onClick={() => setEditingId(null)}>
+                  ביטול
+                </button>
+              </div>
+            ) : (
+              <div className="category-manager-row-content">
+                <span className="category-manager-name">{category.name}</span>
+                <button type="button" className="btn btn-outline" onClick={() => startEditing(category)}>
                   עריכה
                 </button>
                 <button type="button" className="btn btn-secondary" onClick={() => handleDelete(category)}>
                   מחיקה
                 </button>
               </div>
-            ) : (
-              <div className="category-manager-form">
-                <input
-                  placeholder="שם קטגוריה (למשל: חופשות)"
-                  value={drafts[slot] ?? ''}
-                  onChange={(e) => setDrafts((current) => ({ ...current, [slot]: e.target.value }))}
-                />
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  disabled={savingSlot === slot}
-                  onClick={() => (category ? handleRename(category) : handleCreate(slot))}
-                >
-                  {savingSlot === slot ? 'שומר...' : 'שמירה'}
-                </button>
-                {isEditing && (
-                  <button type="button" className="btn btn-outline" onClick={() => setEditingSlot(null)}>
-                    ביטול
-                  </button>
-                )}
-              </div>
             )}
           </div>
         )
       })}
+
+      {categories.length === 0 && !creating && (
+        <p className="category-manager-empty">אין עדיין קטגוריות — יש להוסיף אחת לפני שניתן להוסיף רשומות ידניות ללוח.</p>
+      )}
+
+      {creating ? (
+        <div className="category-manager-row category-manager-add">
+          <div className="category-manager-form">
+            <input
+              placeholder="שם קטגוריה (למשל: חופשות)"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              autoFocus
+            />
+            <SwatchPicker value={newColorKey} onChange={setNewColorKey} />
+            <button type="button" className="btn btn-primary" disabled={savingTarget === 'new'} onClick={handleCreate}>
+              {savingTarget === 'new' ? 'שומר...' : 'שמירה'}
+            </button>
+            <button type="button" className="btn btn-outline" onClick={() => setCreating(false)}>
+              ביטול
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" className="btn btn-primary category-manager-add-toggle" onClick={() => setCreating(true)}>
+          + קטגוריה חדשה
+        </button>
+      )}
+
       {error && <p className="category-manager-error">{error}</p>}
     </div>
   )

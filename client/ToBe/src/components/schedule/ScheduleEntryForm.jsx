@@ -17,7 +17,7 @@ const EMPTY_FORM = { title: '', startDate: '', endDate: '', categoryId: '' }
  * there's no file upload here.
  *
  * @param {{
- *   categories: Array<{_id: string, name: string, colorSlot: number}>,
+ *   categories: Array<{_id: string, name: string, colorKey: string}>,
  *   initialValues?: {title: string, startDate: string, endDate: string, categoryId: string},
  *   submitLabel: string,
  *   onSubmit: (payload: {title: string, startDate: string, endDate: string, categoryId: string}) => Promise<void>,

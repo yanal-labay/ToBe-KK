@@ -26,20 +26,20 @@ export function getScheduleCategories() {
 }
 
 /** POST /api/schedule/categories — admin-only. */
-export function createScheduleCategory({ name, colorSlot }) {
+export function createScheduleCategory({ name, colorKey }) {
   return apiRequest('/api/schedule/categories', {
     method: 'POST',
     credentials: 'include',
-    body: { name, colorSlot },
+    body: { name, colorKey },
   })
 }
 
 /** PATCH /api/schedule/categories/:id — admin-only. Renames/recolors a category. */
-export function renameScheduleCategory(id, { name, colorSlot }) {
+export function renameScheduleCategory(id, { name, colorKey }) {
   return apiRequest(`/api/schedule/categories/${id}`, {
     method: 'PATCH',
     credentials: 'include',
-    body: { name, colorSlot },
+    body: { name, colorKey },
   })
 }
 
