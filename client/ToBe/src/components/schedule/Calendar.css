@@ -438,9 +438,15 @@
 }
 
 /* Compact variant: the home page's small preview of the same calendar
-   (see Home.jsx) — shorter day cells, smaller pills, no legend. */
+   (see Home.jsx) — shorter day cells, smaller pills, no legend. Also
+   redeclares `--schedule-day-padding` to match the flat `2px` this variant
+   actually uses below — the bridging math (`--schedule-band-bridge` and
+   everything derived from it) reads this same variable, so without this
+   override it was still computing the bridge for the *full-size* clamp()
+   padding, over-extending every spanning-entry segment here. */
 .schedule-calendar--compact {
   padding: 12px;
+  --schedule-day-padding: 2px;
 }
 
 .schedule-calendar--compact .schedule-calendar-header h2 {
@@ -473,6 +479,14 @@
   font-size: 7px;
   line-height: 10px;
   padding: 0 4px;
+}
+
+/* Must track the compact band-pill's own height above — a mismatch here is
+   exactly what makes a higher-lane entry visibly misaligned across days
+   whenever a lower lane drops out (see `.schedule-band-pill-placeholder`
+   in the base rules and `computeWeekLaneAssignments` in Calendar.jsx). */
+.schedule-calendar--compact .schedule-band-pill-placeholder {
+  height: 10px;
 }
 
 /* Matches Navbar.css's own mobile breakpoint. Sizing itself (day-cell
