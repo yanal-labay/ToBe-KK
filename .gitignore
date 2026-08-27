@@ -1,5 +1,12 @@
 node_modules/
-.env
+
+# Every env file, not just the bare one. A plain `.env` pattern matches only
+# that exact filename, so .env.production / .env.local / .env.development
+# would all be committed — and a production env file is the single most
+# sensitive file in the project. The negation keeps the committable template.
+.env*
+!.env.example
+
 dist/
 *.log
 server/uploads/

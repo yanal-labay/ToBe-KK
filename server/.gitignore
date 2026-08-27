@@ -1,0 +1,16 @@
+# Redundant with the repo-root .gitignore today, but kept here so these rules
+# survive the server being copied, split into its own repo, or deployed on its
+# own — the case where losing them would expose real credentials.
+
+node_modules/
+
+# Every env file, not just the bare one: a plain `.env` pattern matches only
+# that exact name and would let .env.production through.
+.env*
+!.env.example
+
+# Runtime-uploaded photos (events/, jobs/, home/, scholarships/). User
+# content, not source — created on boot by the upload modules.
+uploads/
+
+*.log

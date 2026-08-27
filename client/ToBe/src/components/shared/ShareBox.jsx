@@ -19,6 +19,15 @@ import './ShareBox.css'
  * one platform where a prefilled share link genuinely carries the text
  * through.
  *
+ * The WhatsApp hand-off uses `api.whatsapp.com/send` rather than the shorter
+ * `wa.me/?text=`. Both receive identical, correct UTF-8 percent-encoding
+ * from `encodeURIComponent`, but `wa.me` was observed replacing every
+ * astral-plane emoji (📅, 💰 — the 4-byte ones needing a surrogate pair)
+ * with "?", while passing 2-byte Hebrew through untouched. That points at a
+ * BMP-only handler on the receiving end, not at anything encodable here;
+ * `api.whatsapp.com` is the endpoint documented for text-only shares and
+ * routes differently.
+ *
  * @param {{ text: string }} props
  */
 function ShareBox({ text }) {
@@ -56,7 +65,7 @@ function ShareBox({ text }) {
           {copyState === 'copied' ? 'הועתק ✓' : 'העתקה'}
         </button>
         <a
-          href={`https://wa.me/?text=${encodeURIComponent(draft)}`}
+          href={`https://api.whatsapp.com/send?text=${encodeURIComponent(draft)}`}
           target="_blank"
           rel="noopener noreferrer"
           className="btn btn-primary"

@@ -72,6 +72,47 @@ app.use("/api/home", homeRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/links", linkRoutes);
 
+// Anything that matched no router above. Without this, Express answers with
+// its own HTML page ("Cannot GET /api/evnts"), and the client — which calls
+// res.json() on every response — surfaces that as a JSON parse error rather
+// than a clean failure. Hebrew message to match the per-resource 404s in the
+// controllers ("האירוע לא נמצא" and friends).
+//
+// Deliberately unscoped rather than "/api/*": this server only serves /api
+// and /uploads. If the built client is ever served from here too, this must
+// move below that static mount, or it will swallow the client's own routes.
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: "הכתובת המבוקשת לא נמצאה" });
+});
+
+// Last-resort error handler. The four-argument signature is what marks it as
+// one to Express — it is not interchangeable with the 404 above, and it has
+// to stay last.
+//
+// Express 5 forwards a rejected promise out of an async handler here
+// automatically. That matters for `login` (auth.controller.js), the one
+// DB-touching handler with no try/catch of its own, on a router with no local
+// error middleware: without this, a Mongo outage answers a login attempt with
+// Express's default HTML error page, stack trace included.
+//
+// The four routers that mount their own upload-error middleware (events,
+// scholarships, jobs, home) still handle their errors first; this only
+// catches what they don't.
+app.use((err, req, res, next) => {
+  // A response already streaming (a partially-sent static file) can't be
+  // rewritten — hand it back to Express to close out.
+  if (res.headersSent) return next(err);
+  console.error("UNHANDLED ERROR:", err);
+  // body-parser tags its own errors with a status — malformed JSON is a
+  // client mistake (400), not a server fault. Anything untagged is a real
+  // 500. The error's own message is logged, never sent.
+  const status = err.status || err.statusCode || 500;
+  res.status(status).json({
+    success: false,
+    message: status >= 500 ? "Server error" : "Bad request",
+  });
+});
+
 const MONGO_URI = process.env.MONGO_URI || "";
 if (!MONGO_URI) {
   console.error("CRITICAL: MONGO_URI is missing from .env!");

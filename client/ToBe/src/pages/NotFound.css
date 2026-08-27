@@ -1,0 +1,38 @@
+/* Same centered block as .placeholder-page — the two pages are siblings in
+   purpose (a whole page with nothing but a short message). */
+.not-found-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 80px 24px;
+  text-align: center;
+}
+
+/* The numeral is an identifier, not the heading — it carries the brand gold
+   so it reads as decoration, while the Hebrew <h1> below stays the thing
+   actually being said. */
+.not-found-code {
+  font-size: 72px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-primary);
+  margin-bottom: 8px;
+}
+
+.not-found-page h1 {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.not-found-text {
+  color: var(--color-text-muted);
+  font-size: 18px;
+  margin-bottom: 32px;
+}
+
+/* `.btn` sets no `display` and no `text-decoration` — it was written for
+   <button>, and there's no global anchor reset in index.css. Both have to be
+   set locally on an <a>, same as ShareBox.css does for its own .btn link. */
+.not-found-home-link {
+  display: inline-block;
+  text-decoration: none;
+}

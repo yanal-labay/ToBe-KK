@@ -10,6 +10,7 @@ import Links from './pages/Links'
 import StudentRegistry from './pages/StudentRegistry'
 import StyleGuide from './pages/StyleGuide'
 import PlaceholderPage from './pages/PlaceholderPage'
+import NotFound from './pages/NotFound'
 import AdminLogin from './pages/admin/AdminLogin'
 import './styles/components.css'
 
@@ -21,6 +22,10 @@ import './styles/components.css'
  * as everyone else, just with admin-only controls layered on (see Home.jsx).
  * Only /admin/login sits outside Layout, since it needs no chrome ambiguity
  * for anonymous visitors.
+ *
+ * The trailing `path="*"` is nested inside Layout like the rest: an unmatched
+ * URL used to match nothing at all, which meant Layout didn't render either
+ * and the visitor got a blank page with no way to navigate away.
  */
 function App() {
   return (
@@ -36,6 +41,9 @@ function App() {
         <Route path="/appointment" element={<PlaceholderPage title="בקשה לתאום פגישה" />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/style-guide" element={<StyleGuide />} />
+
+        {/* Catch-all for unknown URLs. Inside Layout on purpose — see NotFound.jsx */}
+        <Route path="*" element={<NotFound />} />
       </Route>
 
       {/* Login page has its own standalone chrome, deliberately outside Layout */}

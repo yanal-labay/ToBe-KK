@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Env files. Redundant with the repo-root .gitignore today, but kept here so
+# the rule survives this folder being copied, split out, or deployed on its
+# own. Note Vite inlines every VITE_-prefixed variable into the browser
+# bundle, so anything secret placed here would ship to users regardless.
+.env*
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
