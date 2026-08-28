@@ -86,9 +86,9 @@ async function updateHomeContent(req, res) {
 
 /**
  * POST /api/home/photos — admin-only. Adds one photo to the home page's
- * rotating photo box. The photo was already written to disk by
- * `upload.single("photo")` (see home.routes.js) and is available as
- * `req.file`.
+ * rotating photo box. The photo was already uploaded to Cloudinary by the
+ * `upload.single("photo")` + `toCloudinary` middleware pair (see
+ * home.routes.js), which leaves its URL on `req.photoUrl`.
  */
 async function addHomePhoto(req, res) {
   if (!req.file) {
@@ -96,7 +96,7 @@ async function addHomePhoto(req, res) {
   }
 
   try {
-    const photo = await new HomePhoto({ photoUrl: `/uploads/home/${req.file.filename}` }).save();
+    const photo = await new HomePhoto({ photoUrl: req.photoUrl }).save();
     res.status(201).json({ success: true, photo });
   } catch (err) {
     res.status(500).json({ success: false, message: "Database error" });

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTheme } from '../../hooks/useTheme'
-import { API_URL } from '../../apiConfig'
+import { resolvePhotoUrl } from '../../utils/photoUrl'
 import { buildJobShareText } from '../../utils/shareText'
 import ShareBox from '../shared/ShareBox'
 import './JobCard.css'
@@ -32,7 +32,7 @@ function JobCard({ job, isAdmin, isHighlighted, onEdit, onDelete }) {
   const [sharing, setSharing] = useState(false)
   const { theme } = useTheme()
   const fallbackLogo = theme === 'dark' ? '/logodark.png' : '/logo.png'
-  const photoSrc = job.photoUrl ? `${API_URL}${job.photoUrl}` : fallbackLogo
+  const photoSrc = resolvePhotoUrl(job.photoUrl, fallbackLogo)
 
   const hasContact = job.contactName || job.contactEmail || job.contactPhone
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { API_URL } from '../../apiConfig'
+import { resolvePhotoUrl } from '../../utils/photoUrl'
 import './PhotoCarousel.css'
 
 const ROTATE_INTERVAL_MS = 5000
@@ -20,7 +20,7 @@ const ROTATE_INTERVAL_MS = 5000
  */
 function PhotoCarousel({ photos, isAdmin, onAddPhoto, onDeletePhoto }) {
   const slides = useMemo(
-    () => photos.map((photo) => ({ src: `${API_URL}${photo.photoUrl}`, photo })),
+    () => photos.map((photo) => ({ src: resolvePhotoUrl(photo.photoUrl), photo })),
     [photos]
   )
 

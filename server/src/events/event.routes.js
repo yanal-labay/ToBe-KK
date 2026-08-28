@@ -1,7 +1,7 @@
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 const { requireAuth } = require("../userManagement/auth.middleware");
-const { upload } = require("./upload");
+const { upload, toCloudinary } = require("./upload");
 const {
   listEvents,
   createEvent,
@@ -30,8 +30,8 @@ const registerLimiter = rateLimit({
 });
 
 router.get("/", listEvents);
-router.post("/", requireAuth, upload.single("photo"), createEvent);
-router.patch("/:id", requireAuth, upload.single("photo"), updateEvent);
+router.post("/", requireAuth, upload.single("photo"), toCloudinary, createEvent);
+router.patch("/:id", requireAuth, upload.single("photo"), toCloudinary, updateEvent);
 router.delete("/:id", requireAuth, deleteEvent);
 router.post("/:id/register", registerLimiter, registerForEvent);
 router.get("/:id/registrations", requireAuth, listRegistrations);

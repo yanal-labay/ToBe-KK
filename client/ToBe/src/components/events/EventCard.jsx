@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { API_URL } from '../../apiConfig'
+import { resolvePhotoUrl } from '../../utils/photoUrl'
 import { buildEventShareText } from '../../utils/shareText'
 import ShareBox from '../shared/ShareBox'
 import RegisterForm from './RegisterForm'
@@ -97,7 +97,7 @@ function EventCard({ event, isAdmin, isHighlighted, onEdit, onDelete, isViewingR
 
       {expired && <span className="event-expired-badge">הסתיים</span>}
       {event.photoUrl && (
-        <img src={`${API_URL}${event.photoUrl}`} alt={event.title} className="event-photo" />
+        <img src={resolvePhotoUrl(event.photoUrl)} alt={event.title} className="event-photo" />
       )}
       <h3>{event.title}</h3>
       <div className="event-meta">

@@ -1,13 +1,13 @@
 const express = require("express");
 const { requireAuth } = require("../userManagement/auth.middleware");
-const { upload } = require("./upload");
+const { upload, toCloudinary } = require("./upload");
 const { getHome, updateHomeContent, addHomePhoto, deleteHomePhoto } = require("./home.controller");
 
 const router = express.Router();
 
 router.get("/", getHome);
 router.patch("/content", requireAuth, updateHomeContent);
-router.post("/photos", requireAuth, upload.single("photo"), addHomePhoto);
+router.post("/photos", requireAuth, upload.single("photo"), toCloudinary, addHomePhoto);
 router.delete("/photos/:id", requireAuth, deleteHomePhoto);
 
 // Turn photo upload failures (bad file type, too large) into clean JSON responses

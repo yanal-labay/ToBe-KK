@@ -1,6 +1,6 @@
 const express = require("express");
 const { requireAuth } = require("../userManagement/auth.middleware");
-const { upload } = require("./upload");
+const { upload, toCloudinary } = require("./upload");
 const {
   listJobs,
   listJobsAdmin,
@@ -13,8 +13,8 @@ const router = express.Router();
 
 router.get("/", listJobs);
 router.get("/admin", requireAuth, listJobsAdmin);
-router.post("/", requireAuth, upload.single("photo"), createJob);
-router.patch("/:id", requireAuth, upload.single("photo"), updateJob);
+router.post("/", requireAuth, upload.single("photo"), toCloudinary, createJob);
+router.patch("/:id", requireAuth, upload.single("photo"), toCloudinary, updateJob);
 router.delete("/:id", requireAuth, deleteJob);
 
 // Turn photo upload failures (bad file type, too large) into clean JSON responses

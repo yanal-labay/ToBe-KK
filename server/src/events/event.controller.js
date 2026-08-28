@@ -81,8 +81,9 @@ async function listEvents(req, res) {
 
 /**
  * POST /api/events — admin-only. Creates a new event. The photo is optional;
- * when present it was already written to disk by the `upload.single("photo")`
- * middleware (see event.routes.js) and is available here as `req.file`.
+ * when present it was already uploaded to Cloudinary by the
+ * `upload.single("photo")` + `toCloudinary` middleware pair (see
+ * event.routes.js), which leaves its URL on `req.photoUrl`.
  */
 async function createEvent(req, res) {
   const result = EventInputSchema.safeParse(req.body);
@@ -91,7 +92,7 @@ async function createEvent(req, res) {
   }
 
   try {
-    const photoUrl = req.file ? `/uploads/events/${req.file.filename}` : undefined;
+    const photoUrl = req.photoUrl;
     const event = await new Event({ ...result.data, ...(photoUrl && { photoUrl }) }).save();
     res.status(201).json({ success: true, event });
   } catch (err) {
@@ -124,7 +125,7 @@ async function updateEvent(req, res) {
 
     const updates = { ...result.data };
     if (req.file) {
-      updates.photoUrl = `/uploads/events/${req.file.filename}`;
+      updates.photoUrl = req.photoUrl;
       deletePhoto(existing.photoUrl);
     }
 

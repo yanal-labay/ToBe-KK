@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { API_URL } from '../../apiConfig'
+import { resolvePhotoUrl } from '../../utils/photoUrl'
 import './PhotoDropzone.css'
 
 /**
@@ -38,7 +38,7 @@ function PhotoDropzone({ photoFile, existingPhotoUrl, onSelect }) {
   return (
     <>
       <img
-        src={preview || (existingPhotoUrl ? `${API_URL}${existingPhotoUrl}` : undefined)}
+        src={preview || resolvePhotoUrl(existingPhotoUrl)}
         alt=""
         className="photo-preview"
         hidden={!preview && !existingPhotoUrl}

@@ -72,9 +72,9 @@ async function listScholarships(req, res) {
 
 /**
  * POST /api/scholarships — admin-only. Creates a new scholarship. The
- * photo is optional; when present it was already written to disk by the
- * `upload.single("photo")` middleware (see scholarship.routes.js) and is
- * available here as `req.file`.
+ * photo is optional; when present it was already uploaded to Cloudinary by
+ * the `upload.single("photo")` + `toCloudinary` middleware pair (see
+ * scholarship.routes.js), which leaves its URL on `req.photoUrl`.
  */
 async function createScholarship(req, res) {
   const result = ScholarshipInputSchema.safeParse(req.body);
@@ -83,7 +83,7 @@ async function createScholarship(req, res) {
   }
 
   try {
-    const photoUrl = req.file ? `/uploads/scholarships/${req.file.filename}` : undefined;
+    const photoUrl = req.photoUrl;
     const scholarship = await new Scholarship({
       ...result.data,
       ...(photoUrl && { photoUrl }),
@@ -120,7 +120,7 @@ async function updateScholarship(req, res) {
 
     const updates = { ...result.data };
     if (req.file) {
-      updates.photoUrl = `/uploads/scholarships/${req.file.filename}`;
+      updates.photoUrl = req.photoUrl;
       deletePhoto(existing.photoUrl);
     }
 

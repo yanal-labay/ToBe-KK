@@ -1,8 +1,14 @@
+// Loaded before any of this app's own modules are required. That ordering is
+// load-bearing: shared/cloudinaryUpload.js configures the Cloudinary SDK at
+// require time, so if dotenv ran after the route imports below it would see
+// an empty process.env and every upload would fail with "Must supply
+// api_key". Third-party requires above are safe either way.
+require("dotenv").config();
+
 const path = require("path");
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const dotenv = require("dotenv");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
@@ -20,8 +26,6 @@ const scheduleRoutes = require("./schedule/schedule.routes");
 const homeRoutes = require("./home/home.routes");
 const contactRoutes = require("./contact/contact.routes");
 const linkRoutes = require("./links/link.routes");
-
-dotenv.config();
 
 const app = express();
 
@@ -72,6 +76,12 @@ app.use("/api/home", homeRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/links", linkRoutes);
 
+// Cheap liveness probe — no database, no auth. Used as the target of the
+// keep-alive ping below, and as something to point Render's health check at.
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", db: mongoose.connection.readyState === 1 });
+});
+
 // Anything that matched no router above. Without this, Express answers with
 // its own HTML page ("Cannot GET /api/evnts"), and the client — which calls
 // res.json() on every response — surfaces that as a JSON parse error rather
@@ -113,6 +123,13 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Without a signing secret, `login` throws and `requireAuth` rejects every
+// token — the server boots and looks healthy, then nobody can log in. Say so
+// at startup rather than leaving it to be discovered at the login screen.
+if (!process.env.JWT_SECRET) {
+  console.error("CRITICAL: JWT_SECRET is missing! Login will not work.");
+}
+
 const MONGO_URI = process.env.MONGO_URI || "";
 if (!MONGO_URI) {
   console.error("CRITICAL: MONGO_URI is missing from .env!");
@@ -127,6 +144,32 @@ if (!MONGO_URI) {
 }
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, "127.0.0.1", () => {
-  console.log(`Server is running on http://127.0.0.1:${PORT}`);
+
+// Render routes external traffic *into* the container, so in production the
+// server has to listen on every interface — bound to 127.0.0.1 it would be
+// unreachable from outside and the deploy would fail its health check with no
+// obvious symptom. Locally we keep binding to loopback so the dev server
+// isn't exposed to everyone else on the network.
+const HOST = process.env.NODE_ENV === "production" ? "0.0.0.0" : "127.0.0.1";
+
+app.listen(PORT, HOST, () => {
+  console.log(`Server is running on http://${HOST}:${PORT}`);
 });
+
+// Render's free tier stops the container after 15 minutes without traffic,
+// and waking it again takes the better part of a minute — which a visitor
+// experiences as the site simply not loading. Pinging ourselves every 14
+// minutes keeps it below that threshold.
+//
+// RENDER_EXTERNAL_URL is injected by Render, so this stays dormant locally
+// and in any other environment; there's nothing to disable in development.
+const KEEP_ALIVE_URL = process.env.RENDER_EXTERNAL_URL;
+if (KEEP_ALIVE_URL) {
+  const FOURTEEN_MINUTES = 14 * 60 * 1000;
+  setInterval(() => {
+    // Failures are ignored on purpose: a missed ping only risks a cold start,
+    // and an unhandled rejection here would take the whole server down.
+    fetch(`${KEEP_ALIVE_URL}/api/health`).catch(() => {});
+  }, FOURTEEN_MINUTES);
+  console.log(`Keep-alive ping enabled for ${KEEP_ALIVE_URL}`);
+}

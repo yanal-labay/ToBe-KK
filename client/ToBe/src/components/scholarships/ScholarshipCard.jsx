@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTheme } from '../../hooks/useTheme'
-import { API_URL } from '../../apiConfig'
+import { resolvePhotoUrl } from '../../utils/photoUrl'
 import { buildScholarshipShareText } from '../../utils/shareText'
 import ShareBox from '../shared/ShareBox'
 import './ScholarshipCard.css'
@@ -53,7 +53,7 @@ function ScholarshipCard({ scholarship, isAdmin, isHighlighted, onEdit, onDelete
   const [sharing, setSharing] = useState(false)
   const { theme } = useTheme()
   const fallbackLogo = theme === 'dark' ? '/logodark.png' : '/logo.png'
-  const photoSrc = scholarship.photoUrl ? `${API_URL}${scholarship.photoUrl}` : fallbackLogo
+  const photoSrc = resolvePhotoUrl(scholarship.photoUrl, fallbackLogo)
   const expired = isScholarshipExpired(scholarship)
 
   return (

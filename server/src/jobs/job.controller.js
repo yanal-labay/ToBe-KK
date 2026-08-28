@@ -108,9 +108,9 @@ async function listJobsAdmin(req, res) {
 
 /**
  * POST /api/jobs — admin-only. Creates a new job posting. The photo is
- * optional; when present it was already written to disk by the
- * `upload.single("photo")` middleware (see job.routes.js) and is available
- * here as `req.file`.
+ * optional; when present it was already uploaded to Cloudinary by the
+ * `upload.single("photo")` + `toCloudinary` middleware pair (see
+ * job.routes.js), which leaves its URL on `req.photoUrl`.
  */
 async function createJob(req, res) {
   const result = JobInputSchema.safeParse(req.body);
@@ -119,7 +119,7 @@ async function createJob(req, res) {
   }
 
   try {
-    const photoUrl = req.file ? `/uploads/jobs/${req.file.filename}` : undefined;
+    const photoUrl = req.photoUrl;
     const job = await new Job({ ...result.data, ...(photoUrl && { photoUrl }) }).save();
     res.status(201).json({ success: true, job });
   } catch (err) {
@@ -152,7 +152,7 @@ async function updateJob(req, res) {
 
     const updates = { ...result.data };
     if (req.file) {
-      updates.photoUrl = `/uploads/jobs/${req.file.filename}`;
+      updates.photoUrl = req.photoUrl;
       deletePhoto(existing.photoUrl);
     }
 
