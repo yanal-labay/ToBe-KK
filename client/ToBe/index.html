@@ -2,9 +2,15 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!--
+      type is image/jpeg, not image/png: public/logo.png is a JPEG that was
+      saved with a .png extension. Browsers sniff the real format so the file
+      displays fine everywhere, but the declared type should match the bytes.
+      Don't "correct" this to image/png unless the file itself is re-encoded.
+    -->
+    <link rel="icon" type="image/jpeg" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>tobe</title>
+    <title>ToBe KK</title>
   </head>
   <body>
     <div id="root"></div>
