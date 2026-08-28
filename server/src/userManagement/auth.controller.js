@@ -6,9 +6,6 @@ const User = require("./user.model");
 const LoginSchema = z.object({
   email: z.string().trim().email(),
   password: z.string().min(1),
-  // `.default()` also makes the field optional on input, so a client that
-  // doesn't send it still validates and gets the normal 8-hour session.
-  rememberMe: z.boolean().default(false),
 });
 
 // Name of the httpOnly cookie that carries the signed JWT session. Shared
@@ -16,34 +13,42 @@ const LoginSchema = z.object({
 // sets.
 const COOKIE_NAME = "token";
 
-// One duration per session type, feeding both the JWT's expiry and the
-// cookie's max-age so the two can't drift apart — a cookie outliving its
-// token would leave an admin looking logged in while every request 401s.
-const SESSION_MAX_AGE_MS = 8 * 60 * 60 * 1000; // 8 hours — the default
-const REMEMBERED_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days — "זכור אותי"
+// How long a session lasts. Read by both the JWT's expiry and the cookie's
+// max-age below, so the two can't drift apart — a cookie outliving its token
+// would leave an admin looking logged in while every request 401s.
+//
+// There is deliberately no longer-lived "remember me" variant: a multi-week
+// session is a bearer credential sitting in the browser, and it survives both
+// logout elsewhere and account deletion (requireAuth checks the signature,
+// never the database). Convenience comes from the browser's own password
+// manager instead — see the autofill attributes on AdminLogin.jsx's inputs.
+const SESSION_MAX_AGE_MS = 8 * 60 * 60 * 1000; // 8 hours
 
 /** Signs a session JWT for an authenticated admin user, expiring with its cookie. */
-function signToken(user, maxAgeMs) {
+function signToken(user) {
   return jwt.sign({ id: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET, {
-    expiresIn: Math.floor(maxAgeMs / 1000), // jsonwebtoken reads a bare number as seconds
+    expiresIn: Math.floor(SESSION_MAX_AGE_MS / 1000), // a bare number is read as seconds
   });
 }
 
 /**
  * Sets the session cookie. `httpOnly` keeps it inaccessible to client-side
- * JS (XSS mitigation); `secure` is only enforced in production so local dev
- * over plain http still works; `sameSite: "lax"` is enough since the client
- * and API are same-site in this deployment.
+ * JS (XSS mitigation); `secure` is only enforced in production, so local dev
+ * over plain http still works — which also means NODE_ENV must actually be
+ * set to "production" on the host, or the session ships without it.
  *
- * `maxAgeMs` must be the same value the token was signed with — pass one
- * duration to both, never two literals.
+ * `sameSite: "lax"` also blocks cross-site POST/PATCH/DELETE from carrying
+ * this cookie, which is the app's only CSRF protection (there are no CSRF
+ * tokens). It *requires* the client and API to be same-site: served from
+ * different registrable domains, the browser won't send this cookie at all
+ * and admin login silently stops working while public pages look fine.
  */
-function setAuthCookie(res, token, maxAgeMs) {
+function setAuthCookie(res, token) {
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: maxAgeMs,
+    maxAge: SESSION_MAX_AGE_MS,
   });
 }
 
@@ -54,7 +59,7 @@ async function login(req, res) {
     return res.status(400).json({ success: false, message: "Invalid email or password format" });
   }
 
-  const { email, password, rememberMe } = result.data;
+  const { email, password } = result.data;
   const user = await User.findOne({ email });
   if (!user) {
     return res.status(401).json({ success: false, message: "Invalid credentials" });
@@ -65,9 +70,8 @@ async function login(req, res) {
     return res.status(401).json({ success: false, message: "Invalid credentials" });
   }
 
-  const maxAgeMs = rememberMe ? REMEMBERED_MAX_AGE_MS : SESSION_MAX_AGE_MS;
-  const token = signToken(user, maxAgeMs);
-  setAuthCookie(res, token, maxAgeMs);
+  const token = signToken(user);
+  setAuthCookie(res, token);
   res.json({ success: true, admin: { email: user.email } });
 }
 

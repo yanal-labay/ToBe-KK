@@ -1,5 +1,5 @@
 // TODO: replace with the real WhatsApp group invite link
-export const WHATSAPP_GROUP_URL = '#'
+export const WHATSAPP_GROUP_URL = 'https://chat.whatsapp.com/KbEjLXZ5pxQKypZaEZcjhW'
 
 /**
  * The public site's navbar links, rendered by <Navbar/> when the visitor is

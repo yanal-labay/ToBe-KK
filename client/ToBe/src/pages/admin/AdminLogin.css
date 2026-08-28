@@ -61,17 +61,6 @@
   margin-top: 8px;
 }
 
-/* `.admin-login-form label` is column-flex (caption stacked above its input),
-   which would put this checkbox above its text instead of beside it. The
-   `label.admin-login-remember` compound outranks that selector on
-   specificity, so no !important is needed here (cf. JobForm.css:74, which
-   had to reach for one). */
-.admin-login-form label.admin-login-remember {
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-}
-
 /* A quiet way off this page rather than a second call to action — the primary
    button above it should stay the only thing competing for attention. */
 .admin-login-guest-link {

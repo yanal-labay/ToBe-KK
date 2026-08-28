@@ -23,9 +23,6 @@ import './AdminLogin.css'
 function AdminLogin() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  // Opt-in longer session: 30 days instead of the default 8 hours. The
-  // duration itself is decided server-side (auth.controller.js).
-  const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
@@ -37,7 +34,7 @@ function AdminLogin() {
     setError('')
     setLoading(true)
     try {
-      const res = await login({ email, password, rememberMe })
+      const res = await login({ email, password })
       const data = await res.json()
       if (data.success) {
         markAuthed(data.admin)
@@ -58,12 +55,23 @@ function AdminLogin() {
         <BrandLogo theme={theme} />
         <ThemeToggleButton theme={theme} onToggle={toggleTheme} />
       </div>
+      {/*
+        The `id`/`name` on the two fields below do nothing for React — these
+        are controlled inputs, so their values come from state, not the DOM.
+        They're there for the browser: `name` is the key the form-history
+        autofill dropdown files remembered values under (no name, no
+        dropdown, ever), and password managers use `id`/`name` alongside the
+        `autoComplete` hints to identify the fields and to decide whether to
+        offer "save password". Please don't remove them as unused.
+      */}
       <form onSubmit={handleSubmit} className="admin-login-form">
         <h1>כניסת מנהלים</h1>
         <label>
           אימייל
           <input
             type="email"
+            id="admin-email"
+            name="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="username"
@@ -74,19 +82,13 @@ function AdminLogin() {
           סיסמה
           <input
             type="password"
+            id="admin-password"
+            name="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
             required
           />
-        </label>
-        <label className="admin-login-remember">
-          <input
-            type="checkbox"
-            checked={rememberMe}
-            onChange={(e) => setRememberMe(e.target.checked)}
-          />
-          זכור אותי
         </label>
         {error && <p className="admin-login-error">{error}</p>}
         <button type="submit" className="btn btn-primary" disabled={loading}>
