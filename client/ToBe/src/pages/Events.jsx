@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAdminSession } from '../hooks/useAdminSession'
+import { useScrollToOpenPanel } from '../hooks/useScrollToOpenPanel'
 import { listEvents, createEvent, updateEvent, deleteEvent } from '../services/eventsService'
 import EventForm from '../components/events/EventForm'
 import EventCard, { isEventExpired } from '../components/events/EventCard'
@@ -29,6 +30,16 @@ function Events() {
   const [creating, setCreating] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [viewingRegistrationsId, setViewingRegistrationsId] = useState(null)
+
+  // One form is open at a time — either the create form or exactly one card's
+  // edit form. Drives both the scroll-into-view effect and the backdrop.
+  const openFormId = creating
+    ? 'event-form-new'
+    : editingId
+      ? `event-form-${editingId}`
+      : null
+
+  useScrollToOpenPanel(openFormId)
 
   const loadEvents = () => {
     setLoadState('loading')
@@ -89,6 +100,8 @@ function Events() {
 
   return (
     <div className="events-page">
+      {isAdmin && openFormId && <div className="form-focus-overlay" />}
+
       <div className="events-page-header">
         <h1>אירועים</h1>
         {isAdmin && !creating && (
@@ -100,6 +113,7 @@ function Events() {
 
       {isAdmin && creating && (
         <EventForm
+          formId="event-form-new"
           submitLabel="שמירה"
           onSubmit={handleCreate}
           onCancel={() => setCreating(false)}
@@ -119,6 +133,7 @@ function Events() {
           isAdmin && editingId === event._id ? (
             <EventForm
               key={event._id}
+              formId={`event-form-${event._id}`}
               initialValues={{
                 title: event.title,
                 description: event.description,

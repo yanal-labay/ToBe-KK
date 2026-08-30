@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAdminSession } from '../hooks/useAdminSession'
+import { useScrollToOpenPanel } from '../hooks/useScrollToOpenPanel'
 import { listScholarships, createScholarship, updateScholarship, deleteScholarship } from '../services/scholarshipsService'
 import { listScholarshipFields } from '../services/scholarshipFieldsService'
 import ScholarshipForm from '../components/scholarships/ScholarshipForm'
@@ -42,6 +43,20 @@ function Scholarships() {
   const [creating, setCreating] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [showFieldsManager, setShowFieldsManager] = useState(false)
+
+  // One form is open at a time — either the create form or exactly one
+  // card's edit form. The fields manager toggles independently of both, so
+  // each gets its own scroll hook rather than one merged id: that way only
+  // the panel that just opened scrolls, with no precedence rules needed.
+  const openFormId = creating
+    ? 'scholarship-form-new'
+    : editingId
+      ? `scholarship-form-${editingId}`
+      : null
+  const openManagerId = showFieldsManager ? 'scholarship-fields-manager' : null
+
+  useScrollToOpenPanel(openFormId)
+  useScrollToOpenPanel(openManagerId)
 
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedOptionIds, setSelectedOptionIds] = useState({}) // { [fieldId]: optionId[] }
@@ -142,6 +157,8 @@ function Scholarships() {
 
   return (
     <div className="scholarships-page">
+      {isAdmin && (openFormId || openManagerId) && <div className="form-focus-overlay" />}
+
       <div className="scholarships-page-header">
         <h1>מלגות</h1>
         <div className="scholarships-page-header-actions">
@@ -163,11 +180,17 @@ function Scholarships() {
       </div>
 
       {isAdmin && showFieldsManager && (
-        <ScholarshipFieldsManager fields={fields} onFieldsChanged={loadFields} />
+        <ScholarshipFieldsManager
+          panelId="scholarship-fields-manager"
+          fields={fields}
+          onFieldsChanged={loadFields}
+          onClose={() => setShowFieldsManager(false)}
+        />
       )}
 
       {isAdmin && creating && (
         <ScholarshipForm
+          formId="scholarship-form-new"
           fields={fields}
           submitLabel="שמירה"
           onSubmit={handleCreate}
@@ -198,6 +221,7 @@ function Scholarships() {
                 isAdmin && editingId === scholarship._id ? (
                   <ScholarshipForm
                     key={scholarship._id}
+                    formId={`scholarship-form-${scholarship._id}`}
                     fields={fields}
                     initialValues={{
                       title: scholarship.title,

@@ -6,7 +6,9 @@ import './LinkGroupCard.css'
  * One links "card": a gold header bar naming the group, with each link
  * item listed below (headline + description + a fixed-icon button linking
  * out). An arrow button in the header collapses/expands the item list
- * (local UI state only, not persisted). Admins get rename/delete on the
+ * (local UI state only, not persisted). Cards begin collapsed, so the page
+ * opens as a list of headers and each visit to the tab starts closed again.
+ * Admins get rename/delete on the
  * card itself, and add/edit/delete per item — mirrors ContactGroupCard's
  * structure exactly.
  *
@@ -45,7 +47,10 @@ function LinkGroupCard({
   const [titleDraft, setTitleDraft] = useState(group.title)
   const [addingItem, setAddingItem] = useState(false)
   const [editingItemId, setEditingItemId] = useState(null)
-  const [collapsed, setCollapsed] = useState(false)
+  // Cards start collapsed so the page opens as a scannable list of card
+  // headers rather than every group's full link list at once. Local state, so
+  // this resets to collapsed on every visit to the tab.
+  const [collapsed, setCollapsed] = useState(true)
 
   const handleRenameSubmit = async (e) => {
     e.preventDefault()

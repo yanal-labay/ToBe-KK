@@ -21,6 +21,7 @@ const EMPTY_FORM = { title: '', description: '', deadline: '', url: '', amount: 
  * dynamic, not a fixed shape.
  *
  * @param {{
+ *   formId?: string,
  *   initialValues?: {title: string, description: string, deadline: string, url: string, amount: string, volunteerHours: string},
  *   initialFieldValues?: Record<string, string[]>,
  *   fields: Array<{_id: string, name: string, options: Array<{_id: string, name: string}>}>,
@@ -31,6 +32,7 @@ const EMPTY_FORM = { title: '', description: '', deadline: '', url: '', amount: 
  * }} props
  */
 function ScholarshipForm({
+  formId,
   initialValues,
   initialFieldValues,
   fields,
@@ -80,7 +82,7 @@ function ScholarshipForm({
   }
 
   return (
-    <form className="scholarship-form" onSubmit={handleSubmit}>
+    <form id={formId} className="scholarship-form form-focus-panel" onSubmit={handleSubmit}>
       <label>
         שם המלגה
         <input value={values.title} onChange={handleChange('title')} required />

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAdminSession } from '../hooks/useAdminSession'
+import { useScrollToOpenPanel } from '../hooks/useScrollToOpenPanel'
 import { listJobs, createJob, updateJob, deleteJob } from '../services/jobsService'
 import { listJobFields } from '../services/jobFieldsService'
 import JobForm from '../components/jobs/JobForm'
@@ -49,6 +50,20 @@ function Jobs() {
   const [creating, setCreating] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [showFieldsManager, setShowFieldsManager] = useState(false)
+
+  // One form is open at a time — either the create form or exactly one
+  // card's edit form. The fields manager toggles independently of both, so
+  // each gets its own scroll hook rather than one merged id: that way only
+  // the panel that just opened scrolls, with no precedence rules needed.
+  const openFormId = creating
+    ? 'job-form-new'
+    : editingId
+      ? `job-form-${editingId}`
+      : null
+  const openManagerId = showFieldsManager ? 'job-fields-manager' : null
+
+  useScrollToOpenPanel(openFormId)
+  useScrollToOpenPanel(openManagerId)
 
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedOptionIds, setSelectedOptionIds] = useState({}) // { [fieldId]: optionId[] }
@@ -159,6 +174,8 @@ function Jobs() {
 
   return (
     <div className="jobs-page">
+      {isAdmin && (openFormId || openManagerId) && <div className="form-focus-overlay" />}
+
       <div className="jobs-page-header">
         <h1>לוח משרות</h1>
         <div className="jobs-page-header-actions">
@@ -180,11 +197,17 @@ function Jobs() {
       </div>
 
       {isAdmin && showFieldsManager && (
-        <JobFieldsManager fields={fields} onFieldsChanged={loadFields} />
+        <JobFieldsManager
+          panelId="job-fields-manager"
+          fields={fields}
+          onFieldsChanged={loadFields}
+          onClose={() => setShowFieldsManager(false)}
+        />
       )}
 
       {isAdmin && creating && (
         <JobForm
+          formId="job-form-new"
           fields={fields}
           submitLabel="שמירה"
           onSubmit={handleCreate}
@@ -209,6 +232,7 @@ function Jobs() {
               isAdmin && editingId === job._id ? (
                 <JobForm
                   key={job._id}
+                  formId={`job-form-${job._id}`}
                   fields={fields}
                   initialValues={{
                     title: job.title,

@@ -82,3 +82,28 @@
   font-size: 15px;
   margin-bottom: 16px;
 }
+
+/* Dims and blurs the page while an admin create/edit form or fields-manager
+   panel is open. Sits below the sticky .site-topbar (z-index: 100) so
+   navigation stays sharp and usable, and below .form-focus-panel so the open
+   panel stays crisp. Deliberately has no click handler: an open form holds
+   unsaved typing, so only its own buttons close it. Its default pointer
+   capture also blocks clicks on the blurred content underneath. */
+.form-focus-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 50;
+}
+
+/* The panel that stays sharp above .form-focus-overlay. Applied
+   unconditionally by each panel component, since these only exist in the DOM
+   while open. scroll-margin-top clears the sticky top bar for block: 'start'
+   (see hooks/useScrollToOpenPanel.js). */
+.form-focus-panel {
+  position: relative;
+  z-index: 60;
+  scroll-margin-top: 96px;
+}

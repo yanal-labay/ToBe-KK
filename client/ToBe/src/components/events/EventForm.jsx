@@ -23,7 +23,12 @@ const EMPTY_FORM = {
  * Submits via `onSubmit(formData)` with a `FormData` (not JSON) because the
  * optional photo file has to travel as `multipart/form-data`.
  *
+ * `formId` becomes the form's DOM id. The Events page uses it to scroll the
+ * form into view on open — an edit form replaces its card mid-list, so the
+ * card's own id is gone by the time we need something to scroll to.
+ *
  * @param {{
+ *   formId?: string,
  *   initialValues?: {title: string, description: string, date: string, time: string, location: string, price: string, registrationDeadline: string},
  *   existingPhotoUrl?: string|null,
  *   submitLabel: string,
@@ -31,7 +36,7 @@ const EMPTY_FORM = {
  *   onCancel: () => void,
  * }} props
  */
-function EventForm({ initialValues, existingPhotoUrl, submitLabel, onSubmit, onCancel }) {
+function EventForm({ formId, initialValues, existingPhotoUrl, submitLabel, onSubmit, onCancel }) {
   const [values, setValues] = useState(initialValues || EMPTY_FORM)
   const [photoFile, setPhotoFile] = useState(null)
   const [error, setError] = useState('')
@@ -68,7 +73,7 @@ function EventForm({ initialValues, existingPhotoUrl, submitLabel, onSubmit, onC
   }
 
   return (
-    <form className="event-form" onSubmit={handleSubmit}>
+    <form id={formId} className="event-form form-focus-panel" onSubmit={handleSubmit}>
       <label>
         כותרת
         <input value={values.title} onChange={handleChange('title')} required />

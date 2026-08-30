@@ -32,6 +32,7 @@ const EMPTY_FORM = {
  * since the set of fields is dynamic, not a fixed shape.
  *
  * @param {{
+ *   formId?: string,
  *   initialValues?: {title: string, company: string, location: string, isStudentPosition: boolean, description: string, salary: string, contactName: string, contactEmail: string, contactPhone: string, isActive: boolean},
  *   initialFieldValues?: Record<string, string[]>,
  *   fields: Array<{_id: string, name: string, options: Array<{_id: string, name: string}>}>,
@@ -42,6 +43,7 @@ const EMPTY_FORM = {
  * }} props
  */
 function JobForm({
+  formId,
   initialValues,
   initialFieldValues,
   fields,
@@ -95,7 +97,7 @@ function JobForm({
   }
 
   return (
-    <form className="job-form" onSubmit={handleSubmit}>
+    <form id={formId} className="job-form form-focus-panel" onSubmit={handleSubmit}>
       <label>
         תפקיד
         <input value={values.title} onChange={handleChange('title')} required />

@@ -17,11 +17,13 @@ import './ScholarshipFieldsManager.css'
  * renamed here — mirrors `components/jobs/JobFieldsManager.jsx` exactly.
  *
  * @param {{
+ *   panelId?: string,
  *   fields: Array<{_id: string, name: string, options: Array<{_id: string, name: string}>}>,
  *   onFieldsChanged: () => void,
+ *   onClose: () => void,
  * }} props
  */
-function ScholarshipFieldsManager({ fields, onFieldsChanged }) {
+function ScholarshipFieldsManager({ panelId, fields, onFieldsChanged, onClose }) {
   const [newFieldName, setNewFieldName] = useState('')
   const [addError, setAddError] = useState('')
   const [addSaving, setAddSaving] = useState(false)
@@ -73,7 +75,7 @@ function ScholarshipFieldsManager({ fields, onFieldsChanged }) {
   }
 
   return (
-    <div className="scholarship-fields-manager">
+    <div id={panelId} className="scholarship-fields-manager form-focus-panel">
       <form className="scholarship-fields-add-form" onSubmit={handleAddField}>
         <label>
           שדה חדש
@@ -95,6 +97,16 @@ function ScholarshipFieldsManager({ fields, onFieldsChanged }) {
           onDeleteOption={(option) => handleDeleteOption(field._id, option)}
         />
       ))}
+
+      {/* The header's "סגירת ניהול שדות" toggle sits behind the focus overlay
+          while this panel is open, so the way out has to live in here. Labelled
+          "סגירה", not "ביטול": every action above saves immediately, so there
+          is nothing to undo — this only closes the panel. */}
+      <div className="scholarship-fields-actions">
+        <button type="button" className="btn btn-outline" onClick={onClose}>
+          סגירה
+        </button>
+      </div>
     </div>
   )
 }
