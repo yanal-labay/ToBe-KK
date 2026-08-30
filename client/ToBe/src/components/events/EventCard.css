@@ -54,17 +54,51 @@
   cursor: not-allowed;
 }
 
-.event-expired-badge {
+/* One positioned container for both badges so an event that is expired AND
+   inactive stacks them instead of drawing one on top of the other — unlike
+   JobCard, which only ever has the one badge. */
+.event-card-badges {
   position: absolute;
   top: 12px;
   left: 12px;
-  background: var(--color-text-muted);
+  display: flex;
+  gap: 6px;
+  z-index: 1;
+}
+
+.event-badge {
   color: var(--color-surface);
   font-size: 12px;
   font-weight: 600;
   padding: 3px 10px;
   border-radius: 999px;
-  z-index: 1;
+}
+
+.event-expired-badge {
+  background: var(--color-text-muted);
+}
+
+/* Admin-only marker — inactive events never reach a guest's browser at all
+   (excluded server-side, see event.controller.js's listEvents), so this
+   only ever renders in the admin's own view. */
+.event-inactive-badge {
+  background: var(--color-text-muted);
+}
+
+.event-tag-bubbles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.event-tag-bubble {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--color-primary-light);
+  border: 1px solid var(--color-primary);
+  color: var(--color-text);
 }
 
 /* Arriving from /schedule with ?highlight=<id> — a brief pulse around the

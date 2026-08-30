@@ -4,6 +4,7 @@ const { requireAuth } = require("../userManagement/auth.middleware");
 const { upload, toCloudinary } = require("./upload");
 const {
   listEvents,
+  listEventsAdmin,
   createEvent,
   updateEvent,
   deleteEvent,
@@ -30,6 +31,7 @@ const registerLimiter = rateLimit({
 });
 
 router.get("/", listEvents);
+router.get("/admin", requireAuth, listEventsAdmin);
 router.post("/", requireAuth, upload.single("photo"), toCloudinary, createEvent);
 router.patch("/:id", requireAuth, upload.single("photo"), toCloudinary, updateEvent);
 router.delete("/:id", requireAuth, deleteEvent);

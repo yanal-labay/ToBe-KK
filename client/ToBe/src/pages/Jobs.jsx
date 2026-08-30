@@ -8,7 +8,23 @@ import JobForm from '../components/jobs/JobForm'
 import JobCard from '../components/jobs/JobCard'
 import JobFieldsManager from '../components/jobs/JobFieldsManager'
 import JobFilterSidebar from '../components/jobs/JobFilterSidebar'
+import SortBar from '../components/shared/SortBar'
+import { byDateDesc, byTextAsc } from '../utils/sortComparators'
 import './Jobs.css'
+
+// Orderings offered by the sort bar. `added` is first so it's the default,
+// matching the order the page used before the bar existed.
+//
+// There's deliberately no salary option: `Job.salary` is a free-text string
+// ("לפי ניסיון", ranges, "₪45 לשעה"), so it can't be ordered numerically.
+// Jobs also has no expiry concept, so unlike Events/Scholarships nothing is
+// pinned to the bottom and the chosen sort applies to the whole list.
+const SORT_OPTIONS = [
+  { value: 'added', label: 'תאריך הוספה — החדש ראשון', compare: byDateDesc('createdAt') },
+  { value: 'title', label: 'שם המשרה — א-ת', compare: byTextAsc('title') },
+  { value: 'company', label: 'שם החברה — א-ת', compare: byTextAsc('company') },
+  { value: 'location', label: 'מיקום — א-ת', compare: byTextAsc('location') },
+]
 
 /** Groups a job's populated `fieldSelections` into `{ [fieldId]: optionId[] }`, for seeding JobForm's edit state. */
 function fieldSelectionsToFieldValues(fieldSelections) {
@@ -50,6 +66,7 @@ function Jobs() {
   const [creating, setCreating] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [showFieldsManager, setShowFieldsManager] = useState(false)
+  const [viewingApplicationsId, setViewingApplicationsId] = useState(null)
 
   // One form is open at a time — either the create form or exactly one
   // card's edit form. The fields manager toggles independently of both, so
@@ -67,6 +84,7 @@ function Jobs() {
 
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedOptionIds, setSelectedOptionIds] = useState({}) // { [fieldId]: optionId[] }
+  const [sortKey, setSortKey] = useState(SORT_OPTIONS[0].value)
   const [studentOnly, setStudentOnly] = useState(false)
 
   const loadJobs = () => {
@@ -172,6 +190,9 @@ function Jobs() {
     return true
   })
 
+  const activeSort = SORT_OPTIONS.find((option) => option.value === sortKey) ?? SORT_OPTIONS[0]
+  const sortedJobs = [...visibleJobs].sort(activeSort.compare)
+
   return (
     <div className="jobs-page">
       {isAdmin && (openFormId || openManagerId) && <div className="form-focus-overlay" />}
@@ -227,8 +248,12 @@ function Jobs() {
             <p>אין משרות התואמות את החיפוש/הסינון.</p>
           )}
 
+          {loadState === 'ready' && jobs.length > 0 && (
+            <SortBar options={SORT_OPTIONS} value={sortKey} onChange={setSortKey} />
+          )}
+
           <div className="jobs-list">
-            {visibleJobs.map((job) =>
+            {sortedJobs.map((job) =>
               isAdmin && editingId === job._id ? (
                 <JobForm
                   key={job._id}
@@ -244,6 +269,8 @@ function Jobs() {
                     contactName: job.contactName || '',
                     contactEmail: job.contactEmail || '',
                     contactPhone: job.contactPhone || '',
+                    applicationMethod: job.applicationMethod || 'contact',
+                    applicationUrl: job.applicationUrl || '',
                     isActive: job.isActive,
                   }}
                   initialFieldValues={fieldSelectionsToFieldValues(job.fieldSelections)}
@@ -260,6 +287,12 @@ function Jobs() {
                   isHighlighted={highlightedId === job._id}
                   onEdit={() => setEditingId(job._id)}
                   onDelete={() => handleDelete(job)}
+                  isViewingApplications={viewingApplicationsId === job._id}
+                  onToggleApplications={() =>
+                    setViewingApplicationsId((current) =>
+                      current === job._id ? null : job._id
+                    )
+                  }
                 />
               )
             )}

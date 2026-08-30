@@ -13,8 +13,18 @@ const EMPTY_FORM = {
   contactName: '',
   contactEmail: '',
   contactPhone: '',
+  applicationMethod: 'contact',
+  applicationUrl: '',
   isActive: true,
 }
+
+// The three ways a visitor can apply. Each reveals different fields below,
+// which is why this is a radio group rather than a <select>.
+const APPLICATION_METHODS = [
+  { value: 'contact', label: 'פרטי קשר' },
+  { value: 'link', label: 'קישור חיצוני' },
+  { value: 'form', label: 'השארת פרטים באתר' },
+]
 
 /**
  * Create/edit form for a job posting, used both for "new posting" (no
@@ -72,6 +82,22 @@ function JobForm({
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    // Mirrors the server's superRefine so the admin sees the problem without
+    // a round trip; job.controller.js stays the real guard.
+    if (
+      values.applicationMethod === 'contact' &&
+      !values.contactName.trim() &&
+      !values.contactEmail.trim() &&
+      !values.contactPhone.trim()
+    ) {
+      setError('יש למלא לפחות דרך התקשרות אחת')
+      return
+    }
+    if (values.applicationMethod === 'link' && !values.applicationUrl.trim()) {
+      setError('יש להזין קישור חיצוני')
+      return
+    }
+
     setSaving(true)
     setError('')
     try {
@@ -86,6 +112,8 @@ function JobForm({
       formData.append('contactName', values.contactName)
       formData.append('contactEmail', values.contactEmail)
       formData.append('contactPhone', values.contactPhone)
+      formData.append('applicationMethod', values.applicationMethod)
+      formData.append('applicationUrl', values.applicationUrl)
       formData.append('isActive', values.isActive ? 'true' : 'false')
       if (photoFile) formData.append('photo', photoFile)
       await onSubmit(formData)
@@ -157,25 +185,67 @@ function JobForm({
       </label>
 
       <fieldset className="job-form-contact">
-        <legend>פרטי יצירת קשר (לא חובה)</legend>
-        <label>
-          שם איש/אשת קשר
-          <input value={values.contactName} onChange={handleChange('contactName')} />
-        </label>
-        <div className="job-form-row">
+        <legend>שיטת הגשה</legend>
+        <div className="job-form-method-options">
+          {APPLICATION_METHODS.map((method) => (
+            <label key={method.value} className="job-form-method-option">
+              <input
+                type="radio"
+                name="applicationMethod"
+                value={method.value}
+                checked={values.applicationMethod === method.value}
+                onChange={handleChange('applicationMethod')}
+              />
+              {method.label}
+            </label>
+          ))}
+        </div>
+
+        {values.applicationMethod === 'contact' && (
+          <>
+            <label>
+              שם איש/אשת קשר
+              <input value={values.contactName} onChange={handleChange('contactName')} />
+            </label>
+            <div className="job-form-row">
+              <label>
+                אימייל
+                <input
+                  type="email"
+                  value={values.contactEmail}
+                  onChange={handleChange('contactEmail')}
+                />
+              </label>
+              <label>
+                טלפון
+                <input
+                  type="tel"
+                  value={values.contactPhone}
+                  onChange={handleChange('contactPhone')}
+                />
+              </label>
+            </div>
+            <p className="job-form-hint">יש למלא לפחות אחד מהשדות.</p>
+          </>
+        )}
+
+        {values.applicationMethod === 'link' && (
           <label>
-            אימייל
+            קישור להגשה
             <input
-              type="email"
-              value={values.contactEmail}
-              onChange={handleChange('contactEmail')}
+              type="url"
+              placeholder="https://..."
+              value={values.applicationUrl}
+              onChange={handleChange('applicationUrl')}
             />
           </label>
-          <label>
-            טלפון
-            <input type="tel" value={values.contactPhone} onChange={handleChange('contactPhone')} />
-          </label>
-        </div>
+        )}
+
+        {values.applicationMethod === 'form' && (
+          <p className="job-form-hint">
+            מבקרים יראו כפתור להשארת פרטים. ההגשות יופיעו בכפתור &quot;מועמדים&quot; בכרטיס.
+          </p>
+        )}
       </fieldset>
 
       <label>

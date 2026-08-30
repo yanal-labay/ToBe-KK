@@ -107,3 +107,31 @@
   z-index: 60;
   scroll-margin-top: 96px;
 }
+
+/* The sort control above each listing page's results (see
+   components/shared/SortBar.jsx). Lives here rather than in any one page's
+   stylesheet because events, scholarships, and jobs all use it. */
+.sort-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.sort-bar-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.sort-bar-label select {
+  font: inherit;
+  font-weight: 400;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+}

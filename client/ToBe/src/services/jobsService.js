@@ -28,3 +28,38 @@ export function updateJob(id, formData) {
 export function deleteJob(id) {
   return apiRequest(`/api/jobs/${id}`, { method: 'DELETE', credentials: 'include' })
 }
+
+/**
+ * POST /api/jobs/:id/apply — public, no credentials. Shared by the
+ * visitor-facing SignupForm and SubmissionsPanel's admin "add" convenience,
+ * mirroring registerForEvent. The server rejects this for any job whose
+ * applicationMethod isn't "form".
+ */
+export function applyToJob(jobId, { name, email, phone }) {
+  return apiRequest(`/api/jobs/${jobId}/apply`, {
+    method: 'POST',
+    body: { name, email, phone },
+  })
+}
+
+/** GET /api/jobs/:id/applications — admin-only. */
+export function listApplications(jobId) {
+  return apiRequest(`/api/jobs/${jobId}/applications`, { credentials: 'include' })
+}
+
+/** PATCH /api/jobs/:id/applications/:applicationId — admin-only. */
+export function updateApplicationStatus(jobId, applicationId, { status }) {
+  return apiRequest(`/api/jobs/${jobId}/applications/${applicationId}`, {
+    method: 'PATCH',
+    credentials: 'include',
+    body: { status },
+  })
+}
+
+/** DELETE /api/jobs/:id/applications/:applicationId — admin-only. */
+export function deleteApplication(jobId, applicationId) {
+  return apiRequest(`/api/jobs/${jobId}/applications/${applicationId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  })
+}

@@ -1,21 +1,42 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { resolvePhotoUrl } from '../../utils/photoUrl'
 import { buildEventShareText } from '../../utils/shareText'
 import { previewText } from '../../utils/previewText'
+import { formatDate } from '../../utils/formatDate'
 import ShareBox from '../shared/ShareBox'
-import RegisterForm from './RegisterForm'
-import RegistrationsPanel from './RegistrationsPanel'
+import SignupForm from '../shared/SignupForm'
+import SubmissionsPanel from '../shared/SubmissionsPanel'
+import {
+  registerForEvent,
+  listRegistrations,
+  updateRegistrationStatus,
+  deleteRegistration,
+} from '../../services/eventsService'
 import './EventCard.css'
 
 const DESCRIPTION_PREVIEW_CHARS = 90
 
-/** Formats an event's `date` (ISO string from the API) for display in Hebrew. */
-function formatDate(value) {
-  return new Date(value).toLocaleDateString('he-IL', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
+// Display order for both the chart rows and the per-row status <select> in
+// SubmissionsPanel; colors follow the app's reserved status palette
+// (green=good, red=critical) so identity never relies on color alone —
+// every mark also carries an icon + label.
+const REGISTRATION_STATUS_ORDER = ['signed_up', 'arrived', 'did_not_arrive']
+const REGISTRATION_STATUS_META = {
+  signed_up: { label: 'נרשם', icon: '🕓', color: 'var(--color-text-muted)' },
+  arrived: { label: 'הגיע', icon: '✅', color: '#0ca30c' },
+  did_not_arrive: { label: 'לא הגיע', icon: '❌', color: '#d03b3b' },
+}
+
+const REGISTRATION_LABELS = {
+  chartAria: 'גרף סיכום סטטוס נרשמים',
+  addButton: '+ הוספת נרשם',
+  loading: 'טוען נרשמים...',
+  loadError: 'לא ניתן לטעון את הנרשמים',
+  empty: 'עדיין אין נרשמים לאירוע זה.',
+  exportPrefix: 'נרשמים',
+  confirmDelete: (name) => `למחוק את ${name} מרשימת הנרשמים?`,
+  deleteAria: (name) => `מחק את ${name} מרשימת הנרשמים`,
+  deleteTitle: 'מחיקת נרשם',
 }
 
 /**
@@ -53,7 +74,7 @@ export function isRegistrationClosed(event) {
 /**
  * Read-only display of a single event, with the action row branching by
  * role: admins get edit/delete/toggle-registrations buttons (and the
- * `RegistrationsPanel` when toggled open), guests get the `RegisterForm`
+ * `SubmissionsPanel` when toggled open), guests get the `SignupForm`
  * instead. Editing itself is handled by the parent (`Events.jsx` swaps this
  * component out for an `EventForm` while `editingId` matches), so this
  * component only needs to know *whether* it's being viewed by an admin, not
@@ -81,10 +102,30 @@ function EventCard({ event, isAdmin, isHighlighted, onEdit, onDelete, isViewingR
   const [sharing, setSharing] = useState(false)
   const { preview, isTruncated } = previewText(event.description, DESCRIPTION_PREVIEW_CHARS)
 
+  // Memoised because SubmissionsPanel re-fetches whenever `api` changes
+  // identity — a fresh object each render would loop it forever.
+  const registrationsApi = useMemo(
+    () => ({
+      list: () => listRegistrations(event._id),
+      add: (values) => registerForEvent(event._id, values),
+      updateStatus: (registrationId, body) =>
+        updateRegistrationStatus(event._id, registrationId, body),
+      remove: (registrationId) => deleteRegistration(event._id, registrationId),
+    }),
+    [event._id]
+  )
+
   return (
     <div id={`event-${event._id}`} className={`card event-card ${isHighlighted ? 'is-highlighted' : ''}`}>
 
-      {expired && <span className="event-expired-badge">הסתיים</span>}
+      {(expired || (isAdmin && !event.isActive)) && (
+        <div className="event-card-badges">
+          {expired && <span className="event-badge event-expired-badge">הסתיים</span>}
+          {isAdmin && !event.isActive && (
+            <span className="event-badge event-inactive-badge">לא פעיל</span>
+          )}
+        </div>
+      )}
       {event.photoUrl && (
         <img src={resolvePhotoUrl(event.photoUrl)} alt={event.title} className="event-photo" />
       )}
@@ -111,6 +152,16 @@ function EventCard({ event, isAdmin, isHighlighted, onEdit, onDelete, isViewingR
         </button>
       )}
 
+      {event.fieldSelections?.length > 0 && (
+        <div className="event-tag-bubbles">
+          {event.fieldSelections.map((selection) => (
+            <span className="event-tag-bubble" key={selection._id}>
+              {selection.name}
+            </span>
+          ))}
+        </div>
+      )}
+
       {isAdmin ? (
         <>
           <div className="event-card-actions">
@@ -132,7 +183,13 @@ function EventCard({ event, isAdmin, isHighlighted, onEdit, onDelete, isViewingR
             </button>
           </div>
           {isViewingRegistrations && (
-            <RegistrationsPanel eventId={event._id} eventTitle={event.title} />
+            <SubmissionsPanel
+              parentTitle={event.title}
+              statusOrder={REGISTRATION_STATUS_ORDER}
+              statusMeta={REGISTRATION_STATUS_META}
+              api={registrationsApi}
+              labels={REGISTRATION_LABELS}
+            />
           )}
           {sharing && <ShareBox text={buildEventShareText(event)} />}
         </>
@@ -141,7 +198,14 @@ function EventCard({ event, isAdmin, isHighlighted, onEdit, onDelete, isViewingR
           ההרשמה נסגרה
         </button>
       ) : (
-        <RegisterForm eventId={event._id} />
+        <SignupForm
+          onSubmit={(values) => registerForEvent(event._id, values)}
+          openLabel="הרשמה לאירוע"
+          submitLabel="אישור הרשמה"
+          submittingLabel="נרשם..."
+          errorFallback="ההרשמה נכשלה"
+          successLines={['✔ נרשמת בהצלחה!', 'ניצור איתך קשר :)']}
+        />
       )}
     </div>
   )

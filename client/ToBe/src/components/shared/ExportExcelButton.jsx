@@ -3,7 +3,7 @@ import './ExportExcelButton.css'
 /**
  * A small abstract "spreadsheet with a download arrow" icon, colored via
  * fixed fills rather than `currentColor` (green reads as "Excel" the way
- * red reads as "delete" for TrashIcon in RegistrationsPanel.jsx) — not a
+ * red reads as "delete" for TrashIcon in SubmissionsPanel.jsx) — not a
  * literal reproduction of any brand's logo, just evocative of one, matching
  * this app's existing hand-drawn-SVG icon style.
  */
@@ -28,7 +28,7 @@ function ExcelExportIcon() {
  * An icon-only "export to Excel" button (spreadsheet + download-arrow
  * icon, no visible text) shared by the student-registry table
  * (RegistrantsPanel.jsx) and the per-event registrants table
- * (RegistrationsPanel.jsx). `label` sets the accessible name and tooltip
+ * (SubmissionsPanel.jsx). `label` sets the accessible name and tooltip
  * text since the icon alone carries no text of its own.
  *
  * @param {{ onClick: () => void, disabled?: boolean, label?: string }} props

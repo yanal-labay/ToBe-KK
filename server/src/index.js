@@ -20,6 +20,8 @@ const listOptionRoutes = require("./studentRegistry/listOption.routes");
 const seedListOptions = require("./studentRegistry/seedListOptions");
 const jobRoutes = require("./jobs/job.routes");
 const jobFieldRoutes = require("./jobs/jobField.routes");
+const eventFieldRoutes = require("./events/eventField.routes");
+const seedEventFields = require("./events/seedEventFields");
 const seedJobFields = require("./jobs/seedJobFields");
 const scholarshipFieldRoutes = require("./scholarships/scholarshipField.routes");
 const scheduleRoutes = require("./schedule/schedule.routes");
@@ -71,6 +73,7 @@ app.use("/api/student-registry", studentRegistryRoutes);
 app.use("/api/student-registry-options", listOptionRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/job-fields", jobFieldRoutes);
+app.use("/api/event-fields", eventFieldRoutes);
 app.use("/api/schedule", scheduleRoutes);
 app.use("/api/home", homeRoutes);
 app.use("/api/contact", contactRoutes);
@@ -138,7 +141,7 @@ if (!MONGO_URI) {
     .connect(MONGO_URI)
     .then(() => {
       console.log("DB STATUS: Connected Successfully");
-      return Promise.all([seedListOptions(), seedJobFields()]);
+      return Promise.all([seedListOptions(), seedJobFields(), seedEventFields()]);
     })
     .catch((err) => console.error("DB CONNECTION ERROR:", err.message));
 }

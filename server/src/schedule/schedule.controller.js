@@ -56,7 +56,10 @@ const CategoryInputSchema = z.object({
 async function listSchedule(req, res) {
   try {
     const [events, scholarships, manualEntries] = await Promise.all([
-      Event.find(),
+      // Inactive events are hidden from the calendar too, matching
+      // `listEvents` — otherwise unpublishing an event would remove it
+      // from /events while leaving it visible here.
+      Event.find({ isActive: { $ne: false } }),
       Scholarship.find(),
       ScheduleEntry.find().populate("category"),
     ]);

@@ -1,7 +1,7 @@
-/* Shared field styling for EventForm and RegisterForm */
+/* Shared field styling for EventForm. (RegisterForm used to share this
+   file; it now lives at shared/SignupForm with its own self-contained CSS.) */
 
-.event-form label,
-.register-form label {
+.event-form label {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -10,8 +10,7 @@
 }
 
 .event-form input,
-.event-form textarea,
-.register-form input {
+.event-form textarea {
   font: inherit;
   padding: 8px 10px;
   border-radius: 6px;

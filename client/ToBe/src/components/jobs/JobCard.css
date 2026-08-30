@@ -94,6 +94,20 @@
   font-size: 14px;
 }
 
+/* Secondary metadata — deliberately smaller than the rest of the card so it
+   reads as a footnote rather than part of the posting's details.
+   Scoped under .job-card on purpose: `.card p` in styles/components.css is
+   (0,1,1) and would otherwise win over a bare `.job-added-date` (0,1,0),
+   forcing this back to 15px. */
+.job-card .job-added-date {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  margin: 0;
+  /* Physical left, which under the app's global RTL is the inline *end* —
+     so this metadata sits opposite the card's right-aligned content. */
+  text-align: left;
+}
+
 .job-tag-bubbles {
   display: flex;
   flex-wrap: wrap;

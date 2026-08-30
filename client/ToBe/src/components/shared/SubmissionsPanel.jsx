@@ -1,26 +1,9 @@
 import { useEffect, useState } from 'react'
-import {
-  listRegistrations,
-  updateRegistrationStatus,
-  deleteRegistration,
-  registerForEvent,
-} from '../../services/eventsService'
-import ExportExcelButton from '../shared/ExportExcelButton'
+import ExportExcelButton from './ExportExcelButton'
 import { exportRowsToExcel } from '../../utils/exportToExcel'
-import './RegistrationsPanel.css'
+import './SubmissionsPanel.css'
 
-// Display order for both the chart rows and the per-row status <select>;
-// colors follow the app's reserved status palette (green=good, red=critical)
-// so identity never relies on color alone — every mark also carries an
-// icon + label.
-const STATUS_ORDER = ['signed_up', 'arrived', 'did_not_arrive']
-const STATUS_META = {
-  signed_up: { label: 'נרשם', icon: '🕓', color: 'var(--color-text-muted)' },
-  arrived: { label: 'הגיע', icon: '✅', color: '#0ca30c' },
-  did_not_arrive: { label: 'לא הגיע', icon: '❌', color: '#d03b3b' },
-}
-
-const EMPTY_REGISTRANT = { name: '', email: '', phone: '' }
+const EMPTY_PERSON = { name: '', email: '', phone: '' }
 
 /** A small abstract trash-bin icon, colored via `currentColor` (see .registrations-delete-btn). */
 function TrashIcon() {
@@ -38,26 +21,49 @@ function TrashIcon() {
 }
 
 /**
- * Admin-only view of everyone registered for one event: a status-summary
- * bar chart, an "add registrant" form for admins to add someone manually
- * (reusing the same public register endpoint guests use), and a table
- * where each registrant's attendance status can be changed via a dropdown
- * or the registrant removed entirely (with confirmation). Toggled
- * open/closed from `EventCard`.
+ * Admin-only view of everyone who signed up for one parent record — event
+ * registrants or job applicants. Renders a status-summary bar chart, an
+ * "add manually" form (reusing the same public endpoint visitors use), and
+ * a table where each row's status can be changed via a dropdown or the row
+ * removed entirely (with confirmation). Toggled open/closed from the card.
  *
- * @param {{eventId: string, eventTitle: string}} props
+ * The caller supplies `api` already bound to the parent id, the status set,
+ * and every visible string — this component knows nothing about events or
+ * jobs.
+ *
+ * `statusMeta` colors follow the app's reserved status palette (green=good,
+ * red=critical), and every mark also carries an icon + label so identity
+ * never relies on color alone.
+ *
+ * @param {{
+ *   parentTitle: string,
+ *   statusOrder: string[],
+ *   statusMeta: Record<string, {label: string, icon: string, color: string}>,
+ *   api: {
+ *     list: () => Promise<Response>,
+ *     add: (values: object) => Promise<Response>,
+ *     updateStatus: (id: string, body: {status: string}) => Promise<Response>,
+ *     remove: (id: string) => Promise<Response>,
+ *   },
+ *   labels: {
+ *     chartAria: string, addButton: string, loading: string,
+ *     loadError: string, empty: string, exportPrefix: string,
+ *     confirmDelete: (name: string) => string,
+ *     deleteAria: (name: string) => string, deleteTitle: string,
+ *   },
+ * }} props
  */
-function RegistrationsPanel({ eventId, eventTitle }) {
+function SubmissionsPanel({ parentTitle, statusOrder, statusMeta, api, labels }) {
   const [registrations, setRegistrations] = useState([])
   const [loadState, setLoadState] = useState('loading') // loading | ready | error
   const [adding, setAdding] = useState(false)
-  const [newRegistrant, setNewRegistrant] = useState(EMPTY_REGISTRANT)
+  const [newRegistrant, setNewRegistrant] = useState(EMPTY_PERSON)
   const [addError, setAddError] = useState('')
   const [saving, setSaving] = useState(false)
 
   const load = () => {
     setLoadState('loading')
-    listRegistrations(eventId)
+    api.list()
       .then((res) => {
         if (!res.ok) throw new Error('failed')
         return res.json()
@@ -72,7 +78,8 @@ function RegistrationsPanel({ eventId, eventTitle }) {
   useEffect(() => {
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [api])
 
   /** Optimistically updates the dropdown, then rolls back if the PATCH fails. */
   const handleStatusChange = async (registrationId, status) => {
@@ -81,7 +88,7 @@ function RegistrationsPanel({ eventId, eventTitle }) {
       current.map((r) => (r._id === registrationId ? { ...r, status } : r))
     )
     try {
-      const res = await updateRegistrationStatus(eventId, registrationId, { status })
+      const res = await api.updateStatus(registrationId, { status })
       const data = await res.json()
       if (!data.success) throw new Error()
     } catch {
@@ -90,8 +97,8 @@ function RegistrationsPanel({ eventId, eventTitle }) {
   }
 
   const handleDelete = async (registration) => {
-    if (!window.confirm(`למחוק את ${registration.name} מרשימת הנרשמים?`)) return
-    const res = await deleteRegistration(eventId, registration._id)
+    if (!window.confirm(labels.confirmDelete(registration.name))) return
+    const res = await api.remove(registration._id)
     const data = await res.json()
     if (!data.success) return
     load()
@@ -102,10 +109,10 @@ function RegistrationsPanel({ eventId, eventTitle }) {
     setSaving(true)
     setAddError('')
     try {
-      const res = await registerForEvent(eventId, newRegistrant)
+      const res = await api.add(newRegistrant)
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
-      setNewRegistrant(EMPTY_REGISTRANT)
+      setNewRegistrant(EMPTY_PERSON)
       setAdding(false)
       load()
     } catch (err) {
@@ -118,32 +125,32 @@ function RegistrationsPanel({ eventId, eventTitle }) {
   /** Exports exactly the visible table columns (name/email/phone/status) to an .xlsx file. */
   const handleExport = () => {
     const headers = ['שם', 'אימייל', 'טלפון', 'סטטוס']
-    const rows = registrations.map((r) => [r.name, r.email, r.phone, STATUS_META[r.status].label])
-    const safeTitle = eventTitle.replace(/[\\/:*?"<>|]/g, '')
-    exportRowsToExcel({ filename: `נרשמים-${safeTitle}.xlsx`, headers, rows })
+    const rows = registrations.map((r) => [r.name, r.email, r.phone, statusMeta[r.status].label])
+    const safeTitle = parentTitle.replace(/[\\/:*?"<>|]/g, '')
+    exportRowsToExcel({ filename: `${labels.exportPrefix}-${safeTitle}.xlsx`, headers, rows })
   }
 
-  const statusCounts = STATUS_ORDER.reduce((acc, status) => {
+  const statusCounts = statusOrder.reduce((acc, status) => {
     acc[status] = registrations.filter((r) => r.status === status).length
     return acc
   }, {})
-  const maxStatusCount = Math.max(1, ...STATUS_ORDER.map((status) => statusCounts[status]))
+  const maxStatusCount = Math.max(1, ...statusOrder.map((status) => statusCounts[status]))
 
   return (
     <div className="registrations-panel">
       {loadState === 'ready' && registrations.length > 0 && (
-        <div className="registrations-chart" role="img" aria-label="גרף סיכום סטטוס נרשמים">
-          {STATUS_ORDER.map((status) => (
+        <div className="registrations-chart" role="img" aria-label={labels.chartAria}>
+          {statusOrder.map((status) => (
             <div className="registrations-chart-row" key={status}>
               <span className="registrations-chart-label">
-                {STATUS_META[status].icon} {STATUS_META[status].label}
+                {statusMeta[status].icon} {statusMeta[status].label}
               </span>
               <div className="registrations-chart-track">
                 <div
                   className="registrations-chart-bar"
                   style={{
                     width: `${(statusCounts[status] / maxStatusCount) * 100}%`,
-                    background: STATUS_META[status].color,
+                    background: statusMeta[status].color,
                   }}
                 />
               </div>
@@ -156,7 +163,7 @@ function RegistrationsPanel({ eventId, eventTitle }) {
       <div className="registrations-toolbar">
         {!adding && (
           <button type="button" className="btn btn-primary" onClick={() => setAdding(true)}>
-            + הוספת נרשם
+            {labels.addButton}
           </button>
         )}
         <ExportExcelButton onClick={handleExport} disabled={registrations.length === 0} />
@@ -190,7 +197,7 @@ function RegistrationsPanel({ eventId, eventTitle }) {
               required
             />
           </label>
-          {addError && <p className="events-error">{addError}</p>}
+          {addError && <p className="submissions-error">{addError}</p>}
           <div className="registrations-add-form-actions">
             <button type="submit" className="btn btn-primary" disabled={saving}>
               {saving ? 'מוסיף...' : 'הוספה'}
@@ -201,7 +208,7 @@ function RegistrationsPanel({ eventId, eventTitle }) {
               onClick={() => {
                 setAdding(false)
                 setAddError('')
-                setNewRegistrant(EMPTY_REGISTRANT)
+                setNewRegistrant(EMPTY_PERSON)
               }}
             >
               ביטול
@@ -210,11 +217,9 @@ function RegistrationsPanel({ eventId, eventTitle }) {
         </form>
       )}
 
-      {loadState === 'loading' && <p>טוען נרשמים...</p>}
-      {loadState === 'error' && <p className="events-error">לא ניתן לטעון את הנרשמים</p>}
-      {loadState === 'ready' && registrations.length === 0 && (
-        <p>עדיין אין נרשמים לאירוע זה.</p>
-      )}
+      {loadState === 'loading' && <p>{labels.loading}</p>}
+      {loadState === 'error' && <p className="submissions-error">{labels.loadError}</p>}
+      {loadState === 'ready' && registrations.length === 0 && <p>{labels.empty}</p>}
 
       {loadState === 'ready' && registrations.length > 0 && (
         <div className="registrations-table-wrap">
@@ -239,9 +244,9 @@ function RegistrationsPanel({ eventId, eventTitle }) {
                       value={r.status}
                       onChange={(e) => handleStatusChange(r._id, e.target.value)}
                     >
-                      {STATUS_ORDER.map((status) => (
+                      {statusOrder.map((status) => (
                         <option value={status} key={status}>
-                          {STATUS_META[status].icon} {STATUS_META[status].label}
+                          {statusMeta[status].icon} {statusMeta[status].label}
                         </option>
                       ))}
                     </select>
@@ -251,8 +256,8 @@ function RegistrationsPanel({ eventId, eventTitle }) {
                       type="button"
                       className="registrations-delete-btn"
                       onClick={() => handleDelete(r)}
-                      aria-label={`מחק את ${r.name} מרשימת הנרשמים`}
-                      title="מחיקת נרשם"
+                      aria-label={labels.deleteAria(r.name)}
+                      title={labels.deleteTitle}
                     >
                       <TrashIcon />
                     </button>
@@ -267,4 +272,4 @@ function RegistrationsPanel({ eventId, eventTitle }) {
   )
 }
 
-export default RegistrationsPanel
+export default SubmissionsPanel

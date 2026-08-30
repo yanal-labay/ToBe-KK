@@ -1,8 +1,11 @@
 import { apiRequest } from './apiClient'
 
-/** GET /api/events — public. */
-export function listEvents() {
-  return apiRequest('/api/events')
+/**
+ * GET /api/events (guest) or /api/events/admin (admin, includes inactive
+ * events). Sends credentials unconditionally, matching jobsService.listJobs.
+ */
+export function listEvents({ isAdmin } = {}) {
+  return apiRequest(`/api/events${isAdmin ? '/admin' : ''}`, { credentials: 'include' })
 }
 
 /** POST /api/events — admin-only. */
@@ -27,7 +30,7 @@ export function deleteEvent(id) {
 
 /**
  * POST /api/events/:id/register — public, no credentials. Shared by the
- * guest-facing RegisterForm and RegistrationsPanel's admin "add" convenience
+ * guest-facing SignupForm and SubmissionsPanel's admin "add" convenience
  * (both hit this exact endpoint today).
  */
 export function registerForEvent(eventId, { name, email, phone }) {

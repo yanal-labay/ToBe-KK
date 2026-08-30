@@ -76,3 +76,17 @@
   align-items: center;
   gap: 8px !important;
 }
+
+/* The שיטת הגשה radio row inside .job-form-contact. */
+.job-form-method-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.job-form-method-option {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 6px !important;
+  font-weight: 400;
+}

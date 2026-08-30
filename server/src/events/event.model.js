@@ -19,6 +19,22 @@ const mongoose = require("mongoose");
  * - `photoUrl` is a relative path under `/uploads/events/...` (see
  *   upload.js), or `null` if no photo was attached. It is served statically
  *   by the Express app, not stored as binary data in MongoDB.
+ * - `fieldSelections` references admin-defined `EventField`/
+ *   `EventFieldOption` documents (e.g. a "סוג אירוע" field with a "הרצאה"
+ *   option selected) — the admin manages fields and their checkbox values
+ *   independently of any event (see `eventField.model.js`). An event can
+ *   hold multiple selections from the same field at once, same convention
+ *   as `Job.fieldSelections`/`Scholarship.fieldSelections`.
+ * - `isActive` is a manual admin toggle, deliberately independent of the
+ *   date-based expiry above: an event can be upcoming but unpublished, or
+ *   past but still listed. Inactive events are never sent to guests, on
+ *   either `/api/events` or the `/api/schedule` calendar feed.
+ *
+ *   Note the public query uses `{ isActive: { $ne: false } }` rather than
+ *   `{ isActive: true }` (which is what Jobs uses): events created before
+ *   this field existed have no `isActive` key at all, and `true` would
+ *   exclude every one of them. `$ne: false` treats "missing" as active, so
+ *   no backfill is needed.
  */
 const EventSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true },
@@ -29,6 +45,8 @@ const EventSchema = new mongoose.Schema({
   price: { type: Number, default: null },
   registrationDeadline: { type: Date, required: true },
   photoUrl: { type: String, default: null },
+  fieldSelections: [{ type: mongoose.Schema.Types.ObjectId, ref: "EventFieldOption" }],
+  isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
 });
 

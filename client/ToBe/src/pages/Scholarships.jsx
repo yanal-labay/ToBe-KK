@@ -8,7 +8,31 @@ import ScholarshipForm from '../components/scholarships/ScholarshipForm'
 import ScholarshipCard, { isScholarshipExpired } from '../components/scholarships/ScholarshipCard'
 import ScholarshipFieldsManager from '../components/scholarships/ScholarshipFieldsManager'
 import ScholarshipFilterSidebar from '../components/scholarships/ScholarshipFilterSidebar'
+import SortBar from '../components/shared/SortBar'
+import { byDateAsc, byDateDesc, byNumberAsc, byNumberDesc, chain } from '../utils/sortComparators'
 import './Scholarships.css'
+
+// Orderings offered by the sort bar. `added` is first so it's the default,
+// matching the order the page used before the bar existed.
+const SORT_OPTIONS = [
+  { value: 'added', label: 'תאריך הוספה — החדש ראשון', compare: byDateDesc('createdAt') },
+  // A null `amount` means the scholarship doesn't state a sum, not that it's
+  // worth nothing — so those sink to the bottom rather than counting as the
+  // largest. Note this is the opposite null placement from Events' `price`.
+  {
+    value: 'amount',
+    label: 'גובה המלגה — מהגבוה לנמוך',
+    compare: byNumberDesc('amount', { nullsFirst: false }),
+  },
+  { value: 'deadline', label: 'מועד אחרון להגשה — הקרוב ראשון', compare: byDateAsc('deadline') },
+  // A null `volunteerHours` means none are required, which is the best case
+  // when sorting fewest-first — so these belong at the top.
+  {
+    value: 'volunteerHours',
+    label: 'שעות התנדבות — מהנמוך לגבוה',
+    compare: byNumberAsc('volunteerHours', { nullsFirst: true }),
+  },
+]
 
 /** Groups a scholarship's populated `fieldSelections` into `{ [fieldId]: optionId[] }`, for seeding ScholarshipForm's edit state. */
 function fieldSelectionsToFieldValues(fieldSelections) {
@@ -60,6 +84,7 @@ function Scholarships() {
 
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedOptionIds, setSelectedOptionIds] = useState({}) // { [fieldId]: optionId[] }
+  const [sortKey, setSortKey] = useState(SORT_OPTIONS[0].value)
 
   const loadScholarships = () => {
     setLoadState('loading')
@@ -155,6 +180,17 @@ function Scholarships() {
     return true
   })
 
+  const activeSort = SORT_OPTIONS.find((option) => option.value === sortKey) ?? SORT_OPTIONS[0]
+
+  // Expired scholarships stay grouped at the bottom whatever the visitor
+  // sorts by; the chosen sort only orders within each group.
+  const sortedScholarships = [...visibleScholarships].sort(
+    chain(
+      (a, b) => Number(isScholarshipExpired(a)) - Number(isScholarshipExpired(b)),
+      activeSort.compare
+    )
+  )
+
   return (
     <div className="scholarships-page">
       {isAdmin && (openFormId || openManagerId) && <div className="form-focus-overlay" />}
@@ -212,12 +248,12 @@ function Scholarships() {
             <p>אין מלגות התואמות את החיפוש/הסינון.</p>
           )}
 
+          {loadState === 'ready' && scholarships.length > 0 && (
+            <SortBar options={SORT_OPTIONS} value={sortKey} onChange={setSortKey} />
+          )}
+
           <div className="scholarships-list">
-            {/* Stable sort: groups expired scholarships after active ones while
-                preserving each group's original order. */}
-            {[...visibleScholarships]
-              .sort((a, b) => Number(isScholarshipExpired(a)) - Number(isScholarshipExpired(b)))
-              .map((scholarship) =>
+            {sortedScholarships.map((scholarship) =>
                 isAdmin && editingId === scholarship._id ? (
                   <ScholarshipForm
                     key={scholarship._id}

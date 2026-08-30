@@ -3,9 +3,40 @@ import { useSearchParams } from 'react-router-dom'
 import { useAdminSession } from '../hooks/useAdminSession'
 import { useScrollToOpenPanel } from '../hooks/useScrollToOpenPanel'
 import { listEvents, createEvent, updateEvent, deleteEvent } from '../services/eventsService'
+import { listEventFields } from '../services/eventFieldsService'
 import EventForm from '../components/events/EventForm'
 import EventCard, { isEventExpired } from '../components/events/EventCard'
+import EventFieldsManager from '../components/events/EventFieldsManager'
+import EventFilterSidebar from '../components/events/EventFilterSidebar'
+import SortBar from '../components/shared/SortBar'
+import { byDateAsc, byDateDesc, byNumberAsc, chain } from '../utils/sortComparators'
 import './Events.css'
+
+// Orderings offered by the sort bar. `eventDate` is first so it's the
+// default, matching the order the page used before the bar existed.
+const SORT_OPTIONS = [
+  { value: 'eventDate', label: 'תאריך האירוע — הקרוב ראשון', compare: byDateAsc('date') },
+  { value: 'added', label: 'תאריך הוספה — החדש ראשון', compare: byDateDesc('createdAt') },
+  // A null `price` means free, not unknown, so those belong at the cheap
+  // end — the opposite of Scholarships' null `amount`, which means unstated.
+  { value: 'price', label: 'מחיר — מהזול ליקר', compare: byNumberAsc('price', { nullsFirst: true }) },
+  {
+    value: 'registrationDeadline',
+    label: 'סגירת הרשמה — הקרוב ראשון',
+    compare: byDateAsc('registrationDeadline'),
+  },
+]
+
+/** Groups an event's populated `fieldSelections` into `{ [fieldId]: optionId[] }`, for seeding EventForm's edit state. */
+function fieldSelectionsToFieldValues(fieldSelections) {
+  const grouped = {}
+  for (const selection of fieldSelections || []) {
+    const fieldId = selection.field?._id || selection.field
+    if (!fieldId) continue
+    grouped[fieldId] = [...(grouped[fieldId] || []), selection._id]
+  }
+  return grouped
+}
 
 /**
  * The /events page — the app's first fully-built example of a shared page
@@ -30,6 +61,12 @@ function Events() {
   const [creating, setCreating] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [viewingRegistrationsId, setViewingRegistrationsId] = useState(null)
+  const [showFieldsManager, setShowFieldsManager] = useState(false)
+
+  const [fields, setFields] = useState([])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedOptionIds, setSelectedOptionIds] = useState({}) // { [fieldId]: optionId[] }
+  const [sortKey, setSortKey] = useState(SORT_OPTIONS[0].value)
 
   // One form is open at a time — either the create form or exactly one card's
   // edit form. Drives both the scroll-into-view effect and the backdrop.
@@ -38,12 +75,14 @@ function Events() {
     : editingId
       ? `event-form-${editingId}`
       : null
+  const openManagerId = showFieldsManager ? 'event-fields-manager' : null
 
   useScrollToOpenPanel(openFormId)
+  useScrollToOpenPanel(openManagerId)
 
   const loadEvents = () => {
     setLoadState('loading')
-    listEvents()
+    listEvents({ isAdmin })
       .then((res) => {
         if (!res.ok) throw new Error('failed')
         return res.json()
@@ -55,8 +94,22 @@ function Events() {
       .catch(() => setLoadState('error'))
   }
 
+  const loadFields = () => {
+    listEventFields()
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setFields)
+      .catch(() => {})
+  }
+
+  // Re-fetches when `isAdmin` flips: guests get /api/events (active only),
+  // admins get /api/events/admin (everything).
   useEffect(() => {
     loadEvents()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin])
+
+  useEffect(() => {
+    loadFields()
   }, [])
 
   // Scrolls to and briefly highlights the event named by ?highlight=<id>
@@ -98,42 +151,113 @@ function Events() {
     loadEvents()
   }
 
+  const toggleOption = (fieldId, optionId) => {
+    setSelectedOptionIds((current) => {
+      const currentForField = current[fieldId] || []
+      const nextForField = currentForField.includes(optionId)
+        ? currentForField.filter((id) => id !== optionId)
+        : [...currentForField, optionId]
+      return { ...current, [fieldId]: nextForField }
+    })
+  }
+
+  const hasActiveFilters =
+    searchTerm.trim() !== '' ||
+    Object.values(selectedOptionIds).some((ids) => ids.length > 0)
+
+  const clearFilters = () => {
+    setSearchTerm('')
+    setSelectedOptionIds({})
+  }
+
+  const visibleEvents = events.filter((event) => {
+    const term = searchTerm.trim().toLowerCase()
+    if (term && !event.title.toLowerCase().includes(term)) return false
+    for (const field of fields) {
+      const selected = selectedOptionIds[field._id]
+      if (!selected || selected.length === 0) continue
+      if (!event.fieldSelections.some((sel) => selected.includes(sel._id))) return false
+    }
+    return true
+  })
+
+  const activeSort = SORT_OPTIONS.find((option) => option.value === sortKey) ?? SORT_OPTIONS[0]
+
+  // Expired events stay grouped at the bottom whatever the visitor sorts by,
+  // so a cheap event that has already happened never outranks a live one —
+  // the chosen sort only orders within each group.
+  const sortedEvents = [...visibleEvents].sort(
+    chain((a, b) => Number(isEventExpired(a)) - Number(isEventExpired(b)), activeSort.compare)
+  )
+
   return (
     <div className="events-page">
-      {isAdmin && openFormId && <div className="form-focus-overlay" />}
+      {isAdmin && (openFormId || openManagerId) && <div className="form-focus-overlay" />}
 
       <div className="events-page-header">
         <h1>אירועים</h1>
-        {isAdmin && !creating && (
-          <button type="button" className="btn btn-primary" onClick={() => setCreating(true)}>
-            + אירוע חדש
-          </button>
+        {isAdmin && (
+          <div className="events-page-header-actions">
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => setShowFieldsManager((current) => !current)}
+            >
+              {showFieldsManager ? 'סגירת ניהול שדות' : 'ניהול שדות'}
+            </button>
+            {!creating && (
+              <button type="button" className="btn btn-primary" onClick={() => setCreating(true)}>
+                + אירוע חדש
+              </button>
+            )}
+          </div>
         )}
       </div>
+
+      {isAdmin && showFieldsManager && (
+        <EventFieldsManager
+          panelId="event-fields-manager"
+          fields={fields}
+          onFieldsChanged={loadFields}
+          onClose={() => setShowFieldsManager(false)}
+        />
+      )}
 
       {isAdmin && creating && (
         <EventForm
           formId="event-form-new"
+          fields={fields}
           submitLabel="שמירה"
           onSubmit={handleCreate}
           onCancel={() => setCreating(false)}
         />
       )}
 
-      {loadState === 'loading' && <p>טוען אירועים...</p>}
-      {loadState === 'error' && <p className="events-error">לא ניתן לטעון את האירועים כרגע</p>}
-      {loadState === 'ready' && events.length === 0 && <p>אין אירועים קרובים כרגע.</p>}
+      <div className="events-page-layout">
+        <div className="events-page-main">
+          {loadState === 'loading' && <p>טוען אירועים...</p>}
+          {loadState === 'error' && (
+            <p className="events-error">לא ניתן לטעון את האירועים כרגע</p>
+          )}
+          {loadState === 'ready' && events.length === 0 && <p>אין אירועים קרובים כרגע.</p>}
+          {loadState === 'ready' && events.length > 0 && hasActiveFilters && (
+            <p className="events-match-count">{visibleEvents.length} אירועים נמצאו</p>
+          )}
+          {loadState === 'ready' && events.length > 0 && visibleEvents.length === 0 && (
+            <p>אין אירועים התואמים את החיפוש/הסינון.</p>
+          )}
 
-      <div className="events-list">
-        {/* Stable sort: groups expired events after active ones while
-            preserving each group's original (soonest-first) order. */}
-        {[...events]
-          .sort((a, b) => Number(isEventExpired(a)) - Number(isEventExpired(b)))
-          .map((event) =>
+          {loadState === 'ready' && events.length > 0 && (
+            <SortBar options={SORT_OPTIONS} value={sortKey} onChange={setSortKey} />
+          )}
+
+          <div className="events-list">
+        {sortedEvents.map((event) =>
           isAdmin && editingId === event._id ? (
             <EventForm
               key={event._id}
               formId={`event-form-${event._id}`}
+              fields={fields}
               initialValues={{
                 title: event.title,
                 description: event.description,
@@ -144,7 +268,9 @@ function Events() {
                 registrationDeadline: event.registrationDeadline
                   ? event.registrationDeadline.slice(0, 10)
                   : '',
+                isActive: event.isActive !== false,
               }}
+              initialFieldValues={fieldSelectionsToFieldValues(event.fieldSelections)}
               existingPhotoUrl={event.photoUrl}
               submitLabel="עדכון"
               onSubmit={(formData) => handleUpdate(event._id, formData)}
@@ -167,6 +293,20 @@ function Events() {
             />
           )
         )}
+          </div>
+        </div>
+
+        <aside className="events-filter-sidebar">
+          <EventFilterSidebar
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            fields={fields}
+            selectedOptionIds={selectedOptionIds}
+            onToggleOption={toggleOption}
+            hasActiveFilters={hasActiveFilters}
+            onClearFilters={clearFilters}
+          />
+        </aside>
       </div>
     </div>
   )

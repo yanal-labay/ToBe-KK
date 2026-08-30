@@ -1,12 +1,43 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTheme } from '../../hooks/useTheme'
 import { resolvePhotoUrl } from '../../utils/photoUrl'
 import { buildJobShareText } from '../../utils/shareText'
 import { previewText } from '../../utils/previewText'
+import { formatDate } from '../../utils/formatDate'
 import ShareBox from '../shared/ShareBox'
+import SignupForm from '../shared/SignupForm'
+import SubmissionsPanel from '../shared/SubmissionsPanel'
+import {
+  applyToJob,
+  listApplications,
+  updateApplicationStatus,
+  deleteApplication,
+} from '../../services/jobsService'
 import './JobCard.css'
 
 const DESCRIPTION_PREVIEW_CHARS = 220
+
+// Hiring pipeline for "leave your details" postings. Colors follow the app's
+// reserved status palette and every mark also carries an icon + label, so
+// identity never relies on color alone.
+const APPLICATION_STATUS_ORDER = ['submitted', 'in_review', 'handled']
+const APPLICATION_STATUS_META = {
+  submitted: { label: 'הוגש', icon: '🕓', color: 'var(--color-text-muted)' },
+  in_review: { label: 'בטיפול', icon: '🔎', color: '#b8860b' },
+  handled: { label: 'טופל', icon: '✅', color: '#0ca30c' },
+}
+
+const APPLICATION_LABELS = {
+  chartAria: 'גרף סיכום סטטוס מועמדים',
+  addButton: '+ הוספת מועמד',
+  loading: 'טוען מועמדים...',
+  loadError: 'לא ניתן לטעון את המועמדים',
+  empty: 'עדיין אין מועמדים למשרה זו.',
+  exportPrefix: 'מועמדים',
+  confirmDelete: (name) => `למחוק את ${name} מרשימת המועמדים?`,
+  deleteAria: (name) => `מחק את ${name} מרשימת המועמדים`,
+  deleteTitle: 'מחיקת מועמד',
+}
 
 /**
  * Read-only display of a single job posting — structurally the same as
@@ -14,8 +45,10 @@ const DESCRIPTION_PREVIEW_CHARS = 220
  * salary block only (top row), while the description and contact line span
  * the full card width below it. Falls back to the site logo
  * (theme-appropriate, same as `ScholarshipCard`) when no photo was
- * uploaded. Unlike scholarships, there's no guest-facing action — jobs
- * have no "apply" URL, guests just read the contact details off the card.
+ * uploaded. How a visitor applies depends on `job.applicationMethod`:
+ * "contact" shows the contact line, "link" a button out to an external
+ * site, and "form" a SignupForm whose submissions admins read through
+ * SubmissionsPanel behind the מועמדים button.
  * Admins get edit/delete plus an "לא פעיל" badge when `isActive` is false
  * (guests never receive inactive postings at all, see job.controller.js).
  * `job.fieldSelections` (populated server-side, see job.controller.js) is
@@ -35,9 +68,19 @@ const DESCRIPTION_PREVIEW_CHARS = 220
  *   isHighlighted?: boolean,
  *   onEdit: () => void,
  *   onDelete: () => void,
+ *   isViewingApplications?: boolean,
+ *   onToggleApplications?: () => void,
  * }} props
  */
-function JobCard({ job, isAdmin, isHighlighted, onEdit, onDelete }) {
+function JobCard({
+  job,
+  isAdmin,
+  isHighlighted,
+  onEdit,
+  onDelete,
+  isViewingApplications,
+  onToggleApplications,
+}) {
   const [sharing, setSharing] = useState(false)
   const [descriptionExpanded, setDescriptionExpanded] = useState(false)
   const { theme } = useTheme()
@@ -53,6 +96,19 @@ function JobCard({ job, isAdmin, isHighlighted, onEdit, onDelete }) {
   )
 
   const hasContact = job.contactName || job.contactEmail || job.contactPhone
+
+  // Memoised because SubmissionsPanel re-fetches whenever `api` changes
+  // identity — a fresh object each render would loop it forever.
+  const applicationsApi = useMemo(
+    () => ({
+      list: () => listApplications(job._id),
+      add: (values) => applyToJob(job._id, values),
+      updateStatus: (applicationId, body) =>
+        updateApplicationStatus(job._id, applicationId, body),
+      remove: (applicationId) => deleteApplication(job._id, applicationId),
+    }),
+    [job._id]
+  )
 
   return (
     <div id={`job-${job._id}`} className={`card job-card ${isHighlighted ? 'is-highlighted' : ''}`}>
@@ -89,12 +145,36 @@ function JobCard({ job, isAdmin, isHighlighted, onEdit, onDelete }) {
         </>
       )}
 
-      {hasContact && (
+      {job.applicationMethod === 'contact' && hasContact && (
         <p className="job-contact">
           ליצירת קשר{job.contactName ? ` עם ${job.contactName}` : ''}
           {job.contactEmail ? ` · 📧 ${job.contactEmail}` : ''}
           {job.contactPhone ? ` · 📞 ${job.contactPhone}` : ''}
         </p>
+      )}
+
+      {job.applicationMethod === 'link' && job.applicationUrl && (
+        <p className="job-apply-link">
+          <a
+            href={job.applicationUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-primary"
+          >
+            להגשת מועמדות ↗
+          </a>
+        </p>
+      )}
+
+      {job.applicationMethod === 'form' && !isAdmin && (
+        <SignupForm
+          onSubmit={(values) => applyToJob(job._id, values)}
+          openLabel="השארת פרטים"
+          submitLabel="שליחת הפרטים"
+          submittingLabel="שולח..."
+          errorFallback="שליחת הפרטים נכשלה"
+          successLines={['✔ הפרטים נשלחו!', 'ניצור איתך קשר :)']}
+        />
       )}
 
       {job.fieldSelections?.length > 0 && (
@@ -107,6 +187,8 @@ function JobCard({ job, isAdmin, isHighlighted, onEdit, onDelete }) {
         </div>
       )}
 
+      <p className="job-added-date">נוסף ב{formatDate(job.createdAt)}</p>
+
       {isAdmin && (
         <>
           <div className="job-card-actions">
@@ -116,6 +198,11 @@ function JobCard({ job, isAdmin, isHighlighted, onEdit, onDelete }) {
             <button type="button" className="btn btn-secondary" onClick={onDelete}>
               מחיקה
             </button>
+            {job.applicationMethod === 'form' && (
+              <button type="button" className="btn btn-outline" onClick={onToggleApplications}>
+                {isViewingApplications ? 'הסתרת מועמדים' : 'מועמדים'}
+              </button>
+            )}
             <button
               type="button"
               className="btn btn-outline"
@@ -124,6 +211,15 @@ function JobCard({ job, isAdmin, isHighlighted, onEdit, onDelete }) {
               {sharing ? 'סגירת שיתוף' : 'שיתוף'}
             </button>
           </div>
+          {isViewingApplications && job.applicationMethod === 'form' && (
+            <SubmissionsPanel
+              parentTitle={job.title}
+              statusOrder={APPLICATION_STATUS_ORDER}
+              statusMeta={APPLICATION_STATUS_META}
+              api={applicationsApi}
+              labels={APPLICATION_LABELS}
+            />
+          )}
           {sharing && <ShareBox text={buildJobShareText(job)} />}
         </>
       )}

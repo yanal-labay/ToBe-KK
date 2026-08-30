@@ -4,6 +4,10 @@ const Event = require("./event.model");
 const Registration = require("./registration.model");
 const { deletePhoto } = require("./upload");
 
+const objectIdString = z.string().refine((v) => mongoose.Types.ObjectId.isValid(v), {
+  message: "מזהה לא תקין",
+});
+
 /**
  * Validates the create/update event payload. Note this arrives as
  * `multipart/form-data` (because the photo upload shares the same request),
@@ -24,6 +28,25 @@ const EventInputSchema = z.object({
     .transform((v) => (v ? Number(v) : null))
     .refine((v) => v === null || (Number.isFinite(v) && v >= 0), { message: "מחיר לא תקין" }),
   registrationDeadline: z.coerce.date({ invalid_type_error: "תאריך סגירת ההרשמה לא תקין" }),
+  fieldSelections: z
+    .string()
+    .optional()
+    .transform((v, ctx) => {
+      if (!v) return [];
+      try {
+        const parsed = JSON.parse(v);
+        if (!Array.isArray(parsed)) throw new Error();
+        return parsed;
+      } catch {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "בחירת שדות לא תקינה" });
+        return z.NEVER;
+      }
+    })
+    .pipe(z.array(objectIdString)),
+  isActive: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => v !== "false"),
 }).refine(
   (data) => data.registrationDeadline.getTime() <= data.date.getTime(),
   {
@@ -69,10 +92,38 @@ const RegistrationStatusSchema = z.object({
   status: z.enum(["signed_up", "arrived", "did_not_arrive"]),
 });
 
-/** GET /api/events — public list of all events, soonest date first. */
+// Every event-listing query resolves `fieldSelections` down to
+// `{ _id, name, field: { _id, name } }` so the client can render/filter by
+// field+value without a separate round trip per event.
+const FIELD_SELECTIONS_POPULATE = { path: "fieldSelections", populate: { path: "field" } };
+
+/**
+ * GET /api/events — public list of active events only, soonest date first.
+ * Inactive events are excluded at the query level, not merely hidden in the
+ * UI, so they never reach a guest's browser at all.
+ *
+ * `$ne: false` rather than `true`: events created before `isActive` existed
+ * have no such key, and `{ isActive: true }` would exclude every one of
+ * them. See the note in event.model.js.
+ */
 async function listEvents(req, res) {
   try {
-    const events = await Event.find().sort({ date: 1 });
+    const events = await Event.find({ isActive: { $ne: false } })
+      .sort({ date: 1 })
+      .populate(FIELD_SELECTIONS_POPULATE);
+    res.json(events);
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Database error" });
+  }
+}
+
+/**
+ * GET /api/events/admin — admin-only. Lists every event regardless of
+ * `isActive`, so the admin can see, reactivate, or delete inactive ones.
+ */
+async function listEventsAdmin(req, res) {
+  try {
+    const events = await Event.find().sort({ date: 1 }).populate(FIELD_SELECTIONS_POPULATE);
     res.json(events);
   } catch (err) {
     res.status(500).json({ success: false, message: "Database error" });
@@ -271,6 +322,7 @@ async function deleteRegistration(req, res) {
 
 module.exports = {
   listEvents,
+  listEventsAdmin,
   createEvent,
   updateEvent,
   deleteEvent,

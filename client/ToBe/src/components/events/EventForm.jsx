@@ -11,6 +11,7 @@ const EMPTY_FORM = {
   location: '',
   price: '',
   registrationDeadline: '',
+  isActive: true,
 }
 
 /**
@@ -29,20 +30,42 @@ const EMPTY_FORM = {
  *
  * @param {{
  *   formId?: string,
- *   initialValues?: {title: string, description: string, date: string, time: string, location: string, price: string, registrationDeadline: string},
+ *   initialValues?: {title: string, description: string, date: string, time: string, location: string, price: string, registrationDeadline: string, isActive: boolean},
+ *   initialFieldValues?: Record<string, string[]>,
+ *   fields: Array<{_id: string, name: string, options: Array<{_id: string, name: string}>}>,
  *   existingPhotoUrl?: string|null,
  *   submitLabel: string,
  *   onSubmit: (formData: FormData) => Promise<void>,
  *   onCancel: () => void,
  * }} props
  */
-function EventForm({ formId, initialValues, existingPhotoUrl, submitLabel, onSubmit, onCancel }) {
+function EventForm({
+  formId,
+  initialValues,
+  initialFieldValues,
+  fields,
+  existingPhotoUrl,
+  submitLabel,
+  onSubmit,
+  onCancel,
+}) {
   const [values, setValues] = useState(initialValues || EMPTY_FORM)
+  const [fieldValues, setFieldValues] = useState(initialFieldValues || {})
   const [photoFile, setPhotoFile] = useState(null)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
   const handleChange = (field) => (e) => setValues({ ...values, [field]: e.target.value })
+
+  const toggleFieldOption = (fieldId, optionId) => {
+    setFieldValues((current) => {
+      const currentForField = current[fieldId] || []
+      const nextForField = currentForField.includes(optionId)
+        ? currentForField.filter((id) => id !== optionId)
+        : [...currentForField, optionId]
+      return { ...current, [fieldId]: nextForField }
+    })
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -63,6 +86,8 @@ function EventForm({ formId, initialValues, existingPhotoUrl, submitLabel, onSub
       formData.append('location', values.location)
       formData.append('price', values.price)
       formData.append('registrationDeadline', values.registrationDeadline)
+      formData.append('fieldSelections', JSON.stringify(Object.values(fieldValues).flat()))
+      formData.append('isActive', values.isActive ? 'true' : 'false')
       if (photoFile) formData.append('photo', photoFile)
       await onSubmit(formData)
     } catch (err) {
@@ -117,6 +142,27 @@ function EventForm({ formId, initialValues, existingPhotoUrl, submitLabel, onSub
           required
         />
       </label>
+      {fields.map((field) => (
+        <fieldset className="event-field-picker" key={field._id}>
+          <legend>{field.name}</legend>
+          {field.options.length === 0 ? (
+            <p className="event-form-hint">אין עדיין אפשרויות בשדה זה.</p>
+          ) : (
+            <div className="event-field-checkboxes">
+              {field.options.map((option) => (
+                <label key={option._id} className="event-field-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={(fieldValues[field._id] || []).includes(option._id)}
+                    onChange={() => toggleFieldOption(field._id, option._id)}
+                  />
+                  {option.name}
+                </label>
+              ))}
+            </div>
+          )}
+        </fieldset>
+      ))}
       <label>
         תמונה (לא חובה)
         <PhotoDropzone
@@ -125,6 +171,15 @@ function EventForm({ formId, initialValues, existingPhotoUrl, submitLabel, onSub
           onSelect={setPhotoFile}
         />
       </label>
+      <label className="event-form-active">
+        <input
+          type="checkbox"
+          checked={values.isActive}
+          onChange={(e) => setValues({ ...values, isActive: e.target.checked })}
+        />
+        האירוע פעיל (מוצג לציבור)
+      </label>
+
       {error && <p className="event-form-error">{error}</p>}
       <div className="event-form-actions">
         <button type="submit" className="btn btn-primary" disabled={saving}>

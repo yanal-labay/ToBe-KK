@@ -3,19 +3,11 @@ import { useTheme } from '../../hooks/useTheme'
 import { resolvePhotoUrl } from '../../utils/photoUrl'
 import { buildScholarshipShareText } from '../../utils/shareText'
 import { previewText } from '../../utils/previewText'
+import { formatDate } from '../../utils/formatDate'
 import ShareBox from '../shared/ShareBox'
 import './ScholarshipCard.css'
 
 const DESCRIPTION_PREVIEW_CHARS = 220
-
-/** Formats a scholarship's `deadline` (ISO string from the API) for display in Hebrew. */
-function formatDate(value) {
-  return new Date(value).toLocaleDateString('he-IL', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-}
 
 /**
  * True once the deadline's calendar day has fully passed (comparing

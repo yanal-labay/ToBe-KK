@@ -138,3 +138,11 @@
 .registrations-delete-btn:hover {
   background: rgba(208, 59, 59, 0.12);
 }
+
+/* Was `.events-error` when this panel lived under components/events. Defined
+   here so the shared component carries its own styling rather than borrowing
+   a page-level class that only exists on one of its two callers. */
+.submissions-error {
+  color: #c0392b;
+  font-size: 14px;
+}

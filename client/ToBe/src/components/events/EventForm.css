@@ -7,7 +7,6 @@
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 16px;
-  grid-column: 1 / -1;
 }
 
 .event-form-row {
@@ -22,4 +21,44 @@
 .event-form textarea {
   min-height: 80px;
   resize: vertical;
+}
+
+/* Tag pickers, mirroring .job-field-picker in jobs/JobForm.css. */
+.event-field-picker {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.event-field-picker legend {
+  font-weight: 600;
+  font-size: 14px;
+  padding: 0 6px;
+}
+
+.event-field-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.event-field-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 400;
+  font-size: 14px;
+}
+
+.event-form-hint {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+/* The form is a flex column of stacked labels; this one label needs its
+   checkbox beside the text instead. Mirrors .job-form-active. */
+.event-form-active {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px !important;
 }
