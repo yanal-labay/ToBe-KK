@@ -2,8 +2,11 @@ import { useState } from 'react'
 import { useTheme } from '../../hooks/useTheme'
 import { resolvePhotoUrl } from '../../utils/photoUrl'
 import { buildScholarshipShareText } from '../../utils/shareText'
+import { previewText } from '../../utils/previewText'
 import ShareBox from '../shared/ShareBox'
 import './ScholarshipCard.css'
+
+const DESCRIPTION_PREVIEW_CHARS = 220
 
 /** Formats a scholarship's `deadline` (ISO string from the API) for display in Hebrew. */
 function formatDate(value) {
@@ -41,6 +44,11 @@ export function isScholarshipExpired(scholarship) {
  * row of small pill-shaped bubbles (one per selected option, field name not
  * shown) just above that action row.
  *
+ * Descriptions are clipped to a 220-character preview by default (so every
+ * card's height stays consistent regardless of how long its description is)
+ * with a "קרא עוד"/"הצג פחות" toggle to expand/collapse the full text in
+ * place. The toggle only renders when the text was actually longer than that.
+ *
  * @param {{
  *   scholarship: object,
  *   isAdmin: boolean,
@@ -51,10 +59,15 @@ export function isScholarshipExpired(scholarship) {
  */
 function ScholarshipCard({ scholarship, isAdmin, isHighlighted, onEdit, onDelete }) {
   const [sharing, setSharing] = useState(false)
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false)
   const { theme } = useTheme()
   const fallbackLogo = theme === 'dark' ? '/logodark.png' : '/logo.png'
   const photoSrc = resolvePhotoUrl(scholarship.photoUrl, fallbackLogo)
   const expired = isScholarshipExpired(scholarship)
+  const { preview, isTruncated } = previewText(
+    scholarship.description,
+    DESCRIPTION_PREVIEW_CHARS
+  )
 
   return (
     <div
@@ -78,7 +91,18 @@ function ScholarshipCard({ scholarship, isAdmin, isHighlighted, onEdit, onDelete
         />
       </div>
 
-      <p className="scholarship-description">{scholarship.description}</p>
+      <p className="scholarship-description">
+        {descriptionExpanded || !isTruncated ? scholarship.description : `${preview}…`}
+      </p>
+      {isTruncated && (
+        <button
+          type="button"
+          className="scholarship-description-toggle"
+          onClick={() => setDescriptionExpanded((current) => !current)}
+        >
+          {descriptionExpanded ? 'הצג פחות' : 'קרא עוד'}
+        </button>
+      )}
 
       {scholarship.fieldSelections?.length > 0 && (
         <div className="scholarship-tag-bubbles">

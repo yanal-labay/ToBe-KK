@@ -2,8 +2,11 @@ import { useState } from 'react'
 import { useTheme } from '../../hooks/useTheme'
 import { resolvePhotoUrl } from '../../utils/photoUrl'
 import { buildJobShareText } from '../../utils/shareText'
+import { previewText } from '../../utils/previewText'
 import ShareBox from '../shared/ShareBox'
 import './JobCard.css'
+
+const DESCRIPTION_PREVIEW_CHARS = 220
 
 /**
  * Read-only display of a single job posting — structurally the same as
@@ -20,6 +23,12 @@ import './JobCard.css'
  * small pill-shaped bubbles (one per selected option, field name not
  * shown) just above the action buttons.
  *
+ * Descriptions are clipped to a 220-character preview by default (matching
+ * ScholarshipCard) with a "קרא עוד"/"הצג פחות" toggle to expand/collapse the
+ * full text in place. The toggle only renders when the text was actually
+ * longer than that, and the whole block is skipped when a job has no
+ * description at all — unlike scholarships, it's optional.
+ *
  * @param {{
  *   job: object,
  *   isAdmin: boolean,
@@ -30,9 +39,18 @@ import './JobCard.css'
  */
 function JobCard({ job, isAdmin, isHighlighted, onEdit, onDelete }) {
   const [sharing, setSharing] = useState(false)
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false)
   const { theme } = useTheme()
   const fallbackLogo = theme === 'dark' ? '/logodark.png' : '/logo.png'
   const photoSrc = resolvePhotoUrl(job.photoUrl, fallbackLogo)
+
+  // Unlike scholarships, a job's description is optional (job.model.js
+  // defaults it to null), so fall back to an empty string — the block below
+  // is skipped entirely in that case anyway.
+  const { preview, isTruncated } = previewText(
+    job.description || '',
+    DESCRIPTION_PREVIEW_CHARS
+  )
 
   const hasContact = job.contactName || job.contactEmail || job.contactPhone
 
@@ -54,7 +72,22 @@ function JobCard({ job, isAdmin, isHighlighted, onEdit, onDelete }) {
         />
       </div>
 
-      {job.description && <p className="job-description">{job.description}</p>}
+      {job.description && (
+        <>
+          <p className="job-description">
+            {descriptionExpanded || !isTruncated ? job.description : `${preview}…`}
+          </p>
+          {isTruncated && (
+            <button
+              type="button"
+              className="job-description-toggle"
+              onClick={() => setDescriptionExpanded((current) => !current)}
+            >
+              {descriptionExpanded ? 'הצג פחות' : 'קרא עוד'}
+            </button>
+          )}
+        </>
+      )}
 
       {hasContact && (
         <p className="job-contact">

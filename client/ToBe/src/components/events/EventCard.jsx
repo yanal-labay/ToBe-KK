@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { resolvePhotoUrl } from '../../utils/photoUrl'
 import { buildEventShareText } from '../../utils/shareText'
+import { previewText } from '../../utils/previewText'
 import ShareBox from '../shared/ShareBox'
 import RegisterForm from './RegisterForm'
 import RegistrationsPanel from './RegistrationsPanel'
@@ -15,18 +16,6 @@ function formatDate(value) {
     month: 'long',
     day: 'numeric',
   })
-}
-
-/**
- * Splits `text` into a leading preview of at most `maxChars` characters
- * (including spaces) plus whether it was actually longer than that, so the
- * card can offer to expand only when there's really more to show.
- */
-function previewDescription(text, maxChars) {
-  if (text.length <= maxChars) {
-    return { preview: text, isTruncated: false }
-  }
-  return { preview: text.slice(0, maxChars), isTruncated: true }
 }
 
 /**
@@ -90,7 +79,7 @@ function EventCard({ event, isAdmin, isHighlighted, onEdit, onDelete, isViewingR
   const registrationClosed = isRegistrationClosed(event)
   const [descriptionExpanded, setDescriptionExpanded] = useState(false)
   const [sharing, setSharing] = useState(false)
-  const { preview, isTruncated } = previewDescription(event.description, DESCRIPTION_PREVIEW_CHARS)
+  const { preview, isTruncated } = previewText(event.description, DESCRIPTION_PREVIEW_CHARS)
 
   return (
     <div id={`event-${event._id}`} className={`card event-card ${isHighlighted ? 'is-highlighted' : ''}`}>
