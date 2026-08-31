@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { getActivitySummary } from '../services/activityService'
+import { getActivitySummary } from '../components/ActivityManager/ActivityService'
 import { useAdminSession } from './useAdminSession'
 
 const ActivityContext = createContext(null)

@@ -1,0 +1,15 @@
+/* Layout specific to the contact-person form; the field styling itself comes
+   from the shared `.form-fields` class (see styles/components.css).
+
+   Contact details pair up naturally (mobile + phone, email + location), so
+   this form groups them two-per-row instead of the single column the other
+   admin forms use. `flex: 1` splits each row evenly regardless of label
+   length. */
+.contact-person-form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.contact-person-form-row label {
+  flex: 1;
+}

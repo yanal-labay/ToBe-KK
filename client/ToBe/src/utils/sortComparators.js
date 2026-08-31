@@ -1,6 +1,6 @@
 /**
  * Comparator builders for the listing pages' sort bars (see
- * components/shared/SortBar.jsx). Each returns a plain `(a, b) => number`
+ * GUIComponents/SortBar.jsx). Each returns a plain `(a, b) => number`
  * suitable for `Array.prototype.sort`.
  *
  * `Array.prototype.sort` is stable in every engine the app targets, so rows

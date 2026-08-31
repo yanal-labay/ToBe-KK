@@ -1,0 +1,74 @@
+.registrant-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 560px;
+  width: 100%;
+  align-self: center;
+}
+
+.registrant-form-row {
+  display: flex;
+  gap: 14px;
+}
+
+.registrant-form-row label {
+  flex: 1;
+}
+
+.registrant-register-success {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--color-primary-dark);
+  font-weight: 600;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 560px;
+  width: 100%;
+  align-self: center;
+}
+
+@media (max-width: 640px) {
+  .registrant-form-row {
+    flex-direction: column;
+  }
+}
+
+/* Moved here from this feature's old formFields.css, whose shared rules now
+   live on `.form-fields` in styles/components.css. These three are genuinely
+   registry-specific: no other form has a checkbox group or inline validation. */
+
+/* Multi-select answers (e.g. areas of interest) render as a wrapping row of
+   checkboxes rather than a column, and reset the 600 weight the shared label
+   rule sets — these read as options, not as field titles. */
+.registrant-form-checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-weight: 400;
+}
+
+.registrant-form-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 400;
+  font-size: 14px;
+}
+
+/* Per-field validation marker. This is the only form in the app that
+   validates inline (it's the one guests fill in), so the state lives here
+   rather than in the shared rules. The thicker border is a second signal
+   alongside the colour, which colour-blind users would otherwise miss. */
+.registrant-form input.is-invalid,
+.registrant-form select.is-invalid {
+  border-color: #c0392b;
+  border-width: 2px;
+}

@@ -1,0 +1,30 @@
+/* Layout specific to the link-item form; the field styling itself comes from
+   the shared `.form-fields` class (see styles/components.css).
+
+   Unlike the other admin forms, this one renders *inside* a link-group card
+   rather than as a standalone panel, so it has to claim the card's full width
+   explicitly — a flex child would otherwise shrink to its content. That is
+   what `width: 100%` plus `align-self: stretch` here are for, and why the
+   inputs repeat `width: 100%` with `box-sizing: border-box` so their padding
+   doesn't push them past the card's edge. */
+.link-item-form {
+  width: 100%;
+  align-self: stretch;
+}
+
+.link-item-form label {
+  width: 100%;
+}
+
+.link-item-form input,
+.link-item-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* A link's description runs to a couple of sentences, so this starts taller
+   than a single-line input and stays user-resizable. */
+.link-item-form textarea {
+  min-height: 80px;
+  resize: vertical;
+}
