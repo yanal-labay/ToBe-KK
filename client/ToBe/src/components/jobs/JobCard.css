@@ -108,10 +108,13 @@
   text-align: left;
 }
 
+/* Same as .event-tag-bubbles: .card has no gap of its own, so the chips
+   need this to clear the apply button rendered beneath them. */
 .job-tag-bubbles {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  margin-bottom: 16px;
 }
 
 .job-tag-bubble {

@@ -19,6 +19,15 @@
   margin-bottom: 12px;
 }
 
+/* The site-logo fallback for events with no uploaded photo. `contain` plus
+   padding so the logo sits inside the frame instead of being cropped by
+   `cover` — matching .job-photo/.scholarship-photo. */
+.event-photo.is-fallback-logo {
+  object-fit: contain;
+  background: var(--color-primary-light);
+  padding: 24px;
+}
+
 .event-description-toggle {
   display: block;
   border: none;
@@ -85,10 +94,14 @@
   background: var(--color-text-muted);
 }
 
+/* .card is a plain block with no gap, so this needs its own bottom margin —
+   without it the chips sit flush against whatever follows, which collided
+   with the guest's registration button. */
 .event-tag-bubbles {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  margin-bottom: 16px;
 }
 
 .event-tag-bubble {

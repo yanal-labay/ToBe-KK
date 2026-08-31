@@ -256,7 +256,7 @@
 
 .schedule-calendar-day-number {
   flex-shrink: 0;
-  font-size: clamp(11px, 1.8vw, 14px);
+  font-size: clamp(12px, 2vw, 16px);
   font-weight: 600;
   color: var(--color-text-muted);
 }
@@ -279,11 +279,11 @@
 .schedule-band-pill {
   display: block;
   width: 100%;
-  height: clamp(12px, 2vw, 18px);
+  height: clamp(15px, 2.4vw, 21px);
   font: inherit;
-  font-size: clamp(8px, 1.2vw, 11px);
+  font-size: clamp(10px, 1.5vw, 13px);
   font-weight: 600;
-  line-height: clamp(12px, 2vw, 18px);
+  line-height: clamp(15px, 2.4vw, 21px);
   padding: 0 6px;
   border: none;
   cursor: pointer;
@@ -304,7 +304,7 @@
    look from the rules above despite the color itself still lining up
    horizontally. */
 .schedule-band-pill-placeholder {
-  height: clamp(12px, 2vw, 18px);
+  height: clamp(15px, 2.4vw, 21px);
 }
 
 .schedule-band-pill.is-range-start {
@@ -398,7 +398,7 @@
   display: block;
   width: 100%;
   font: inherit;
-  font-size: clamp(10px, 1.6vw, 12px);
+  font-size: clamp(12px, 1.9vw, 14px);
   line-height: 1.3;
   text-align: right;
   padding: 2px 6px;
@@ -535,7 +535,7 @@
 }
 
 .schedule-calendar--compact .schedule-calendar-day-number {
-  font-size: 11px;
+  font-size: 12px;
 }
 
 /* Forces single-line CSS truncation regardless of the base rule (which
@@ -549,14 +549,14 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 9px;
+  font-size: 11px;
   padding: 1px 4px;
 }
 
 .schedule-calendar--compact .schedule-band-pill {
-  height: 10px;
-  font-size: 7px;
-  line-height: 10px;
+  height: 13px;
+  font-size: 9px;
+  line-height: 13px;
   padding: 0 4px;
 }
 
@@ -565,7 +565,7 @@
    whenever a lower lane drops out (see `.schedule-band-pill-placeholder`
    in the base rules and `computeWeekLaneAssignments` in Calendar.jsx). */
 .schedule-calendar--compact .schedule-band-pill-placeholder {
-  height: 10px;
+  height: 13px;
 }
 
 /* Matches Navbar.css's own mobile breakpoint. Sizing itself (day-cell

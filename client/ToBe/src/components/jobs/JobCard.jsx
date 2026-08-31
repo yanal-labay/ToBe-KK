@@ -54,7 +54,8 @@ const APPLICATION_LABELS = {
  * `job.fieldSelections` (populated server-side, see job.controller.js) is
  * an array of `{ _id, name, field: { _id, name } }` — rendered as a row of
  * small pill-shaped bubbles (one per selected option, field name not
- * shown) just above the action buttons.
+ * shown) above the apply control, so a visitor reads what the posting is
+ * tagged as before the button that acts on it.
  *
  * Descriptions are clipped to a 220-character preview by default (matching
  * ScholarshipCard) with a "קרא עוד"/"הצג פחות" toggle to expand/collapse the
@@ -145,6 +146,16 @@ function JobCard({
         </>
       )}
 
+      {job.fieldSelections?.length > 0 && (
+        <div className="job-tag-bubbles">
+          {job.fieldSelections.map((selection) => (
+            <span className="job-tag-bubble" key={selection._id}>
+              {selection.name}
+            </span>
+          ))}
+        </div>
+      )}
+
       {job.applicationMethod === 'contact' && hasContact && (
         <p className="job-contact">
           ליצירת קשר{job.contactName ? ` עם ${job.contactName}` : ''}
@@ -175,16 +186,6 @@ function JobCard({
           errorFallback="שליחת הפרטים נכשלה"
           successLines={['✔ הפרטים נשלחו!', 'ניצור איתך קשר :)']}
         />
-      )}
-
-      {job.fieldSelections?.length > 0 && (
-        <div className="job-tag-bubbles">
-          {job.fieldSelections.map((selection) => (
-            <span className="job-tag-bubble" key={selection._id}>
-              {selection.name}
-            </span>
-          ))}
-        </div>
       )}
 
       <p className="job-added-date">נוסף ב{formatDate(job.createdAt)}</p>

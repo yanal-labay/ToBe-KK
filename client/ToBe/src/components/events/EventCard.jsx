@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useTheme } from '../../hooks/useTheme'
 import { resolvePhotoUrl } from '../../utils/photoUrl'
 import { buildEventShareText } from '../../utils/shareText'
 import { previewText } from '../../utils/previewText'
@@ -100,6 +101,12 @@ function EventCard({ event, isAdmin, isHighlighted, onEdit, onDelete, isViewingR
   const registrationClosed = isRegistrationClosed(event)
   const [descriptionExpanded, setDescriptionExpanded] = useState(false)
   const [sharing, setSharing] = useState(false)
+  const { theme } = useTheme()
+  // Events with no uploaded photo fall back to the site logo, same as
+  // JobCard and ScholarshipCard — so every card in a list has an image and
+  // they stay the same height. Theme-appropriate, matching BrandLogo.
+  const fallbackLogo = theme === 'dark' ? '/logodark.png' : '/logo.png'
+  const photoSrc = resolvePhotoUrl(event.photoUrl, fallbackLogo)
   const { preview, isTruncated } = previewText(event.description, DESCRIPTION_PREVIEW_CHARS)
 
   // Memoised because SubmissionsPanel re-fetches whenever `api` changes
@@ -126,9 +133,13 @@ function EventCard({ event, isAdmin, isHighlighted, onEdit, onDelete, isViewingR
           )}
         </div>
       )}
-      {event.photoUrl && (
-        <img src={resolvePhotoUrl(event.photoUrl)} alt={event.title} className="event-photo" />
-      )}
+      <img
+        src={photoSrc}
+        // Empty alt when it's the fallback: the logo is decorative here and
+        // announcing it would just repeat the title below.
+        alt={event.photoUrl ? event.title : ''}
+        className={`event-photo ${!event.photoUrl ? 'is-fallback-logo' : ''}`}
+      />
       <h3>{event.title}</h3>
       <div className="event-meta">
         <p>📅 {formatDate(event.date)}</p>
