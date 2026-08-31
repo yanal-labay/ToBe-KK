@@ -1,18 +1,41 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import AgendaList from './AgendaList'
+import {
+  buildEntriesByDay,
+  colorClassFor,
+  dateKeyToDate,
+  dayOnly,
+  entriesOnDay,
+  isSpanning,
+  splitDeadlineTitle,
+  toDateKey,
+} from './scheduleEntries'
 import './Calendar.css'
 
 const WEEKDAY_LABELS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש']
 
+// How far ahead the compact agenda looks for its "next few days". Only a
+// bound on the search, not on what's shown — `AGENDA_COMPACT_MAX_DAYS` does
+// that — so it just needs to be comfortably longer than any realistic gap
+// between entries.
+const AGENDA_COMPACT_HORIZON_DAYS = 180
+const AGENDA_COMPACT_MAX_DAYS = 4
+
 /**
  * How wide (columns) and how long (days) each view's grid is. Month is the
- * only multi-row view; the other two are a single rolling window, so their
- * day count equals their column count.
+ * only multi-row view; the two day views are a single rolling window, so
+ * their day count equals their column count.
+ *
+ * 'agenda' is the mobile-only list view (see AgendaList.jsx) — it has no grid
+ * at all, so neither number is ever read on that path; the entry exists only
+ * so the shared destructure below doesn't have to special-case it.
  */
 const VIEW_CONFIG = {
   month: { columnCount: 7, dayCount: 42 },
   sevenDay: { columnCount: 7, dayCount: 7 },
   threeDay: { columnCount: 3, dayCount: 3 },
+  agenda: { columnCount: 1, dayCount: 0 },
 }
 
 // "שבוע" is literal — the 7-day view is a real Sunday–Saturday calendar week
@@ -23,25 +46,6 @@ const VIEW_OPTIONS = [
   { value: 'sevenDay', label: 'שבוע' },
   { value: 'threeDay', label: '3 ימים' },
 ]
-
-/** Zero-pads a "yyyy-mm-dd" key from a Date's *local* components (never UTC) — */
-function toDateKey(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
-    date.getDate()
-  ).padStart(2, '0')}`
-}
-
-function dateKeyToDate(key) {
-  const [year, month, day] = key.split('-').map(Number)
-  return new Date(year, month - 1, day)
-}
-
-/** Midnight-normalized copy of an entry's `startDate`/`endDate` (arrive as ISO strings). */
-function dayOnly(value) {
-  const date = new Date(value)
-  date.setHours(0, 0, 0, 0)
-  return date
-}
 
 /** Every cell of a full 6-week grid for the given month, including the leading/trailing days borrowed from adjacent months so the grid is always a rectangle. */
 function buildMonthGrid(year, month) {
@@ -76,28 +80,14 @@ function buildDayWindow(anchor, length) {
 }
 
 /**
- * Groups single-day entries by the one calendar day they land on — genuinely
- * multi-day entries are handled separately (see `computeWeekLaneAssignments`
- * and `computeDaySpanningSegments`) so they render as one spanning bar
- * instead of a repeated per-day pill.
+ * Every day of the given month, 1st through last — the agenda's range. Unlike
+ * `buildMonthGrid` above it borrows nothing from the adjacent months: a list
+ * has no rectangle to fill, and days from a month you didn't navigate to
+ * would just be confusing entries in it.
  */
-function buildEntriesByDay(entries) {
-  const map = new Map()
-  for (const entry of entries) {
-    const key = toDateKey(dayOnly(entry.startDate))
-    if (!map.has(key)) map.set(key, [])
-    map.get(key).push(entry)
-  }
-  return map
-}
-
-/**
- * True when `entry` spans more than one calendar day. Only manual entries
- * can ever be true here — events/event-deadlines/scholarship-deadlines
- * always carry the same `startDate`/`endDate`.
- */
-function isSpanning(entry) {
-  return toDateKey(dayOnly(entry.startDate)) !== toDateKey(dayOnly(entry.endDate))
+function buildMonthDays(year, month) {
+  const dayCount = new Date(year, month + 1, 0).getDate()
+  return Array.from({ length: dayCount }, (_, index) => new Date(year, month, index + 1))
 }
 
 /**
@@ -208,18 +198,6 @@ function computeDaySpanningSegments(day, spanningEntries, columnIndex, columnCou
     })
 }
 
-/**
- * The pill/legend-dot color class for one entry. Events and Scholarships
- * each have their own permanently-reserved color; a manual entry's color
- * comes from whichever category it was assigned (see CategoryManager) —
- * `categoryKey` is one of the fixed palette keys in categoryPalette.js.
- */
-function colorClassFor(entry) {
-  if (entry.kind === 'event' || entry.kind === 'event-deadline') return 'schedule-color-event'
-  if (entry.kind === 'scholarship-deadline') return 'schedule-color-scholarship'
-  return `schedule-color-category-${entry.categoryKey}`
-}
-
 const PILL_TITLE_PREVIEW_CHARS = 20
 
 /**
@@ -236,25 +214,6 @@ function previewTitle(title, maxChars) {
   return { preview: title.slice(0, maxChars), isTruncated: true }
 }
 
-const DEADLINE_LABEL_BY_KIND = {
-  'event-deadline': 'אחרון להרשמה',
-  'scholarship-deadline': 'אחרון להגשה',
-}
-
-/**
- * Splits a deadline entry's server-built "label: title" string (see
- * `listSchedule` in schedule.controller.js) back into its two parts — `null`
- * for any other kind, since only event/scholarship deadlines are prefixed
- * this way. Safe even if the underlying title itself contains a colon: only
- * the known, fixed label plus its ": " separator is stripped off the front,
- * not the first colon found anywhere in the string.
- */
-function splitDeadlineTitle(entry) {
-  const label = DEADLINE_LABEL_BY_KIND[entry.kind]
-  if (!label) return null
-  return { label, rest: entry.title.slice(label.length + 2) }
-}
-
 /**
  * The interactive calendar grid itself. Renders single-day entries from
  * `GET /api/schedule` as small colored pills per day, and genuinely
@@ -268,11 +227,19 @@ function splitDeadlineTitle(entry) {
  * its source page (and highlights the specific card there); clicking a
  * manual entry (any of its segments) as an admin opens it for editing.
  *
- * Three view types share one code path, parameterized by `VIEW_CONFIG`'s
+ * Three grid views share one code path, parameterized by `VIEW_CONFIG`'s
  * column count: the six-week month grid, and two single-row rolling windows
  * (7-day and 3-day) that start wherever `anchor` points rather than snapping
  * to a Sunday. Navigation state lives in the parent (`useCalendarView`), so
  * this stays a plain controlled display.
+ *
+ * A fourth view type, 'agenda', swaps the grid for `AgendaList` — the
+ * scrollable per-day list that renders instead on a phone, where seven
+ * columns leave each one about 45px wide. It isn't selectable:
+ * `useCalendarView` derives it from the viewport, and the view switcher is
+ * hidden while it's active, since the agenda is the only mobile view. Header
+ * navigation, the legend/filters, and every click behaviour carry over
+ * unchanged; only the layout differs.
  *
  * The legend doubles as the filter control: unlike a plain read-only key,
  * each row is a checkbox — `hiddenFilterKeys`/`onToggleFilterKey` are owned
@@ -284,7 +251,7 @@ function splitDeadlineTitle(entry) {
  *   categories: Array<{_id: string, name: string, colorKey: string}>,
  *   isAdmin: boolean,
  *   anchor: Date,
- *   viewType: 'month'|'sevenDay'|'threeDay',
+ *   viewType: 'month'|'sevenDay'|'threeDay'|'agenda',
  *   onSelectViewType: (next: 'month'|'sevenDay'|'threeDay') => void,
  *   onPrev: () => void,
  *   onNext: () => void,
@@ -325,18 +292,21 @@ function Calendar({
 
   const entriesByDay = useMemo(() => buildEntriesByDay(singleDayEntries), [singleDayEntries])
   const { columnCount, dayCount } = VIEW_CONFIG[viewType]
-  const days = useMemo(
-    () =>
-      viewType === 'month'
-        ? buildMonthGrid(anchor.getFullYear(), anchor.getMonth())
-        : buildDayWindow(anchor, dayCount),
-    [anchor, viewType, dayCount]
-  )
+  const isAgenda = viewType === 'agenda'
+  const days = useMemo(() => {
+    if (viewType === 'agenda') return buildMonthDays(anchor.getFullYear(), anchor.getMonth())
+    if (viewType === 'month') return buildMonthGrid(anchor.getFullYear(), anchor.getMonth())
+    return buildDayWindow(anchor, dayCount)
+  }, [anchor, viewType, dayCount])
   // One lane-assignment map per grid row (six weeks in the month view, a
   // single row in the day views), computed once per render rather than
   // independently per day — see `computeRowLaneAssignments` for why per-day
-  // assignment alone isn't enough.
+  // assignment alone isn't enough. Lanes are a property of a grid *row*, so
+  // the agenda has nothing to assign: the bail-out lives inside the memo
+  // rather than around it, keeping the hook order stable when a resize
+  // switches views mid-session.
   const laneByEntryIdPerRow = useMemo(() => {
+    if (viewType === 'agenda') return []
     const perRow = []
     for (let r = 0; r < Math.ceil(days.length / columnCount); r++) {
       perRow.push(
@@ -344,7 +314,7 @@ function Calendar({
       )
     }
     return perRow
-  }, [days, spanningEntries, columnCount])
+  }, [days, spanningEntries, columnCount, viewType])
   const todayKey = useMemo(() => toDateKey(new Date()), [])
   // Only the compact Home preview needs a hard cap (it's a small, fixed-size
   // glance widget) — the full calendar's day cells already grow to fit their
@@ -383,17 +353,39 @@ function Calendar({
   }
 
   const popoverEntries = expandedDayKey
-    ? [
-        ...(entriesByDay.get(expandedDayKey) || []),
-        ...spanningEntries.filter((entry) => {
-          const day = dateKeyToDate(expandedDayKey).getTime()
-          return day >= dayOnly(entry.startDate).getTime() && day <= dayOnly(entry.endDate).getTime()
-        }),
-      ]
+    ? entriesOnDay(dateKeyToDate(expandedDayKey), entriesByDay, spanningEntries)
     : []
 
-  // What one press of ‹/› actually moves, named for this view.
-  const stepNoun = { month: 'חודש', sevenDay: 'שבוע', threeDay: 'יום' }[viewType]
+  // What one press of ‹/› actually moves, named for this view. The agenda
+  // covers a whole month, same as the month grid.
+  const stepNoun = { month: 'חודש', agenda: 'חודש', sevenDay: 'שבוע', threeDay: 'יום' }[viewType]
+
+  // The full-page agenda spans the anchor's month; the compact one is a
+  // forward-looking "next few days" glance widget instead, for which a month
+  // boundary would be arbitrary — an entry three days away shouldn't vanish
+  // from the home page just because it lands after the 31st.
+  //
+  // Memoised because these Dates are `AgendaList`'s memo dependencies: fresh
+  // objects every render would re-derive its whole day list every render.
+  const agendaRange = useMemo(() => {
+    if (!compact) {
+      return {
+        rangeStart: days[0],
+        rangeEnd: days[days.length - 1],
+        maxDays: Infinity,
+        emptyMessage: 'אין רשומות בחודש זה',
+      }
+    }
+    const rangeStart = dayOnly(new Date())
+    const rangeEnd = dayOnly(new Date())
+    rangeEnd.setDate(rangeEnd.getDate() + AGENDA_COMPACT_HORIZON_DAYS)
+    return {
+      rangeStart,
+      rangeEnd,
+      maxDays: AGENDA_COMPACT_MAX_DAYS,
+      emptyMessage: 'אין רשומות קרובות',
+    }
+  }, [compact, days])
 
   return (
     <div
@@ -402,55 +394,73 @@ function Calendar({
       }`}
       style={{ '--schedule-columns': String(columnCount) }}
     >
-      <div className="schedule-calendar-header">
-        <button
-          type="button"
-          className="btn btn-outline"
-          onClick={onPrev}
-          aria-label={`${stepNoun} קודם`}
-        >
-          ‹
-        </button>
-        <h2>
-          {viewType === 'month'
-            ? anchor.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' })
-            : new Intl.DateTimeFormat('he-IL', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              }).formatRange(days[0], days[days.length - 1])}
-        </h2>
-        <button
-          type="button"
-          className="btn btn-outline"
-          onClick={onNext}
-          aria-label={`${stepNoun} הבא`}
-        >
-          ›
-        </button>
-        <button type="button" className="btn btn-outline schedule-calendar-today" onClick={onToday}>
-          היום
-        </button>
-      </div>
+      {/* The compact agenda is a forward-rolling "next few days" list rather
+          than a month, so month-stepping controls would navigate somewhere it
+          doesn't show. Every other combination keeps the header. */}
+      {!(isAgenda && compact) && (
+        <div className="schedule-calendar-header">
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={onPrev}
+            aria-label={`${stepNoun} קודם`}
+          >
+            ‹
+          </button>
+          <h2>
+            {viewType === 'month' || isAgenda
+              ? anchor.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' })
+              : new Intl.DateTimeFormat('he-IL', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                }).formatRange(days[0], days[days.length - 1])}
+          </h2>
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={onNext}
+            aria-label={`${stepNoun} הבא`}
+          >
+            ›
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline schedule-calendar-today"
+            onClick={onToday}
+          >
+            היום
+          </button>
+        </div>
+      )}
 
       {/* Its own row rather than another control inside the header, which
           already carries four. Unlike the legend, this renders in compact
           mode too, so the Home preview can be re-scoped without leaving for
           the full page (whether the choice outlives the visit is the
-          parent's call — see `persist` in useCalendarView). */}
-      <div className="schedule-calendar-views" role="group" aria-label="תצוגת לוח">
-        {VIEW_OPTIONS.map(({ value, label }) => (
-          <button
-            type="button"
-            key={value}
-            className={`btn btn-outline schedule-view-button ${viewType === value ? 'is-active' : ''}`}
-            aria-pressed={viewType === value}
-            onClick={() => onSelectViewType(value)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+          parent's call — see `persist` in useCalendarView).
+
+          Hidden entirely on the agenda: it's the mobile view, and the whole
+          point is that it's the *only* one there — offering a switch back to
+          a 7-column grid on a phone would just offer the layout this
+          replaces. */}
+      {!isAgenda && (
+        <div className="schedule-calendar-views" role="group" aria-label="תצוגת לוח">
+          {VIEW_OPTIONS.map(({ value, label }) => (
+            <button
+              type="button"
+              key={value}
+              className={`btn btn-outline schedule-view-button ${
+                viewType === value ? 'is-active' : ''
+              }`}
+              aria-pressed={viewType === value}
+              onClick={() => onSelectViewType(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {!compact && (
         <div className="schedule-calendar-legend">
@@ -486,129 +496,145 @@ function Calendar({
         </div>
       )}
 
-      {/* Derived from the actual days rather than a static list, since a
-          rolling window can start on any weekday. In month view the first
-          row is always Sunday-aligned (see `buildMonthGrid`), so this still
-          renders exactly א through ש. The wider 3-day columns have room for
-          the full weekday name. */}
-      <div className="schedule-calendar-weekdays">
-        {days.slice(0, columnCount).map((day, index) => (
-          <div key={index}>
-            {viewType === 'threeDay'
-              ? day.toLocaleDateString('he-IL', { weekday: 'long' })
-              : WEEKDAY_LABELS[day.getDay()]}
-          </div>
-        ))}
-      </div>
+      {isAgenda ? (
+        <AgendaList
+          entries={entries}
+          rangeStart={agendaRange.rangeStart}
+          rangeEnd={agendaRange.rangeEnd}
+          maxDays={agendaRange.maxDays}
+          emptyMessage={agendaRange.emptyMessage}
+          isAdmin={isAdmin}
+          onEntryClick={handleEntryClick}
+          onDeleteManual={onDeleteManual}
+          compact={compact}
+        />
+      ) : (
+        <>
+        {/* Derived from the actual days rather than a static list, since a
+            rolling window can start on any weekday. In month view the first
+            row is always Sunday-aligned (see `buildMonthGrid`), so this still
+            renders exactly א through ש. The wider 3-day columns have room for
+            the full weekday name. */}
+        <div className="schedule-calendar-weekdays">
+          {days.slice(0, columnCount).map((day, index) => (
+            <div key={index}>
+              {viewType === 'threeDay'
+                ? day.toLocaleDateString('he-IL', { weekday: 'long' })
+                : WEEKDAY_LABELS[day.getDay()]}
+            </div>
+          ))}
+        </div>
 
-      <div className="schedule-calendar-grid">
-        {days.map((day, index) => {
-          const key = toDateKey(day)
-          const dayEntries = entriesByDay.get(key) || []
-          const daySegments = computeDaySpanningSegments(
-            day,
-            spanningEntries,
-            index % columnCount,
-            columnCount,
-            laneByEntryIdPerRow[Math.floor(index / columnCount)]
-          )
-          // Slots run from lane 0 up to this day's own highest active lane;
-          // a lower lane with nothing active today still renders an empty
-          // placeholder so a higher-lane segment stays vertically aligned
-          // with where it sits on neighboring days (see
-          // `computeRowLaneAssignments`) — there's no need to pad past this
-          // day's own max lane, since nothing below it needs the alignment.
-          const segmentsByLane = new Map(daySegments.map((segment) => [segment.lane, segment]))
-          const maxLane = daySegments.length > 0 ? Math.max(...daySegments.map((segment) => segment.lane)) : -1
-          const laneSlots = Array.from({ length: maxLane + 1 }, (_, lane) => segmentsByLane.get(lane) ?? null)
-          // Only the month grid borrows days from adjacent months; every cell
-          // of a rolling window is equally in-view, so nothing is dimmed.
-          const isOutsideMonth = viewType === 'month' && day.getMonth() !== anchor.getMonth()
-          const isToday = key === todayKey
-          const visible = dayEntries.slice(0, maxVisibleEntries)
-          const hiddenCount = dayEntries.length - visible.length
+        <div className="schedule-calendar-grid">
+          {days.map((day, index) => {
+            const key = toDateKey(day)
+            const dayEntries = entriesByDay.get(key) || []
+            const daySegments = computeDaySpanningSegments(
+              day,
+              spanningEntries,
+              index % columnCount,
+              columnCount,
+              laneByEntryIdPerRow[Math.floor(index / columnCount)]
+            )
+            // Slots run from lane 0 up to this day's own highest active lane;
+            // a lower lane with nothing active today still renders an empty
+            // placeholder so a higher-lane segment stays vertically aligned
+            // with where it sits on neighboring days (see
+            // `computeRowLaneAssignments`) — there's no need to pad past this
+            // day's own max lane, since nothing below it needs the alignment.
+            const segmentsByLane = new Map(daySegments.map((segment) => [segment.lane, segment]))
+            const maxLane = daySegments.length > 0 ? Math.max(...daySegments.map((segment) => segment.lane)) : -1
+            const laneSlots = Array.from({ length: maxLane + 1 }, (_, lane) => segmentsByLane.get(lane) ?? null)
+            // Only the month grid borrows days from adjacent months; every cell
+            // of a rolling window is equally in-view, so nothing is dimmed.
+            const isOutsideMonth = viewType === 'month' && day.getMonth() !== anchor.getMonth()
+            const isToday = key === todayKey
+            const visible = dayEntries.slice(0, maxVisibleEntries)
+            const hiddenCount = dayEntries.length - visible.length
 
-          return (
-            <div
-              key={key}
-              className={`schedule-calendar-day ${isOutsideMonth ? 'is-outside-month' : ''} ${
-                isToday ? 'is-today' : ''
-              }`}
-            >
-              <span className="schedule-calendar-day-number">{day.getDate()}</span>
+            return (
+              <div
+                key={key}
+                className={`schedule-calendar-day ${isOutsideMonth ? 'is-outside-month' : ''} ${
+                  isToday ? 'is-today' : ''
+                }`}
+              >
+                <span className="schedule-calendar-day-number">{day.getDate()}</span>
 
-              {laneSlots.length > 0 && (
-                <div className="schedule-calendar-day-bands">
-                  {laneSlots.map((segment, lane) => {
-                    if (!segment) {
+                {laneSlots.length > 0 && (
+                  <div className="schedule-calendar-day-bands">
+                    {laneSlots.map((segment, lane) => {
+                      if (!segment) {
+                        return (
+                          <div
+                            className="schedule-band-pill-placeholder"
+                            key={`empty-lane-${lane}`}
+                            aria-hidden="true"
+                          />
+                        )
+                      }
+                      const isExpanded = expandedEntryIds.has(segment.entry.id)
+                      const { preview, isTruncated } = previewTitle(segment.entry.title, pillPreviewChars)
+                      const showFull = isExpanded || !isTruncated
                       return (
-                        <div
-                          className="schedule-band-pill-placeholder"
-                          key={`empty-lane-${lane}`}
-                          aria-hidden="true"
-                        />
+                        <button
+                          type="button"
+                          key={segment.entry.id}
+                          className={`schedule-band-pill ${colorClassFor(segment.entry)} ${
+                            segment.isRangeStart ? 'is-range-start' : ''
+                          } ${segment.isRangeEnd ? 'is-range-end' : ''} ${
+                            segment.showsTitle ? 'is-title-segment' : ''
+                          } ${segment.isContinuingBackward ? 'is-continuing-backward' : ''} ${
+                            segment.isContinuingForward ? 'is-continuing-forward' : ''
+                          } ${segment.showsTitle && isExpanded ? 'is-expanded' : ''}`}
+                          title={segment.entry.title}
+                          onClick={() => handlePillClick(segment.entry)}
+                        >
+                          {segment.showsTitle ? (showFull ? segment.entry.title : `${preview}…`) : ''}
+                        </button>
                       )
-                    }
-                    const isExpanded = expandedEntryIds.has(segment.entry.id)
-                    const { preview, isTruncated } = previewTitle(segment.entry.title, pillPreviewChars)
-                    const showFull = isExpanded || !isTruncated
+                    })}
+                  </div>
+                )}
+
+                <div className="schedule-calendar-day-entries">
+                  {visible.map((entry) => {
+                    const deadline = splitDeadlineTitle(entry)
                     return (
                       <button
                         type="button"
-                        key={segment.entry.id}
-                        className={`schedule-band-pill ${colorClassFor(segment.entry)} ${
-                          segment.isRangeStart ? 'is-range-start' : ''
-                        } ${segment.isRangeEnd ? 'is-range-end' : ''} ${
-                          segment.showsTitle ? 'is-title-segment' : ''
-                        } ${segment.isContinuingBackward ? 'is-continuing-backward' : ''} ${
-                          segment.isContinuingForward ? 'is-continuing-forward' : ''
-                        } ${segment.showsTitle && isExpanded ? 'is-expanded' : ''}`}
-                        title={segment.entry.title}
-                        onClick={() => handlePillClick(segment.entry)}
+                        key={entry.id}
+                        className={`schedule-entry-pill ${colorClassFor(entry)}`}
+                        title={entry.title}
+                        onClick={() => handleEntryClick(entry)}
                       >
-                        {segment.showsTitle ? (showFull ? segment.entry.title : `${preview}…`) : ''}
+                        {deadline ? (
+                          <>
+                            <span className="schedule-entry-pill-deadline-label">{deadline.label}:</span>
+                            <span className="schedule-entry-pill-deadline-title">{deadline.rest}</span>
+                          </>
+                        ) : (
+                          entry.title
+                        )}
                       </button>
                     )
                   })}
-                </div>
-              )}
-
-              <div className="schedule-calendar-day-entries">
-                {visible.map((entry) => {
-                  const deadline = splitDeadlineTitle(entry)
-                  return (
+                  {hiddenCount > 0 && (
                     <button
                       type="button"
-                      key={entry.id}
-                      className={`schedule-entry-pill ${colorClassFor(entry)}`}
-                      title={entry.title}
-                      onClick={() => handleEntryClick(entry)}
+                      className="schedule-entry-pill schedule-entry-more"
+                      onClick={() => setExpandedDayKey(key)}
                     >
-                      {deadline ? (
-                        <>
-                          <span className="schedule-entry-pill-deadline-label">{deadline.label}:</span>
-                          <span className="schedule-entry-pill-deadline-title">{deadline.rest}</span>
-                        </>
-                      ) : (
-                        entry.title
-                      )}
+                      +{hiddenCount} נוספים
                     </button>
-                  )
-                })}
-                {hiddenCount > 0 && (
-                  <button
-                    type="button"
-                    className="schedule-entry-pill schedule-entry-more"
-                    onClick={() => setExpandedDayKey(key)}
-                  >
-                    +{hiddenCount} נוספים
-                  </button>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+        </>
+      )}
 
       {expandedDayKey && (
         <div className="schedule-day-popover-overlay" onClick={() => setExpandedDayKey(null)}>

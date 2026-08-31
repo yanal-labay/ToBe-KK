@@ -1,0 +1,164 @@
+/* The mobile agenda (see AgendaList.jsx) — the calendar grid's replacement on
+   a phone-sized viewport. Deliberately a plain vertical flow with no media
+   queries of its own: the decision about *when* this renders at all lives in
+   `useIsMobile`/`useCalendarView`, so duplicating the breakpoint here would
+   give the same question two answers that could drift apart.
+
+   The entry color classes (.schedule-color-*) come from Calendar.css, which
+   is always loaded alongside this — Calendar.jsx imports both. */
+
+.schedule-agenda {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.schedule-agenda-empty {
+  color: var(--color-text-muted);
+  text-align: center;
+  margin: 24px 0;
+}
+
+.schedule-agenda-day {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Not `position: sticky`: `.site-topbar` already is, and two sticky layers
+   competing for the same top edge means the heading parks underneath the
+   navbar instead of above the content it labels. `scroll-margin-top` is the
+   same trick `.form-focus-panel` uses in styles/components.css — it gives the
+   auto-scroll-to-today clearance under that same topbar. */
+.schedule-agenda-day-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  scroll-margin-top: 90px;
+}
+
+.schedule-agenda-day-heading.is-today {
+  color: var(--color-text);
+  border-bottom-color: var(--color-primary);
+}
+
+.schedule-agenda-today-badge {
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.schedule-agenda-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.schedule-agenda-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+/* A row, not a solid colored pill like the grid's: a stacked column of
+   full-width color blocks is far too loud to read at length. The color
+   survives as the stripe below instead. */
+.schedule-agenda-entry {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  font: inherit;
+  text-align: right;
+  padding: 0;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.schedule-agenda-entry:hover {
+  border-color: var(--color-primary);
+}
+
+/* The entry's source color. A `<span>` rather than a `border-inline-start`
+   because the palette classes in Calendar.css all set `background`, so reusing
+   them on an element is what keeps this in sync with the grid's pills and the
+   legend dots automatically. Under the app's RTL, inline-start is the right
+   edge — the side a reader meets first. */
+.schedule-agenda-stripe {
+  flex-shrink: 0;
+  width: 5px;
+  align-self: stretch;
+}
+
+.schedule-agenda-entry-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 10px 4px 10px 12px;
+}
+
+/* Mirrors .schedule-entry-pill-deadline-label in Calendar.css: the deadline
+   prefix reads as a caption above its title rather than running into it. */
+.schedule-agenda-entry-label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.schedule-agenda-entry-title {
+  color: var(--color-text);
+  line-height: 1.35;
+  /* Never truncated — the row is free to grow, unlike a grid cell. */
+  overflow-wrap: anywhere;
+}
+
+/* A spanning entry repeats under every day it covers, so its full range is
+   what stops several rows from reading as several separate things. */
+.schedule-agenda-entry-range {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.schedule-agenda-delete {
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* Home's glance widget: same list, tightened up, since it sits inside a small
+   card and shows only the next few days. */
+.schedule-agenda--compact {
+  gap: 12px;
+}
+
+.schedule-agenda--compact .schedule-agenda-day {
+  gap: 6px;
+}
+
+.schedule-agenda--compact .schedule-agenda-day-heading {
+  font-size: 13px;
+  padding-bottom: 4px;
+}
+
+.schedule-agenda--compact .schedule-agenda-entries {
+  gap: 6px;
+}
+
+.schedule-agenda--compact .schedule-agenda-entry-text {
+  padding: 7px 4px 7px 10px;
+  font-size: 13px;
+}

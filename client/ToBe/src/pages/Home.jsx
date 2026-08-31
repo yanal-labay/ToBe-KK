@@ -32,10 +32,11 @@ function Home() {
   // This preview always opens on a short range regardless of what the
   // /schedule page has saved — a whole month is too dense to read at this
   // size — and switching it here stays local to the visit rather than
-  // changing what /schedule opens with.
+  // changing what /schedule opens with. On a phone `useCalendarView` returns
+  // 'agenda' instead, which this renders as a short upcoming list.
   const { viewType, selectViewType, anchor, handlePrev, handleNext, handleToday } = useCalendarView({
     persist: false,
-    defaultViewType: (isMobile) => (isMobile ? 'threeDay' : 'sevenDay'),
+    defaultViewType: 'sevenDay',
   })
 
   const loadHome = () => {

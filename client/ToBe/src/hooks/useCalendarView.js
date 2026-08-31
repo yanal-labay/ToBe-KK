@@ -1,14 +1,11 @@
 import { useState } from 'react'
+import { useIsMobile } from './useIsMobile'
 
 const STORAGE_KEY = 'scheduleView'
+// The three views an explicit pick can select — and so the only three values
+// ever read back out of storage. 'agenda' is deliberately absent: it's
+// derived from the viewport, never chosen, and never persisted.
 const VALID_VIEW_TYPES = ['month', 'sevenDay', 'threeDay']
-
-// The app's canonical mobile breakpoint. There's no shared variable for it,
-// so it's duplicated here alongside Navbar.css and Calendar.css — keep all
-// three in sync.
-const MOBILE_QUERY = '(max-width: 900px)'
-
-const isMobileViewport = () => window.matchMedia(MOBILE_QUERY).matches
 
 /** Today at local midnight — see the `anchor` note in `useCalendarView`. */
 function startOfToday() {
@@ -48,7 +45,8 @@ function addMonthsClamped(date, delta) {
 
 /**
  * Normalizes `anchor` for the view about to render it: the 7-day view always
- * starts on a Sunday, the other two start wherever they're pointed.
+ * starts on a Sunday, the others start wherever they're pointed (the agenda
+ * included — it covers whole calendar months, which need no snapping).
  */
 function anchorForView(anchor, viewType) {
   return viewType === 'sevenDay' ? startOfWeek(anchor) : anchor
@@ -58,7 +56,7 @@ function anchorForView(anchor, viewType) {
  * Which slice of the calendar is on screen, shared by Schedule.jsx and
  * Home.jsx's compact preview.
  *
- * A single `anchor` date drives all three views: month renders the month
+ * A single `anchor` date drives every view: month renders the month
  * containing it, the 7-day view renders the Sunday–Saturday week containing
  * it, and the 3-day view renders a sliding window starting at it. Switching
  * view keeps the anchor, so navigating to September and then switching to
@@ -67,6 +65,16 @@ function anchorForView(anchor, viewType) {
  * Stepping matches what each view means rather than always jumping a whole
  * screenful: a month at a time, a week at a time, but the 3-day window slides
  * one day at a time so you can walk a span across it.
+ *
+ * On a phone-sized viewport this returns a fourth view type, 'agenda' — the
+ * scrollable per-day list Calendar.jsx renders instead of the grid, which is
+ * unreadable at seven columns wide. It's derived here rather than inside
+ * Calendar.jsx for a reason that bites immediately otherwise: `shift()` picks
+ * its step size from `viewType`, so a calendar that swapped in the agenda
+ * locally while this hook still believed it was on 'threeDay' would advance
+ * the anchor by one *day* per ‹ › press while showing a whole month. The
+ * stored desktop pick is left untouched throughout, so widening the window
+ * restores exactly the view that was chosen.
  *
  * `persist` (default true) is what separates the two surfaces. The /schedule
  * page remembers an explicit pick across visits; the Home preview always
@@ -91,16 +99,20 @@ function anchorForView(anchor, viewType) {
  *
  * Unlike `useTheme`, the chosen view is persisted from the setter rather than
  * a `useEffect` on every change: there's no DOM side effect to apply here,
- * and an effect would also persist the *viewport-derived* default, so a first
- * visit on a phone would freeze "threeDay" into storage and then override the
- * desktop default later. Only an explicit pick is remembered.
+ * and an effect would also persist the derived mobile view, freezing "agenda"
+ * into storage where it would then override the desktop default. Only an
+ * explicit pick is remembered.
+ *
+ * `defaultViewType` is a plain string, not a `(isMobile) => …` callback: a
+ * phone never renders the stored/default type at all now, so the only value
+ * this needs to describe is the desktop one.
  *
  * @param {{
  *   persist?: boolean,
- *   defaultViewType?: (isMobile: boolean) => 'month'|'sevenDay'|'threeDay',
+ *   defaultViewType?: 'month'|'sevenDay'|'threeDay',
  * }} [options]
  * @returns {{
- *   viewType: 'month'|'sevenDay'|'threeDay',
+ *   viewType: 'month'|'sevenDay'|'threeDay'|'agenda',
  *   selectViewType: (next: 'month'|'sevenDay'|'threeDay') => void,
  *   anchor: Date,
  *   handlePrev: () => void,
@@ -108,18 +120,18 @@ function anchorForView(anchor, viewType) {
  *   handleToday: () => void,
  * }}
  */
-export function useCalendarView({
-  persist = true,
-  defaultViewType = (isMobile) => (isMobile ? 'threeDay' : 'month'),
-} = {}) {
-  const [viewType, setViewType] = useState(() => {
+export function useCalendarView({ persist = true, defaultViewType = 'month' } = {}) {
+  const isMobile = useIsMobile()
+  const [storedViewType, setViewType] = useState(() => {
     if (persist) {
       const stored = localStorage.getItem(STORAGE_KEY)
       if (VALID_VIEW_TYPES.includes(stored)) return stored
     }
-    return defaultViewType(isMobileViewport())
+    return defaultViewType
   })
   const [anchor, setAnchor] = useState(startOfToday)
+
+  const viewType = isMobile ? 'agenda' : storedViewType
 
   const selectViewType = (next) => {
     setViewType(next)
@@ -128,7 +140,11 @@ export function useCalendarView({
 
   const shift = (direction) => {
     setAnchor((current) => {
-      if (viewType === 'month') return addMonthsClamped(current, direction)
+      // The agenda covers one whole calendar month, so it steps like the
+      // month grid does.
+      if (viewType === 'month' || viewType === 'agenda') {
+        return addMonthsClamped(current, direction)
+      }
       // Whole weeks from the week's own Sunday, so stepping never drifts the
       // window off its Sunday alignment.
       if (viewType === 'sevenDay') return addDays(startOfWeek(current), direction * 7)
