@@ -28,6 +28,7 @@ const scheduleRoutes = require("./schedule/schedule.routes");
 const homeRoutes = require("./home/home.routes");
 const contactRoutes = require("./contact/contact.routes");
 const linkRoutes = require("./links/link.routes");
+const activityRoutes = require("./activity/activity.routes");
 
 const app = express();
 
@@ -78,6 +79,7 @@ app.use("/api/schedule", scheduleRoutes);
 app.use("/api/home", homeRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/links", linkRoutes);
+app.use("/api/activity", activityRoutes);
 
 // Cheap liveness probe — no database, no auth. Used as the target of the
 // keep-alive ping below, and as something to point Render's health check at.

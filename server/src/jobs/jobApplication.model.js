@@ -23,6 +23,16 @@ const JobApplicationSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   email: { type: String, required: true, trim: true, lowercase: true },
   phone: { type: String, required: true, trim: true },
+  // Admin "needs attention" marker, surfaced in the activity tree (see
+  // activity.controller.js) where it colours this row red and rolls up to
+  // its group headers. Shared across admins rather than per-admin: it
+  // describes the submission, not one person's view of it.
+  isFlagged: { type: Boolean, default: false },
+  // Admins who have cleared the notification for this row. Per-admin by
+  // design, which a single shared "last seen" timestamp can't express once
+  // notifications are clearable per event / per person rather than all at
+  // once. Bounded by the number of admin accounts, so it stays tiny.
+  seenBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   status: {
     type: String,
     enum: ["submitted", "in_review", "handled"],

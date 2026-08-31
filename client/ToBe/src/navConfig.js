@@ -24,7 +24,12 @@ export const NAV_LINKS = [
 // registry link uses a shorter label that fits the admin panel's context.
 // The home icon stays pointed at "/" for admins too — there's no separate
 // admin dashboard route anymore (see App.jsx).
-export const ADMIN_NAV_LINKS = NAV_LINKS.map((link) => {
-  if (link.to === '/student-registry') return { ...link, label: 'מאגר צעירים' }
-  return link
-})
+export const ADMIN_NAV_LINKS = [
+  ...NAV_LINKS.map((link) => {
+    if (link.to === '/student-registry') return { ...link, label: 'מאגר צעירים' }
+    return link
+  }),
+  // Admin-only page, so it's appended here rather than mapped from
+  // NAV_LINKS — the first entry the two lists genuinely don't share.
+  { label: 'סטטיסטיקות', to: '/admin/activity' },
+]

@@ -3,9 +3,10 @@ import { useAdminSession } from '../../hooks/useAdminSession'
 import { logout } from '../../services/authService'
 import BrandLogo from './BrandLogo'
 import ThemeToggleButton from './ThemeToggleButton'
+import ActivityBell from './ActivityBell'
 import './AdminTopbar.css'
 
-/** Admin-facing topbar: brand + "אזור ניהול" badge + theme toggle + logout. */
+/** Admin-facing topbar: brand + "אזור ניהול" badge + activity bell + theme toggle + logout. */
 function AdminTopbar() {
   const { theme, toggleTheme } = useTheme()
   const { clearSession } = useAdminSession()
@@ -25,6 +26,7 @@ function AdminTopbar() {
         <span className="admin-badge">אזור ניהול</span>
       </div>
       <div className="admin-topbar-actions">
+        <ActivityBell />
         <ThemeToggleButton theme={theme} onToggle={toggleTheme} />
         <button type="button" className="btn btn-outline" onClick={handleLogout}>
           התנתקות

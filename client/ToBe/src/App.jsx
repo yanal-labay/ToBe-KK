@@ -12,6 +12,7 @@ import StyleGuide from './pages/StyleGuide'
 import PlaceholderPage from './pages/PlaceholderPage'
 import NotFound from './pages/NotFound'
 import AdminLogin from './pages/admin/AdminLogin'
+import AdminActivity from './pages/admin/AdminActivity'
 import './styles/components.css'
 
 /**
@@ -41,6 +42,10 @@ function App() {
         <Route path="/appointment" element={<PlaceholderPage title="בקשה לתאום פגישה" />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/style-guide" element={<StyleGuide />} />
+        {/* Inside Layout so it gets the admin chrome — unlike
+            /admin/login, which sits outside precisely because it must not.
+            The page guards itself on session status; the API enforces it. */}
+        <Route path="/admin/activity" element={<AdminActivity />} />
 
         {/* Catch-all for unknown URLs. Inside Layout on purpose — see NotFound.jsx */}
         <Route path="*" element={<NotFound />} />

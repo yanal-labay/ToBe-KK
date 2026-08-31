@@ -48,6 +48,16 @@ const RegistrantSchema = new mongoose.Schema({
   yearOfStudy: { type: Number, default: null, min: 1, max: 6 },
   interests: { type: [String], required: true },
   militaryStatus: { type: String, default: null },
+  // Admin "needs attention" marker, surfaced in the activity tree (see
+  // activity.controller.js) where it colours this row red and rolls up to
+  // its group headers. Shared across admins rather than per-admin: it
+  // describes the submission, not one person's view of it.
+  isFlagged: { type: Boolean, default: false },
+  // Admins who have cleared the notification for this row. Per-admin by
+  // design, which a single shared "last seen" timestamp can't express once
+  // notifications are clearable per event / per person rather than all at
+  // once. Bounded by the number of admin accounts, so it stays tiny.
+  seenBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   createdAt: { type: Date, default: Date.now },
 });
 

@@ -1,0 +1,283 @@
+.admin-activity-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px 24px;
+
+  /* Gold scale for the tree headers, kept together so the whole set is
+     tunable from one place. Level 1 is the most saturated so top-level
+     groups read as headlines; level 2 sits lighter beneath it; hover
+     lightens further rather than washing out to the page background.
+     Alpha over --color-surface, so it works in both themes without a
+     separate dark-mode palette. */
+  --node-bg-1: rgba(255, 199, 44, 0.42);
+  --node-bg-2: rgba(255, 199, 44, 0.22);
+  --node-bg-hover: rgba(255, 199, 44, 0.12);
+}
+
+.admin-activity-error {
+  color: #c0392b;
+}
+
+.admin-activity-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.admin-activity-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.admin-activity-tile-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  line-height: 1;
+}
+
+.admin-activity-tile-label {
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.admin-activity-search {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+  font-size: 14px;
+  max-width: 420px;
+  margin-bottom: 16px;
+}
+
+.admin-activity-search input {
+  font: inherit;
+  font-weight: 400;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.admin-activity-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-activity-group,
+.admin-activity-child {
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.admin-activity-child {
+  margin-bottom: 8px;
+}
+
+/* Disclosure row for both levels. `level-2` is inset and slightly smaller so
+   the nesting reads at a glance. */
+.admin-activity-node-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-inline-end: 10px;
+  transition: background 0.15s ease;
+}
+
+.admin-activity-node-header.level-1 {
+  background: var(--node-bg-1);
+}
+
+.admin-activity-node-header.level-2 {
+  background: var(--node-bg-2);
+}
+
+/* Hovering lightens the entire bar — including the ✓ — rather than only the
+   disclosure button, which used to leave the two halves different colours. */
+.admin-activity-node-header:hover,
+.admin-activity-node-header.level-1:hover,
+.admin-activity-node-header.level-2:hover {
+  background: var(--node-bg-hover);
+}
+
+/* The clickable disclosure fills the row; the ✓ sits beside it as a sibling
+   rather than nested inside, since a button can't contain another button. */
+.admin-activity-disclosure {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  border: none;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+
+.admin-activity-node-header.level-2 .admin-activity-disclosure {
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+/* A node containing a flagged person, at any depth below it. Border rather
+   than fill so it stacks with .is-new, and always paired with the 🚩 glyph. */
+.admin-activity-node-header.is-flagged {
+  box-shadow: inset 0 0 0 2px #d03b3b;
+}
+
+/* Matches the filter sidebar's collapse affordance. */
+.admin-activity-caret {
+  display: inline-block;
+  transition: transform 0.2s ease;
+  color: var(--color-text-muted);
+}
+
+.admin-activity-caret.is-collapsed {
+  transform: rotate(-90deg);
+}
+
+.admin-activity-node-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-activity-badge {
+  flex-shrink: 0;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-activity-group-body {
+  padding: 0 14px 12px;
+}
+
+.admin-activity-entries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-activity-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+
+.admin-activity-entry:last-child {
+  border-bottom: none;
+}
+
+/* The flagged person themselves — the strongest of the three red states. */
+.admin-activity-entry.is-flagged {
+  background: rgba(208, 59, 59, 0.09);
+  border-inline-start: 3px solid #d03b3b;
+}
+
+.admin-activity-entry-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-activity-entry-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.admin-activity-new-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary-dark);
+  flex-shrink: 0;
+}
+
+.admin-activity-entry-email {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.admin-activity-entry-time {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.admin-activity-flag-btn {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.admin-activity-flag-btn[aria-pressed='true'] {
+  border-color: #d03b3b;
+}
+
+.admin-activity-group-link {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--color-primary-dark);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.admin-activity-group-link:hover {
+  text-decoration: underline;
+}
+
+/* "Mark as seen" — on both header levels and on each person's row. Only
+   rendered when there is something unseen to clear, so its presence is
+   itself the signal that a node has new entries. */
+.admin-activity-clear-btn {
+  flex-shrink: 0;
+  border: 1px solid var(--color-border);
+  /* Transparent so the header's background shows through and the whole bar
+     changes as one on hover. */
+  background: transparent;
+  color: var(--color-text);
+  border-radius: 6px;
+  padding: 4px 9px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.admin-activity-clear-btn:hover {
+  background: var(--color-surface);
+  border-color: var(--color-primary-dark);
+}
