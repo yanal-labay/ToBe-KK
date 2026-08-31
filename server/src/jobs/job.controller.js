@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const { z } = require("zod");
 const Job = require("./job.model");
+const JobApplication = require("./jobApplication.model");
 const { deletePhoto } = require("./upload");
 
 /** An optional free-text field: blank/omitted becomes `null` rather than an empty string. */
@@ -70,7 +71,50 @@ const JobInputSchema = z.object({
     .enum(["true", "false"])
     .optional()
     .transform((v) => v !== "false"),
+  applicationMethod: z.enum(["contact", "link", "form"], {
+    errorMap: () => ({ message: "יש לבחור שיטת הגשה" }),
+  }),
+  applicationUrl: optionalTrimmedString(500),
+}).superRefine((data, ctx) => {
+  // Cross-field rules a per-field schema can't express: which of the other
+  // fields are required depends on the method the admin picked.
+  if (data.applicationMethod === "contact") {
+    if (!data.contactName && !data.contactEmail && !data.contactPhone) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["contactName"],
+        message: "יש למלא לפחות דרך התקשרות אחת",
+      });
+    }
+  }
+
+  if (data.applicationMethod === "link") {
+    const parsed = z.string().url().safeParse(data.applicationUrl || "");
+    if (!parsed.success) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["applicationUrl"],
+        message: "קישור לא תקין",
+      });
+    }
+  }
 });
+
+/**
+ * Blanks whichever fields the chosen `applicationMethod` doesn't use, so a
+ * posting switched from "link" to "contact" doesn't keep a stale URL that a
+ * later change could surface. Returns a new object; never mutates `data`.
+ */
+function clearUnusedApplicationFields(data) {
+  const cleared = { ...data };
+  if (data.applicationMethod !== "link") cleared.applicationUrl = null;
+  if (data.applicationMethod !== "contact") {
+    cleared.contactName = null;
+    cleared.contactEmail = null;
+    cleared.contactPhone = null;
+  }
+  return cleared;
+}
 
 // Every job-listing query resolves `fieldSelections` down to
 // `{ _id, name, field: { _id, name } }` so the client can render/filter
@@ -120,7 +164,10 @@ async function createJob(req, res) {
 
   try {
     const photoUrl = req.photoUrl;
-    const job = await new Job({ ...result.data, ...(photoUrl && { photoUrl }) }).save();
+    const job = await new Job({
+      ...clearUnusedApplicationFields(result.data),
+      ...(photoUrl && { photoUrl }),
+    }).save();
     res.status(201).json({ success: true, job });
   } catch (err) {
     res.status(500).json({ success: false, message: "Database error" });
@@ -150,7 +197,7 @@ async function updateJob(req, res) {
       return res.status(404).json({ success: false, message: "המשרה לא נמצאה" });
     }
 
-    const updates = { ...result.data };
+    const updates = clearUnusedApplicationFields(result.data);
     if (req.file) {
       updates.photoUrl = req.photoUrl;
       deletePhoto(existing.photoUrl);
@@ -179,10 +226,136 @@ async function deleteJob(req, res) {
       return res.status(404).json({ success: false, message: "המשרה לא נמצאה" });
     }
     deletePhoto(job.photoUrl);
+    await JobApplication.deleteMany({ job: job._id });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, message: "Database error" });
   }
 }
 
-module.exports = { listJobs, listJobsAdmin, createJob, updateJob, deleteJob };
+/** Validates an applicant's payload (no authentication required). */
+const ApplySchema = z.object({
+  name: z.string().trim().min(1).max(200),
+  email: z.string().trim().email(),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^[0-9+\-\s()]{7,20}$/, "מספר טלפון לא תקין"),
+});
+
+/** Validates an admin's status update for one application. */
+const ApplicationStatusSchema = z.object({
+  status: z.enum(["submitted", "in_review", "handled"]),
+});
+
+/**
+ * POST /api/jobs/:id/apply — public, rate-limited (see applyLimiter in
+ * job.routes.js). Re-checks that the job actually collects applications and
+ * is still active: the UI only offers the button on "form" postings, but
+ * this endpoint is public, so it enforces that itself rather than trusting
+ * the client — same reasoning as registerForEvent's isRegistrationClosed
+ * re-check.
+ */
+async function applyToJob(req, res) {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ success: false, message: "מזהה משרה לא תקין" });
+  }
+
+  const result = ApplySchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ success: false, message: "פרטי ההגשה אינם תקינים" });
+  }
+
+  try {
+    const job = await Job.findById(id);
+    if (!job) {
+      return res.status(404).json({ success: false, message: "המשרה לא נמצאה" });
+    }
+    if (job.applicationMethod !== "form") {
+      return res
+        .status(400)
+        .json({ success: false, message: "משרה זו אינה מקבלת הגשות דרך האתר" });
+    }
+    if (!job.isActive) {
+      return res.status(400).json({ success: false, message: "המשרה אינה פעילה" });
+    }
+
+    const application = await new JobApplication({ job: job._id, ...result.data }).save();
+    res.status(201).json({ success: true, application });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Database error" });
+  }
+}
+
+/** GET /api/jobs/:id/applications — admin-only. Oldest first. */
+async function listApplications(req, res) {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ success: false, message: "מזהה משרה לא תקין" });
+  }
+
+  try {
+    const applications = await JobApplication.find({ job: id }).sort({ createdAt: 1 });
+    res.json(applications);
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Database error" });
+  }
+}
+
+/** PATCH /api/jobs/:id/applications/:applicationId — admin-only. */
+async function updateApplicationStatus(req, res) {
+  const { id, applicationId } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(applicationId)) {
+    return res.status(400).json({ success: false, message: "מזהה לא תקין" });
+  }
+
+  const result = ApplicationStatusSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ success: false, message: "סטטוס לא תקין" });
+  }
+
+  try {
+    const application = await JobApplication.findOneAndUpdate(
+      { _id: applicationId, job: id },
+      { status: result.data.status },
+      { new: true, runValidators: true }
+    );
+    if (!application) {
+      return res.status(404).json({ success: false, message: "ההגשה לא נמצאה" });
+    }
+    res.json({ success: true, application });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Database error" });
+  }
+}
+
+/** DELETE /api/jobs/:id/applications/:applicationId — admin-only. */
+async function deleteApplication(req, res) {
+  const { id, applicationId } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(applicationId)) {
+    return res.status(400).json({ success: false, message: "מזהה לא תקין" });
+  }
+
+  try {
+    const application = await JobApplication.findOneAndDelete({ _id: applicationId, job: id });
+    if (!application) {
+      return res.status(404).json({ success: false, message: "ההגשה לא נמצאה" });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Database error" });
+  }
+}
+
+module.exports = {
+  applyToJob,
+  listApplications,
+  updateApplicationStatus,
+  deleteApplication,
+  listJobs,
+  listJobsAdmin,
+  createJob,
+  updateJob,
+  deleteJob,
+};

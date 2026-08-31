@@ -1,0 +1,148 @@
+.registrations-panel {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.registrations-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.registrations-chart-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 24px;
+  align-items: center;
+  gap: 8px;
+}
+
+.registrations-chart-label {
+  font-size: 13px;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.registrations-chart-track {
+  height: 10px;
+  background: var(--color-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.registrations-chart-bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+.registrations-chart-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.registrations-table-wrap {
+  overflow-x: auto;
+}
+
+.registrations-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.registrations-table th,
+.registrations-table td {
+  padding: 6px 8px;
+  text-align: right;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.registrations-table th {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.registrations-table select {
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* `justify-content: left` (a physical, not logical, value — unlike
+   `flex-start`, which would follow RTL and land on the right) keeps these
+   buttons at the screen's top-left corner regardless of the app's RTL
+   layout direction. */
+.registrations-toolbar {
+  display: flex;
+  justify-content: left;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.registrations-add-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.registrations-add-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.registrations-add-form input {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.registrations-add-form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.registrations-delete-btn {
+  border: none;
+  background: transparent;
+  color: #d03b3b;
+  cursor: pointer;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.registrations-delete-btn:hover {
+  background: rgba(208, 59, 59, 0.12);
+}
+
+/* Was `.events-error` when this panel lived under EventsManager. Defined
+   here so the shared component carries its own styling rather than borrowing
+   a page-level class that only exists on one of its two callers. */
+.submissions-error {
+  color: #c0392b;
+  font-size: 14px;
+}

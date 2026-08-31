@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { getCurrentAdmin } from '../services/authService'
+import { getCurrentAdmin } from '../components/UsersManager/UsersService'
 
 const AdminSessionContext = createContext(null)
 

@@ -107,3 +107,80 @@
   z-index: 60;
   scroll-margin-top: 96px;
 }
+
+/* Field styling shared by every admin form. Opted into per form by adding
+   `form-fields` alongside the form's own feature class — the same pattern
+   .form-focus-panel above already uses (`className="event-form form-fields"`).
+
+   This replaces seven near-identical formFields.css files, one per feature,
+   which held these exact rules and differed only in their class prefix
+   (`.event-form label` vs `.job-form label` vs ...). They had already drifted:
+   each styled a different subset of input/textarea/select, and their actions
+   and error classes had seven different names. Scoping by a shared class
+   instead means a new form opts in with one word rather than a new file.
+
+   `select` is included even though only ScheduleEntryForm and
+   RegistrantFormFields actually render one — both of which styled it before,
+   so nothing changes visually; it just stops the next form that adds a
+   dropdown from silently getting an unstyled one. */
+.form-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.form-fields input,
+.form-fields textarea,
+.form-fields select {
+  font: inherit;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* Unprefixed on purpose, and used by every form's button row / error line.
+   Both names already existed with exactly these rules — but were defined
+   inside the scholarships feature's own stylesheet, so a generic name was
+   leaking out of one feature. Defining them here makes that deliberate. */
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.form-error {
+  color: #c0392b;
+  font-size: 14px;
+}
+
+/* The sort control above each listing page's results (see
+   GUIComponents/SortBar.jsx). Lives here rather than in any one page's
+   stylesheet because events, scholarships, and jobs all use it. */
+.sort-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.sort-bar-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.sort-bar-label select {
+  font: inherit;
+  font-weight: 400;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+}

@@ -1,0 +1,602 @@
+/* The calendar's colors: 2 permanently reserved for Events and Scholarships,
+   plus a fixed 10-key palette an admin picks from for their own categories
+   (see CategoryManager and categoryPalette.js) — colorClassFor() in
+   Calendar.jsx picks between them per entry. Categories aren't limited to
+   10 in *count*: any number of categories may share a key, since picking
+   one doesn't consume it. */
+:root {
+  --schedule-event-color: #3b82f6;
+  --schedule-scholarship-color: #16a34a;
+  --schedule-category-orange-color: #f97316;
+  --schedule-category-teal-color: #14b8a6;
+  --schedule-category-pink-color: #ec4899;
+  --schedule-category-purple-color: #a855f7;
+  --schedule-category-red-color: #ef4444;
+  --schedule-category-fuchsia-color: #d946ef;
+  --schedule-category-indigo-color: #6366f1;
+  --schedule-category-slate-color: #475569;
+  --schedule-category-cyan-color: #0891b2;
+  --schedule-category-stone-color: #78716c;
+}
+
+:root[data-theme='dark'] {
+  --schedule-event-color: #6ea8ff;
+  --schedule-scholarship-color: #4ade80;
+  --schedule-category-orange-color: #fb923c;
+  --schedule-category-teal-color: #2dd4bf;
+  --schedule-category-pink-color: #f472b6;
+  --schedule-category-purple-color: #c084fc;
+  --schedule-category-red-color: #f87171;
+  --schedule-category-fuchsia-color: #e879f9;
+  --schedule-category-indigo-color: #818cf8;
+  --schedule-category-slate-color: #94a3b8;
+  --schedule-category-cyan-color: #22d3ee;
+  --schedule-category-stone-color: #a8a29e;
+}
+
+.schedule-calendar {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: clamp(12px, 3vw, 20px);
+  /* Shared with the day-cell padding/border and grid gap below so a
+     spanning band's bridge (see .is-continuing-backward/-forward) can
+     extend by exactly the space those add up to, meeting flush in the
+     middle of the gap instead of drifting out of sync with hand-duplicated
+     numbers. */
+  --schedule-day-padding: clamp(2px, 1vw, 6px);
+  --schedule-day-border-width: 1px;
+  --schedule-grid-gap: clamp(2px, 0.6vw, 6px);
+  /* Half the true distance between two adjacent cells' pill content: each
+     side's own border + padding, plus its half of the grid gap between
+     them. Extending a bridging pill by this amount on the connecting side
+     lands it exactly flush against its neighbor's matching extension. */
+  --schedule-band-bridge: calc(
+    var(--schedule-day-border-width) + var(--schedule-day-padding) + var(--schedule-grid-gap) / 2
+  );
+}
+
+.schedule-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.schedule-calendar-header h2 {
+  min-width: 160px;
+  font-size: clamp(16px, 2.2vw, 20px);
+  text-align: center;
+  margin: 0;
+}
+
+.schedule-calendar-today {
+  margin-inline-start: 8px;
+}
+
+/* Month / 7-day / 3-day switcher — a segmented control built from buttons
+   (see VIEW_OPTIONS in Calendar.jsx). `flex-wrap` rather than a media query:
+   three short labels wrap on their own if a narrow screen needs it. */
+.schedule-calendar-views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.schedule-view-button {
+  padding: clamp(4px, 1vw, 6px) clamp(10px, 2vw, 16px);
+  font-size: clamp(12px, 1.8vw, 14px);
+}
+
+.schedule-view-button.is-active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.schedule-calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+/* Each legend row doubles as a filter checkbox (see Calendar.jsx) — styled
+   as its own bordered chip so the filters read as clearly separate,
+   clickable controls rather than a plain inline key. */
+.schedule-legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(4px, 1vw, 8px);
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: clamp(4px, 1vw, 6px) clamp(10px, 2vw, 14px);
+  font-size: clamp(12px, 1.8vw, 14px);
+  background: var(--color-bg);
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.schedule-legend-chip:hover {
+  border-color: var(--color-primary);
+}
+
+.schedule-legend-chip input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.schedule-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.schedule-color-event {
+  background: var(--schedule-event-color);
+}
+
+.schedule-color-scholarship {
+  background: var(--schedule-scholarship-color);
+}
+
+.schedule-color-category-orange {
+  background: var(--schedule-category-orange-color);
+}
+
+.schedule-color-category-teal {
+  background: var(--schedule-category-teal-color);
+}
+
+.schedule-color-category-pink {
+  background: var(--schedule-category-pink-color);
+}
+
+.schedule-color-category-purple {
+  background: var(--schedule-category-purple-color);
+}
+
+.schedule-color-category-red {
+  background: var(--schedule-category-red-color);
+}
+
+.schedule-color-category-fuchsia {
+  background: var(--schedule-category-fuchsia-color);
+}
+
+.schedule-color-category-indigo {
+  background: var(--schedule-category-indigo-color);
+}
+
+.schedule-color-category-slate {
+  background: var(--schedule-category-slate-color);
+}
+
+.schedule-color-category-cyan {
+  background: var(--schedule-category-cyan-color);
+}
+
+.schedule-color-category-stone {
+  background: var(--schedule-category-stone-color);
+}
+
+.schedule-calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(var(--schedule-columns, 7), 1fr);
+  text-align: center;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.schedule-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--schedule-columns, 7), 1fr);
+  gap: var(--schedule-grid-gap);
+}
+
+/* `min-height`, not a fixed `height`: the box only grows past the floor
+   when a day genuinely has more content than fits (a spanning band plus 3
+   two-line-wrapped pills routinely added up to more than the old fixed
+   height, silently clipping the last pill's bottom half via
+   `overflow: hidden`). Grid auto-sizes every cell in a row to its tallest
+   member, so a busy day just makes its whole week-row a bit taller instead
+   of ever clipping a pill — the "+N נוספים" cap (see Calendar.jsx) still
+   limits how many pills a day can show at all, this just guarantees
+   whichever ones it does show are always fully visible.
+   `clamp()` instead of one flat value: scales continuously between a
+   phone-sized floor and a desktop-sized ceiling based on viewport width,
+   rather than jumping between a couple of fixed breakpoint values — sized
+   off the viewport (not the cell's own width) since the cell's width
+   already swings ~3x between phone and desktop while the desired height
+   range is much narrower. */
+.schedule-calendar-day {
+  min-height: clamp(128px, 20vw, 230px);
+  min-width: 0;
+  border: var(--schedule-day-border-width) solid var(--color-border);
+  border-radius: 8px;
+  padding: var(--schedule-day-padding);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2px, 0.6vw, 6px);
+}
+
+/* The day views put one row on screen instead of six, so each cell has far
+   more vertical budget to spend. Only `min-height` is overridden here: the
+   bridging math behind the continuous multi-day bars reads
+   `--schedule-day-padding` and `--schedule-grid-gap` (see
+   `--schedule-band-bridge` above), so a view variant that changed either
+   would silently desync every band segment — the compact variant below has
+   to redeclare the padding for exactly that reason. */
+.schedule-calendar--sevenDay .schedule-calendar-day {
+  min-height: clamp(150px, 18vw, 260px);
+}
+
+.schedule-calendar--threeDay .schedule-calendar-day {
+  min-height: clamp(160px, 20vw, 280px);
+}
+
+.schedule-calendar-day.is-outside-month {
+  opacity: 0.4;
+}
+
+.schedule-calendar-day.is-today {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.schedule-calendar-day-number {
+  flex-shrink: 0;
+  font-size: clamp(12px, 2vw, 16px);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+/* Always-visible, dedicated row for genuinely multi-day manual entries —
+   never subject to the regular entries' 3-max/"+N more" cap below it (see
+   Calendar.jsx). Square by default; `.is-range-start`/`.is-range-end` round
+   only the side that's a true boundary of the whole range. Being square
+   isn't enough on its own to read as one unbroken bar, though — the grid's
+   own gap and each day's own padding/border still show as a visible seam
+   between two same-row segments, which `.is-continuing-backward`/`-forward`
+   below bridge over. */
+.schedule-calendar-day-bands {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.schedule-band-pill {
+  display: block;
+  width: 100%;
+  height: clamp(15px, 2.4vw, 21px);
+  font: inherit;
+  font-size: clamp(10px, 1.5vw, 13px);
+  font-weight: 600;
+  line-height: clamp(15px, 2.4vw, 21px);
+  padding: 0 6px;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+  color: #fff;
+  min-width: 0;
+}
+
+/* Reserves a lane's vertical space on a day where that lane's entry isn't
+   active, so a *different* entry occupying a higher lane on this same day
+   still lines up with wherever it sits on neighboring days (see
+   `computeWeekLaneAssignments` in Calendar.jsx) — otherwise a continuing
+   entry visually jumps to a different row the moment some other entry
+   sharing its lane starts or ends nearby, breaking the bridged/continuous
+   look from the rules above despite the color itself still lining up
+   horizontally. */
+.schedule-band-pill-placeholder {
+  height: clamp(15px, 2.4vw, 21px);
+}
+
+.schedule-band-pill.is-range-start {
+  border-top-right-radius: 999px;
+  border-bottom-right-radius: 999px;
+}
+
+.schedule-band-pill.is-range-end {
+  border-top-left-radius: 999px;
+  border-bottom-left-radius: 999px;
+}
+
+/* Bridges the visual gap between two consecutive same-row days that both
+   carry this same entry, so the segments read as one unbroken bar instead
+   of visibly breaking at each day-cell boundary. Extends past this cell's
+   own padding and border into the grid gap (safe since `.schedule-calendar-
+   day` has no `overflow: hidden`) — `position: relative` + `z-index: 1`
+   lifts it into its own stacking context so it paints *over* the
+   neighboring (unpositioned) day cell's border instead of being painted
+   over by it, since later siblings normally paint on top in plain flow.
+   RTL: chronologically-earlier is visually to the right (see is-range-
+   start/-end above), so "continues backward" (toward yesterday) extends
+   right and "continues forward" (toward tomorrow) extends left. A row
+   boundary is never bridged — Calendar.jsx only sets these classes when a
+   same-row neighbor exists. */
+.schedule-band-pill.is-continuing-backward,
+.schedule-band-pill.is-continuing-forward {
+  position: relative;
+  z-index: 1;
+}
+
+.schedule-band-pill.is-continuing-backward {
+  margin-right: calc(-1 * var(--schedule-band-bridge));
+}
+
+.schedule-band-pill.is-continuing-forward {
+  margin-left: calc(-1 * var(--schedule-band-bridge));
+}
+
+.schedule-band-pill.is-continuing-backward:not(.is-continuing-forward) {
+  width: calc(100% + var(--schedule-band-bridge));
+}
+
+.schedule-band-pill.is-continuing-forward:not(.is-continuing-backward) {
+  width: calc(100% + var(--schedule-band-bridge));
+}
+
+.schedule-band-pill.is-continuing-backward.is-continuing-forward {
+  width: calc(100% + 2 * var(--schedule-band-bridge));
+}
+
+/* The title only renders on one segment per row (see `showsTitle` in
+   Calendar.jsx), but that segment's own box is just one day-column wide —
+   `overflow: visible` lets it spill onto the following same-colored bridged
+   segment(s) instead of eliding, so a title reads as one line across the
+   whole merged bar rather than truncating early. Still governed by
+   `white-space: nowrap` (never wraps to a 2nd line) — this only affects how
+   the *overflow* is handled. `z-index: 2` (above the `z-index: 1` on plain
+   continuing segments) makes sure the spilled text paints over the next
+   segment's own box instead of being covered by it, since same-z-index later
+   DOM siblings normally paint on top. Only reachable via
+   `is-continuing-forward`, which covers every title segment except the rare
+   one landing on the row's last column (nothing to spill onto there — falls
+   back to eliding, unchanged). */
+.schedule-band-pill.is-title-segment.is-continuing-forward {
+  overflow: visible;
+  z-index: 2;
+}
+
+.schedule-calendar-day-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* `min-width: 0` overrides the flex-item default of `min-width: auto` so the
+   pill can shrink to the day column's own width instead of forcing an
+   overflow. `width: 100%` makes it explicit (a `-webkit-box` display used to
+   sit here for line-clamping and, on some engines, quietly opted the button
+   out of the flex column's default stretch — the pill just followed its
+   own content width instead of filling the day cell).
+   This rule must never clip via `overflow`/`text-overflow`/line-clamp — a
+   title always renders in full here (see Calendar.jsx, which no longer
+   truncates entry-pill titles at all, unlike band-pills), so the pill just
+   wraps and lets its day cell grow instead — same "let it grow" approach as
+   the band-pill's `is-expanded` state. `border-radius` is a smaller
+   rounded-rectangle instead of a full capsule, since a fully-rounded pill
+   looks odd once its content can span multiple lines. */
+.schedule-entry-pill {
+  display: block;
+  width: 100%;
+  font: inherit;
+  font-size: clamp(12px, 1.9vw, 14px);
+  line-height: 1.3;
+  text-align: right;
+  padding: 2px 6px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  white-space: normal;
+  color: #fff;
+  min-width: 0;
+}
+
+/* An event/scholarship deadline pill's title arrives from the server as one
+   "label: title" string (see splitDeadlineTitle in Calendar.jsx) — rendered
+   as two separate block-level elements so the label always starts its own
+   line instead of wrapping wherever happens to fit, regardless of the
+   day column's width. */
+.schedule-entry-pill-deadline-label {
+  display: block;
+  font-size: 0.85em;
+  opacity: 0.85;
+}
+
+.schedule-entry-pill-deadline-title {
+  display: block;
+}
+
+.schedule-entry-pill.schedule-entry-more {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+
+.schedule-day-popover-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.schedule-day-popover {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 20px;
+  width: min(420px, 90vw);
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.schedule-day-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.schedule-day-popover-header h3 {
+  margin: 0;
+}
+
+.schedule-day-popover-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.schedule-day-popover-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* The popover exists specifically to show full, untruncated detail —
+   `white-space: normal` (the base rule already wraps too, but this stays
+   explicit here since the popover's correctness doesn't depend on the base
+   rule's own behavior) plus its own centered/larger-padding presentation. */
+.schedule-day-popover-row .schedule-entry-pill {
+  display: block;
+  flex: 1;
+  font-size: 13px;
+  padding: 6px 10px;
+  text-align: center;
+  white-space: normal;
+}
+
+.schedule-day-popover-delete {
+  flex-shrink: 0;
+}
+
+/* Compact variant: the home page's small preview of the same calendar
+   (see Home.jsx) — shorter day cells, smaller pills, no legend. Also
+   redeclares `--schedule-day-padding` to match the flat `2px` this variant
+   actually uses below — the bridging math (`--schedule-band-bridge` and
+   everything derived from it) reads this same variable, so without this
+   override it was still computing the bridge for the *full-size* clamp()
+   padding, over-extending every spanning-entry segment here. */
+.schedule-calendar--compact {
+  padding: 12px;
+  --schedule-day-padding: 2px;
+}
+
+.schedule-calendar--compact .schedule-calendar-header h2 {
+  min-width: auto;
+  font-size: 16px;
+}
+
+.schedule-calendar--compact .schedule-calendar-day {
+  min-height: 54px;
+  padding: 2px;
+}
+
+/* Same reasoning as the full-size day-view overrides above — one row instead
+   of six leaves room to be taller — kept proportional to this variant's own
+   smaller scale. `min-height` only, for the bridging reason documented there. */
+.schedule-calendar--compact.schedule-calendar--sevenDay .schedule-calendar-day {
+  min-height: 90px;
+}
+
+.schedule-calendar--compact.schedule-calendar--threeDay .schedule-calendar-day {
+  min-height: 110px;
+}
+
+.schedule-calendar--compact .schedule-view-button {
+  font-size: 11px;
+  padding: 2px 8px;
+}
+
+.schedule-calendar--compact .schedule-calendar-views {
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.schedule-calendar--compact .schedule-calendar-day-number {
+  font-size: 12px;
+}
+
+/* Forces single-line CSS truncation regardless of the base rule (which
+   otherwise wraps freely) — this tiny preview widget has no room to grow,
+   unlike the main calendar's day cells. Unlike the main calendar, a title can
+   still get silently clipped here with no way to expand it — accepted for
+   now since this widget is meant to stay small, not grow; revisit if it's
+   ever reported here too. */
+.schedule-calendar--compact .schedule-entry-pill {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11px;
+  padding: 1px 4px;
+}
+
+.schedule-calendar--compact .schedule-band-pill {
+  height: 13px;
+  font-size: 9px;
+  line-height: 13px;
+  padding: 0 4px;
+}
+
+/* Must track the compact band-pill's own height above — a mismatch here is
+   exactly what makes a higher-lane entry visibly misaligned across days
+   whenever a lower lane drops out (see `.schedule-band-pill-placeholder`
+   in the base rules and `computeWeekLaneAssignments` in Calendar.jsx). */
+.schedule-calendar--compact .schedule-band-pill-placeholder {
+  height: 13px;
+}
+
+/* Matches Navbar.css's own mobile breakpoint. Sizing itself (day-cell
+   height, fonts, padding, gaps) is handled by the `clamp()` values above,
+   which already scale continuously across every viewport width — this
+   block only needs the genuinely structural change that isn't just a
+   number: letting the header's controls wrap onto a second line instead of
+   forcing one cramped row, and letting the month title shrink its
+   min-width so it doesn't force that overflow on a narrow screen. */
+@media (max-width: 900px) {
+  .schedule-calendar-header {
+    flex-wrap: wrap;
+  }
+
+  .schedule-calendar-header h2 {
+    min-width: auto;
+  }
+}
+
+/* Reveals a truncated band-pill title in full on click (see
+   PILL_TITLE_PREVIEW_CHARS in Calendar.jsx) by wrapping instead of eliding,
+   growing the day cell to fit (it uses `min-height` with no
+   `overflow: hidden`, so nothing clips) — `.schedule-entry-pill` needs no
+   such override since it wraps unconditionally in its base rule already.
+   Placed last in the cascade and matched at 3 classes so it reliably wins
+   regardless of the compact overrides above or the continuing-forward spill
+   rule earlier in this file (both same-specificity ties would otherwise be
+   ambiguous). */
+.schedule-band-pill.is-title-segment.is-expanded {
+  height: auto;
+  white-space: normal;
+  overflow: visible;
+  z-index: 4;
+}

@@ -1,0 +1,168 @@
+.activity-bell {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.activity-bell-button {
+  position: relative;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.activity-bell-button:hover {
+  background: var(--color-bg);
+}
+
+/* Unread badge. Sits on the inline-start (physical right under the app's
+   RTL) so it doesn't collide with the topbar's next control. */
+.activity-bell-dot {
+  position: absolute;
+  top: -6px;
+  inset-inline-start: -6px;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #d03b3b;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
+/* Transparent click-catcher: any click outside the dropdown closes it.
+   Mirrors .schedule-day-popover-overlay's approach, minus the dimming —
+   this is a small menu, not a modal. Sits below the dropdown's z-index. */
+.activity-bell-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+}
+
+.activity-bell-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  /* Anchored on the inline-END, which under the app's RTL is the physical
+     left. The bell sits near the viewport's left edge, so anchoring the
+     other way makes a 320px panel grow off-screen and clip its own counts. */
+  inset-inline-end: 0;
+  z-index: 201;
+  width: min(320px, 90vw);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.activity-bell-heading {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+.activity-bell-empty {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.activity-bell-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.activity-bell-row:hover {
+  background: var(--color-bg);
+}
+
+/* A source with unseen entries. The tinted background is backed up by the
+   bold count text, so the state never depends on colour alone. */
+.activity-bell-row.is-new {
+  background: var(--color-primary-light);
+  border: 1px solid var(--color-primary);
+}
+
+.activity-bell-row.is-new .activity-bell-row-count {
+  font-weight: 700;
+}
+
+.activity-bell-row-count {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.activity-bell-row.is-new .activity-bell-row-count {
+  color: var(--color-primary-dark);
+}
+
+.activity-bell-footer-link {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-primary-dark);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.activity-bell-footer-link:hover {
+  text-decoration: underline;
+}
+
+/* Flag marker on the bell itself — a source somewhere has a flagged person.
+   Paired with the 🚩 glyph so the state never depends on colour alone. */
+.activity-bell-flag {
+  position: absolute;
+  bottom: -6px;
+  inset-inline-start: -6px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+/* A source containing at least one flagged person. Red border rather than a
+   red fill so it can combine with .is-new's tinted background. */
+.activity-bell-row.is-flagged {
+  border: 1px solid #d03b3b;
+}
+
+.activity-bell-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+}
+
+.activity-bell-clear {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+/* The footer link's own border/padding moved to .activity-bell-footer once
+   it gained a sibling. */
+.activity-bell-footer .activity-bell-footer-link {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}

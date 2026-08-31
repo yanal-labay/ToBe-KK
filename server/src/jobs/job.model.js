@@ -17,6 +17,16 @@ const mongoose = require("mongoose");
  *   `isStudentPosition` is a deliberately independent boolean, not part of
  *   that field system — a job can be both a "משרה חלקית" and a student
  *   position at once.
+ * - `applicationMethod` decides how a visitor applies, and which of the
+ *   other fields matter: "contact" uses the contactName/Email/Phone trio,
+ *   "link" uses `applicationUrl`, and "form" collects `JobApplication`
+ *   documents through the public /apply endpoint. The controller nulls out
+ *   whichever fields the chosen method doesn't use, so switching a posting
+ *   from one method to another never leaves stale data behind.
+ *
+ *   `default: "contact"` exists so postings created before this field keep
+ *   working — they all have contact details, and Mongoose fills a missing
+ *   default on read. Same reasoning as `Event.isActive`.
  * - `salary` is free text (a range, "לפי ניסיון", etc.), not a number —
  *   job salaries don't fit a single numeric field the way a scholarship
  *   amount does.
@@ -42,6 +52,8 @@ const JobSchema = new mongoose.Schema({
   contactName: { type: String, default: null },
   contactEmail: { type: String, default: null },
   contactPhone: { type: String, default: null },
+  applicationMethod: { type: String, enum: ["contact", "link", "form"], default: "contact" },
+  applicationUrl: { type: String, default: null },
   isActive: { type: Boolean, default: true },
   photoUrl: { type: String, default: null },
   createdAt: { type: Date, default: Date.now },

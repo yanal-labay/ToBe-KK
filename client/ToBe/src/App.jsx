@@ -1,17 +1,18 @@
 import { Routes, Route } from 'react-router-dom'
-import Layout from './components/layout/Layout'
-import Home from './pages/Home'
-import Events from './pages/Events'
-import Scholarships from './pages/Scholarships'
-import Jobs from './pages/Jobs'
-import Schedule from './pages/Schedule'
-import Contact from './pages/Contact'
-import Links from './pages/Links'
-import StudentRegistry from './pages/StudentRegistry'
-import StyleGuide from './pages/StyleGuide'
-import PlaceholderPage from './pages/PlaceholderPage'
-import NotFound from './pages/NotFound'
-import AdminLogin from './pages/admin/AdminLogin'
+import Layout from './GUIComponents/Layout/Layout'
+import Home from './components/HomeManager/Home'
+import Events from './components/EventsManager/Events'
+import Scholarships from './components/ScholarshipsManager/Scholarships'
+import Jobs from './components/JobsManager/Jobs'
+import Schedule from './components/ScheduleManager/Schedule'
+import Contact from './components/ContactManager/Contact'
+import Links from './components/LinksManager/Links'
+import StudentRegistry from './components/RegistryManager/StudentRegistry'
+import StyleGuide from './GUIComponents/Screens/StyleGuide'
+import PlaceholderPage from './GUIComponents/Screens/PlaceholderPage'
+import NotFound from './GUIComponents/Screens/NotFound'
+import AdminLogin from './components/UsersManager/AdminLogin'
+import AdminActivity from './components/ActivityManager/AdminActivity'
 import './styles/components.css'
 
 /**
@@ -41,6 +42,10 @@ function App() {
         <Route path="/appointment" element={<PlaceholderPage title="בקשה לתאום פגישה" />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/style-guide" element={<StyleGuide />} />
+        {/* Inside Layout so it gets the admin chrome — unlike
+            /admin/login, which sits outside precisely because it must not.
+            The page guards itself on session status; the API enforces it. */}
+        <Route path="/admin/activity" element={<AdminActivity />} />
 
         {/* Catch-all for unknown URLs. Inside Layout on purpose — see NotFound.jsx */}
         <Route path="*" element={<NotFound />} />
