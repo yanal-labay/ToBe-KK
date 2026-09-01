@@ -3,14 +3,31 @@ import { useSearchParams } from 'react-router-dom'
 import { useAdminSession } from '../../hooks/useAdminSession'
 import { useScrollToOpenPanel } from '../../hooks/useScrollToOpenPanel'
 import { listJobs, createJob, updateJob, deleteJob } from './JobsService'
-import { listJobFields } from './JobFieldsService'
+import {
+  listJobFields,
+  createJobField,
+  renameJobField,
+  deleteJobField,
+  addJobFieldOption,
+  deleteJobFieldOption,
+} from './JobFieldsService'
 import JobForm from './JobForm'
 import JobCard from './JobCard'
-import JobFieldsManager from './JobFieldsManager'
+import FieldsManager from '../../GUIComponents/Widgets/FieldsManager'
 import FilterSidebar from '../../GUIComponents/Widgets/FilterSidebar'
 import SortBar from '../../GUIComponents/Widgets/SortBar'
 import { byDateDesc, byTextAsc } from '../../utils/sortComparators'
 import './Jobs.css'
+
+// The write half of JobFieldsService, in the shape the shared FieldsManager
+// expects. At module scope because it's the same object every render.
+const fieldsApi = {
+  create: createJobField,
+  rename: renameJobField,
+  remove: deleteJobField,
+  addOption: addJobFieldOption,
+  removeOption: deleteJobFieldOption,
+}
 
 // Orderings offered by the sort bar. `added` is first so it's the default,
 // matching the order the page used before the bar existed.
@@ -45,12 +62,12 @@ function fieldSelectionsToFieldValues(fieldSelections) {
  * posting is never even present in a guest's data, not just hidden in the
  * UI.
  *
- * Search (by title) and filtering (by admin-defined fields, and a
- * student-position flag) happen entirely client-side against the
- * already-fetched `jobs` list, same as Scholarships' tag filter — see
+ * Search (by title) and filtering (by admin-defined fields) happen entirely
+ * client-side against the already-fetched `jobs` list, same as
+ * Scholarships' tag filter — see
  * `visibleJobs` below. The admin-defined fields themselves (name +
  * checkbox options each) come from a separate fetch (`/api/job-fields`),
- * managed independently of any single posting via `JobFieldsManager`.
+ * managed independently of any single posting via the shared `FieldsManager`.
  */
 function Jobs() {
   const { isAdmin } = useAdminSession()
@@ -214,11 +231,12 @@ function Jobs() {
       </div>
 
       {isAdmin && showFieldsManager && (
-        <JobFieldsManager
+        <FieldsManager
           panelId="job-fields-manager"
           fields={fields}
           onFieldsChanged={loadFields}
           onClose={() => setShowFieldsManager(false)}
+          api={fieldsApi}
         />
       )}
 

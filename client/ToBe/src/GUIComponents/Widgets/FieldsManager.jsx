@@ -1,29 +1,47 @@
 import { useState } from 'react'
-import {
-  createScholarshipField,
-  renameScholarshipField,
-  deleteScholarshipField,
-  addScholarshipFieldOption,
-  deleteScholarshipFieldOption,
-} from './ScholarshipFieldsService'
-import OptionChipManager from '../../GUIComponents/Widgets/OptionChipManager'
-import './ScholarshipFieldsManager.css'
+import OptionChipManager from './OptionChipManager'
+import './FieldsManager.css'
 
 /**
- * Admin-only management of scholarship fields — e.g. "תגיות", or any new
- * field the admin creates. Each field's checkbox values are managed via the
- * shared `OptionChipManager` (same as the student registry's institution/
- * field-of-study lists and Job's fields), but a field's own NAME can also be
- * renamed here — mirrors `JobsManager/JobFieldsManager.jsx` exactly.
+ * Admin-only management of one feature's fields — "סוג אירוע" and "קהל יעד"
+ * on Events, "מתאים ל" on Jobs, "זכאות" on Scholarships, plus whatever else
+ * an admin creates. Shared by all three: the panel was written once and
+ * copied twice, and the copies only ever differed in their endpoint.
+ *
+ * Each field's checkbox values are managed via the sibling
+ * `OptionChipManager` (same as the student registry's institution and
+ * field-of-study lists), but a field's own NAME can also be renamed here,
+ * unlike those other admin-managed lists — mirrors
+ * `LinksManager/LinkGroupCard.jsx`'s inline card-title rename pattern.
+ *
+ * `api` is what makes this feature-agnostic: each page passes its own
+ * `*FieldsService` functions, so the component never knows whether it is
+ * editing event, job or scholarship fields. Build it at module scope in the
+ * page rather than inline in JSX — it has no reason to be rebuilt per render.
+ * `list` is deliberately not part of it: the *page* loads the fields and
+ * passes them in, and re-loads them through `onFieldsChanged` after a write.
+ *
+ * Every action here saves immediately; there is no draft state to cancel.
+ * `onFieldsChanged` is what refreshes the list afterwards.
+ *
+ * Deleting a field cascades server-side into every document's
+ * `fieldSelections`, which is why `handleDeleteField` confirms first.
  *
  * @param {{
  *   panelId?: string,
  *   fields: Array<{_id: string, name: string, options: Array<{_id: string, name: string}>}>,
  *   onFieldsChanged: () => void,
  *   onClose: () => void,
+ *   api: {
+ *     create: ({name: string}) => Promise<Response>,
+ *     rename: (id: string, body: {name: string}) => Promise<Response>,
+ *     remove: (id: string) => Promise<Response>,
+ *     addOption: (fieldId: string, body: {name: string}) => Promise<Response>,
+ *     removeOption: (fieldId: string, optionId: string) => Promise<Response>,
+ *   },
  * }} props
  */
-function ScholarshipFieldsManager({ panelId, fields, onFieldsChanged, onClose }) {
+function FieldsManager({ panelId, fields, onFieldsChanged, onClose, api }) {
   const [newFieldName, setNewFieldName] = useState('')
   const [addError, setAddError] = useState('')
   const [addSaving, setAddSaving] = useState(false)
@@ -33,7 +51,7 @@ function ScholarshipFieldsManager({ panelId, fields, onFieldsChanged, onClose })
     setAddSaving(true)
     setAddError('')
     try {
-      const res = await createScholarshipField({ name: newFieldName })
+      const res = await api.create({ name: newFieldName })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
       setNewFieldName('')
@@ -46,7 +64,7 @@ function ScholarshipFieldsManager({ panelId, fields, onFieldsChanged, onClose })
   }
 
   const handleRenameField = async (fieldId, name) => {
-    const res = await renameScholarshipField(fieldId, { name })
+    const res = await api.rename(fieldId, { name })
     const data = await res.json()
     if (!data.success) throw new Error(data.message)
     onFieldsChanged()
@@ -54,29 +72,29 @@ function ScholarshipFieldsManager({ panelId, fields, onFieldsChanged, onClose })
 
   const handleDeleteField = async (field) => {
     if (!window.confirm(`למחוק את השדה "${field.name}" ואת כל האפשרויות שבו?`)) return
-    const res = await deleteScholarshipField(field._id)
+    const res = await api.remove(field._id)
     const data = await res.json()
     if (!data.success) return
     onFieldsChanged()
   }
 
   const handleAddOption = async (fieldId, name) => {
-    const res = await addScholarshipFieldOption(fieldId, { name })
+    const res = await api.addOption(fieldId, { name })
     const data = await res.json()
     if (!data.success) throw new Error(data.message)
     onFieldsChanged()
   }
 
   const handleDeleteOption = async (fieldId, option) => {
-    const res = await deleteScholarshipFieldOption(fieldId, option._id)
+    const res = await api.removeOption(fieldId, option._id)
     const data = await res.json()
     if (!data.success) return
     onFieldsChanged()
   }
 
   return (
-    <div id={panelId} className="scholarship-fields-manager form-focus-panel">
-      <form className="scholarship-fields-add-form" onSubmit={handleAddField}>
+    <div id={panelId} className="fields-manager form-focus-panel">
+      <form className="fields-add-form" onSubmit={handleAddField}>
         <label>
           שדה חדש
           <input value={newFieldName} onChange={(e) => setNewFieldName(e.target.value)} required />
@@ -85,10 +103,10 @@ function ScholarshipFieldsManager({ panelId, fields, onFieldsChanged, onClose })
           {addSaving ? 'מוסיף...' : 'הוספת שדה'}
         </button>
       </form>
-      {addError && <p className="scholarship-fields-error">{addError}</p>}
+      {addError && <p className="fields-error">{addError}</p>}
 
       {fields.map((field) => (
-        <ScholarshipFieldSection
+        <FieldSection
           key={field._id}
           field={field}
           onRename={(name) => handleRenameField(field._id, name)}
@@ -102,7 +120,7 @@ function ScholarshipFieldsManager({ panelId, fields, onFieldsChanged, onClose })
           while this panel is open, so the way out has to live in here. Labelled
           "סגירה", not "ביטול": every action above saves immediately, so there
           is nothing to undo — this only closes the panel. */}
-      <div className="scholarship-fields-actions">
+      <div className="fields-actions">
         <button type="button" className="btn btn-outline" onClick={onClose}>
           סגירה
         </button>
@@ -111,7 +129,7 @@ function ScholarshipFieldsManager({ panelId, fields, onFieldsChanged, onClose })
   )
 }
 
-function ScholarshipFieldSection({ field, onRename, onDeleteField, onAddOption, onDeleteOption }) {
+function FieldSection({ field, onRename, onDeleteField, onAddOption, onDeleteOption }) {
   const [renaming, setRenaming] = useState(false)
   const [nameDraft, setNameDraft] = useState(field.name)
   const [renameError, setRenameError] = useState('')
@@ -132,10 +150,10 @@ function ScholarshipFieldSection({ field, onRename, onDeleteField, onAddOption, 
   }
 
   return (
-    <div className="scholarship-field-section">
-      <div className="scholarship-field-section-header">
+    <div className="field-section">
+      <div className="field-section-header">
         {renaming ? (
-          <form className="scholarship-field-rename-form" onSubmit={handleRenameSubmit}>
+          <form className="field-rename-form" onSubmit={handleRenameSubmit}>
             <input value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} required />
             <button type="submit" className="btn btn-primary" disabled={renameSaving}>
               {renameSaving ? 'שומר...' : 'שמירה'}
@@ -154,7 +172,7 @@ function ScholarshipFieldSection({ field, onRename, onDeleteField, onAddOption, 
         ) : (
           <>
             <h3>{field.name}</h3>
-            <div className="scholarship-field-section-actions">
+            <div className="field-section-actions">
               <button
                 type="button"
                 className="btn btn-outline"
@@ -172,7 +190,7 @@ function ScholarshipFieldSection({ field, onRename, onDeleteField, onAddOption, 
           </>
         )}
       </div>
-      {renameError && <p className="scholarship-fields-error">{renameError}</p>}
+      {renameError && <p className="fields-error">{renameError}</p>}
 
       <OptionChipManager
         inputLabel="הוספת אפשרות חדשה"
@@ -187,4 +205,4 @@ function ScholarshipFieldSection({ field, onRename, onDeleteField, onAddOption, 
   )
 }
 
-export default ScholarshipFieldsManager
+export default FieldsManager

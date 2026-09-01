@@ -8,14 +8,14 @@ const EMPTY_FORM = { title: '', description: '', deadline: '', url: '', amount: 
  * Create/edit form for a scholarship, used both for "new scholarship" (no
  * `initialValues`) and for editing an existing one. Options are chosen from
  * the existing admin-defined fields only — creating a new field/option is a
- * separate admin action (see ScholarshipFieldsManager), not part of this
- * form.
+ * separate admin action (see GUIComponents/Widgets/FieldsManager), not part
+ * of this form.
  *
  * One `<fieldset>` of checkboxes is rendered per entry in `fields` (see
- * ScholarshipFieldsManager.jsx for how those fields/options are managed) —
- * unlike Job's one-`<select>`-per-field (single choice), a scholarship can
- * pick several options within the same field at once, so each field stays
- * checkboxes. Selections are tracked separately from `values` as
+ * GUIComponents/Widgets/FieldsManager.jsx for how those are managed) — a
+ * scholarship can pick several options within the same field at once, so
+ * each field stays checkboxes rather than a single-choice control. Same
+ * convention as JobForm. Selections are tracked separately from `values` as
  * `fieldValues` (`{ [fieldId]: optionId[] }`) since the set of fields is
  * dynamic, not a fixed shape.
  *

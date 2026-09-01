@@ -3,14 +3,31 @@ import { useSearchParams } from 'react-router-dom'
 import { useAdminSession } from '../../hooks/useAdminSession'
 import { useScrollToOpenPanel } from '../../hooks/useScrollToOpenPanel'
 import { listEvents, createEvent, updateEvent, deleteEvent } from './EventsService'
-import { listEventFields } from './EventFieldsService'
+import {
+  listEventFields,
+  createEventField,
+  renameEventField,
+  deleteEventField,
+  addEventFieldOption,
+  deleteEventFieldOption,
+} from './EventFieldsService'
 import EventForm from './EventForm'
 import EventCard, { isEventExpired } from './EventCard'
-import EventFieldsManager from './EventFieldsManager'
+import FieldsManager from '../../GUIComponents/Widgets/FieldsManager'
 import FilterSidebar from '../../GUIComponents/Widgets/FilterSidebar'
 import SortBar from '../../GUIComponents/Widgets/SortBar'
 import { byDateAsc, byDateDesc, byNumberAsc, chain } from '../../utils/sortComparators'
 import './Events.css'
+
+// The write half of EventFieldsService, in the shape the shared FieldsManager
+// expects. At module scope because it's the same object every render.
+const fieldsApi = {
+  create: createEventField,
+  rename: renameEventField,
+  remove: deleteEventField,
+  addOption: addEventFieldOption,
+  removeOption: deleteEventFieldOption,
+}
 
 // Orderings offered by the sort bar. `eventDate` is first so it's the
 // default, matching the order the page used before the bar existed.
@@ -215,11 +232,12 @@ function Events() {
       </div>
 
       {isAdmin && showFieldsManager && (
-        <EventFieldsManager
+        <FieldsManager
           panelId="event-fields-manager"
           fields={fields}
           onFieldsChanged={loadFields}
           onClose={() => setShowFieldsManager(false)}
+          api={fieldsApi}
         />
       )}
 

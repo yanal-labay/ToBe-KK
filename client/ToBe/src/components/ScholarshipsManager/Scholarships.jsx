@@ -3,14 +3,32 @@ import { useSearchParams } from 'react-router-dom'
 import { useAdminSession } from '../../hooks/useAdminSession'
 import { useScrollToOpenPanel } from '../../hooks/useScrollToOpenPanel'
 import { listScholarships, createScholarship, updateScholarship, deleteScholarship } from './ScholarshipsService'
-import { listScholarshipFields } from './ScholarshipFieldsService'
+import {
+  listScholarshipFields,
+  createScholarshipField,
+  renameScholarshipField,
+  deleteScholarshipField,
+  addScholarshipFieldOption,
+  deleteScholarshipFieldOption,
+} from './ScholarshipFieldsService'
 import ScholarshipForm from './ScholarshipForm'
 import ScholarshipCard, { isScholarshipExpired } from './ScholarshipCard'
-import ScholarshipFieldsManager from './ScholarshipFieldsManager'
+import FieldsManager from '../../GUIComponents/Widgets/FieldsManager'
 import FilterSidebar from '../../GUIComponents/Widgets/FilterSidebar'
 import SortBar from '../../GUIComponents/Widgets/SortBar'
 import { byDateAsc, byDateDesc, byNumberAsc, byNumberDesc, chain } from '../../utils/sortComparators'
 import './Scholarships.css'
+
+// The write half of ScholarshipFieldsService, in the shape the shared
+// FieldsManager expects. At module scope because it's the same object every
+// render.
+const fieldsApi = {
+  create: createScholarshipField,
+  rename: renameScholarshipField,
+  remove: deleteScholarshipField,
+  addOption: addScholarshipFieldOption,
+  removeOption: deleteScholarshipFieldOption,
+}
 
 // Orderings offered by the sort bar. `added` is first so it's the default,
 // matching the order the page used before the bar existed.
@@ -49,7 +67,7 @@ function fieldSelectionsToFieldValues(fieldSelections) {
  * The /scholarships page — same admin-CRUD / guest-view pattern as Events
  * (see EventsManager/Events.jsx), with the same filtering system as Jobs (see
  * JobsManager/Jobs.jsx): a shared admin-defined field/option list managed
- * independently of any post (see ScholarshipFieldsManager), and a
+ * independently of any post (see GUIComponents/Widgets/FieldsManager), and a
  * search-by-title + per-field checkbox filter sidebar for guests, applied
  * client-side against the already-fetched list.
  */
@@ -216,11 +234,12 @@ function Scholarships() {
       </div>
 
       {isAdmin && showFieldsManager && (
-        <ScholarshipFieldsManager
+        <FieldsManager
           panelId="scholarship-fields-manager"
           fields={fields}
           onFieldsChanged={loadFields}
           onClose={() => setShowFieldsManager(false)}
+          api={fieldsApi}
         />
       )}
 

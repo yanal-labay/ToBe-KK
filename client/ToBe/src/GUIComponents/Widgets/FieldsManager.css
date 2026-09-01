@@ -1,4 +1,4 @@
-.scholarship-fields-manager {
+.fields-manager {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 12px;
@@ -9,14 +9,14 @@
   gap: 20px;
 }
 
-.scholarship-fields-add-form {
+.fields-add-form {
   display: flex;
   align-items: flex-end;
   gap: 12px;
   flex-wrap: wrap;
 }
 
-.scholarship-fields-add-form label {
+.fields-add-form label {
   flex: 1;
   min-width: 200px;
   display: flex;
@@ -26,7 +26,7 @@
   font-size: 14px;
 }
 
-.scholarship-fields-add-form input {
+.fields-add-form input {
   font: inherit;
   padding: 8px 10px;
   border-radius: 6px;
@@ -35,12 +35,12 @@
   color: var(--color-text);
 }
 
-.scholarship-fields-error {
+.fields-error {
   color: #c0392b;
   font-size: 14px;
 }
 
-.scholarship-field-section {
+.field-section {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -48,7 +48,7 @@
   border-top: 1px solid var(--color-border);
 }
 
-.scholarship-field-section-header {
+.field-section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -56,23 +56,23 @@
   flex-wrap: wrap;
 }
 
-.scholarship-field-section-header h3 {
+.field-section-header h3 {
   margin: 0;
 }
 
-.scholarship-field-section-actions {
+.field-section-actions {
   display: flex;
   gap: 8px;
 }
 
-.scholarship-field-rename-form {
+.field-rename-form {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.scholarship-field-rename-form input {
+.field-rename-form input {
   font: inherit;
   padding: 6px 8px;
   border-radius: 6px;
@@ -81,9 +81,9 @@
   color: var(--color-text);
 }
 
-/* Closing row at the end of the panel. Borrows .scholarship-field-section's
-   separator so it reads as a distinct final block after the field list. */
-.scholarship-fields-actions {
+/* Closing row at the end of the panel. Borrows .field-section's separator
+   so it reads as a distinct final block after the field list. */
+.fields-actions {
   display: flex;
   gap: 12px;
   padding-top: 16px;

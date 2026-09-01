@@ -32,11 +32,11 @@ const APPLICATION_METHODS = [
  * nullable-field convention.
  *
  * One `<fieldset>` of checkboxes is rendered per entry in `fields` (see
- * JobFieldsManager.jsx for how those fields/options are managed) — this
- * form only ever *picks* existing options per field, it never creates one
- * inline. A job can hold multiple selections within the same field at once
- * (same convention as ScholarshipForm), so selections are tracked
- * separately from `values` as `fieldValues` (`{ [fieldId]: optionId[] }`)
+ * GUIComponents/Widgets/FieldsManager.jsx for how those fields/options are
+ * managed) — this form only ever *picks* existing options per field, it
+ * never creates one inline. A job can hold multiple selections within the
+ * same field at once (same convention as ScholarshipForm), so selections are
+ * tracked separately from `values` as `fieldValues` (`{ [fieldId]: optionId[] }`)
  * since the set of fields is dynamic, not a fixed shape.
  *
  * @param {{
