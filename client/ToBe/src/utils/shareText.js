@@ -96,7 +96,6 @@ export function buildJobShareText(job) {
     `חברה: ${job.company}`,
     `מיקום: ${job.location}`,
     job.salary ? `שכר: ${job.salary}` : null,
-    job.isStudentPosition ? 'משרת סטודנטים' : null,
     '',
     'לפרטים:',
     buildShareUrl('/jobs', job._id),

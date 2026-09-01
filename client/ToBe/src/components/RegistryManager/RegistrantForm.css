@@ -42,7 +42,7 @@
 }
 
 /* Moved here from this feature's old formFields.css, whose shared rules now
-   live on `.form-fields` in styles/components.css. These three are genuinely
+   live on `.form-fields` in styles/shared.css. These three are genuinely
    registry-specific: no other form has a checkbox group or inline validation. */
 
 /* Multi-select answers (e.g. areas of interest) render as a wrapping row of

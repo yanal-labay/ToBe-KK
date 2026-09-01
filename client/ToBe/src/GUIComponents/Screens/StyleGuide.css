@@ -94,7 +94,7 @@
   color: var(--color-text-muted);
 }
 
-/* Buttons row spacing (buttons themselves are in styles/components.css) */
+/* Buttons row spacing (buttons themselves are in styles/shared.css) */
 .button-row {
   display: flex;
   flex-wrap: wrap;

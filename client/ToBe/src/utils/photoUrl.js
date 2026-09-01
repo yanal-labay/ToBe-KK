@@ -1,4 +1,4 @@
-import { API_URL } from '../apiConfig'
+import { API_URL } from '../config/apiConfig'
 
 /**
  * Resolves a stored `photoUrl` into something an <img src> can use.

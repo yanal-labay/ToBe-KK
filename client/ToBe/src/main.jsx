@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { AdminSessionProvider } from './hooks/useAdminSession'
 import { ActivityProvider } from './hooks/useActivity'
-import './index.css'
+import './styles/index.css'
 import App from './App.jsx'
 
 // AdminSessionProvider wraps the whole app (inside the router, since it

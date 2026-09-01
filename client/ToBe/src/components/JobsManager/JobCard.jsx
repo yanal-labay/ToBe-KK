@@ -120,7 +120,6 @@ function JobCard({
           <p className="job-company">🏢 {job.company}</p>
           <p className="job-company">📍 {job.location}</p>
           {job.salary && <p className="job-company">💰 {job.salary}</p>}
-          {job.isStudentPosition && <p className="job-company">🎓 משרת סטודנטים</p>}
         </div>
         <img
           src={photoSrc}

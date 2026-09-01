@@ -9,7 +9,7 @@ const LINKS = [
   { to: '/student-registry', icon: '📋', title: 'מאגר הצעירים', description: 'הרשמה למאגר הצעירים' },
 ]
 
-/** A row of quick-link tiles to the app's main pages, reusing the shared .card/.card-row classes from components.css. */
+/** A row of quick-link tiles to the app's main pages, reusing the shared .card/.card-row classes from shared.css. */
 function QuickLinks() {
   return (
     <div className="card-row quick-links">

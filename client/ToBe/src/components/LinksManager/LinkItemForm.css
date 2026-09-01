@@ -1,5 +1,5 @@
 /* Layout specific to the link-item form; the field styling itself comes from
-   the shared `.form-fields` class (see styles/components.css).
+   the shared `.form-fields` class (see styles/shared.css).
 
    Unlike the other admin forms, this one renders *inside* a link-group card
    rather than as a standalone panel, so it has to claim the card's full width

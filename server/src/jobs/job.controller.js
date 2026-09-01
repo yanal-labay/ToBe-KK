@@ -16,9 +16,9 @@ const optionalTrimmedString = (max) =>
 /**
  * Validates the create/update job-posting payload. Arrives as
  * `multipart/form-data` (the photo shares the request), so every field is a
- * plain string — including `isActive`/`isStudentPosition`, which the
- * client always sends explicitly as `"true"`/`"false"` rather than relying
- * on native checkbox submission semantics.
+ * plain string — including `isActive`, which the client always sends
+ * explicitly as `"true"`/`"false"` rather than relying on native checkbox
+ * submission semantics.
  *
  * `fieldSelections` arrives as a JSON-encoded array of `JobFieldOption`
  * ids (see jobField.model.js) — it has to be JSON-encoded because
@@ -51,10 +51,6 @@ const JobInputSchema = z.object({
       }
     })
     .pipe(z.array(objectIdString)),
-  isStudentPosition: z
-    .enum(["true", "false"])
-    .optional()
-    .transform((v) => v === "true"),
   description: optionalTrimmedString(5000),
   salary: optionalTrimmedString(200),
   contactName: optionalTrimmedString(200),

@@ -7,7 +7,7 @@ import { listEventFields } from './EventFieldsService'
 import EventForm from './EventForm'
 import EventCard, { isEventExpired } from './EventCard'
 import EventFieldsManager from './EventFieldsManager'
-import EventFilterSidebar from './EventFilterSidebar'
+import FilterSidebar from '../../GUIComponents/Widgets/FilterSidebar'
 import SortBar from '../../GUIComponents/Widgets/SortBar'
 import { byDateAsc, byDateDesc, byNumberAsc, chain } from '../../utils/sortComparators'
 import './Events.css'
@@ -297,7 +297,9 @@ function Events() {
         </div>
 
         <aside className="events-filter-sidebar">
-          <EventFilterSidebar
+          <FilterSidebar
+            searchLabel="חיפוש לפי שם האירוע"
+            searchPlaceholder="לדוגמה: סדנה, הרצאה..."
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             fields={fields}

@@ -6,7 +6,6 @@ const EMPTY_FORM = {
   title: '',
   company: '',
   location: '',
-  isStudentPosition: false,
   description: '',
   salary: '',
   contactName: '',
@@ -42,7 +41,7 @@ const APPLICATION_METHODS = [
  *
  * @param {{
  *   formId?: string,
- *   initialValues?: {title: string, company: string, location: string, isStudentPosition: boolean, description: string, salary: string, contactName: string, contactEmail: string, contactPhone: string, isActive: boolean},
+ *   initialValues?: {title: string, company: string, location: string, description: string, salary: string, contactName: string, contactEmail: string, contactPhone: string, isActive: boolean},
  *   initialFieldValues?: Record<string, string[]>,
  *   fields: Array<{_id: string, name: string, options: Array<{_id: string, name: string}>}>,
  *   existingPhotoUrl?: string|null,
@@ -105,7 +104,6 @@ function JobForm({
       formData.append('company', values.company)
       formData.append('location', values.location)
       formData.append('fieldSelections', JSON.stringify(Object.values(fieldValues).flat()))
-      formData.append('isStudentPosition', values.isStudentPosition ? 'true' : 'false')
       formData.append('description', values.description)
       formData.append('salary', values.salary)
       formData.append('contactName', values.contactName)
@@ -160,24 +158,14 @@ function JobForm({
           )}
         </fieldset>
       ))}
-      <div className="job-form-row">
-        <label>
-          שכר (לא חובה)
-          <input
-            placeholder="למשל: 12,000-15,000 ש״ח, לפי ניסיון"
-            value={values.salary}
-            onChange={handleChange('salary')}
-          />
-        </label>
-        <label className="job-form-active">
-          <input
-            type="checkbox"
-            checked={values.isStudentPosition}
-            onChange={(e) => setValues({ ...values, isStudentPosition: e.target.checked })}
-          />
-          משרה זו מתאימה לסטודנטים
-        </label>
-      </div>
+      <label>
+        שכר (לא חובה)
+        <input
+          placeholder="למשל: 12,000-15,000 ש״ח, לפי ניסיון"
+          value={values.salary}
+          onChange={handleChange('salary')}
+        />
+      </label>
       <label>
         תיאור (לא חובה)
         <textarea value={values.description} onChange={handleChange('description')} />

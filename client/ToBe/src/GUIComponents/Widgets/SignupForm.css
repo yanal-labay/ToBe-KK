@@ -4,7 +4,7 @@
    the old events/RegisterForm did.
 
    It deliberately does not use the shared .form-fields class either (see
-   styles/components.css) — this form is shown to guests inside a card, not to
+   styles/shared.css) — this form is shown to guests inside a card, not to
    admins in a panel, and keeps its own tighter spacing. */
 
 .signup-form {

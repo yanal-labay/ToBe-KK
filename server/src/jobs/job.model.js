@@ -14,9 +14,10 @@ const mongoose = require("mongoose");
  *   `JobFieldsManager.jsx`/`jobField.model.js`). A job can hold multiple
  *   selections from the same field at once (same convention as
  *   `Scholarship.fieldSelections`) — nothing enforces one-per-field here.
- *   `isStudentPosition` is a deliberately independent boolean, not part of
- *   that field system — a job can be both a "משרה חלקית" and a student
- *   position at once.
+ *   This is the only mechanism for tagging a job: "suits students" used to
+ *   be a separate `isStudentPosition` boolean, which was removed once every
+ *   such job carried a "סטודנטים" option instead, so the two could no
+ *   longer disagree.
  * - `applicationMethod` decides how a visitor applies, and which of the
  *   other fields matter: "contact" uses the contactName/Email/Phone trio,
  *   "link" uses `applicationUrl`, and "form" collects `JobApplication`
@@ -46,7 +47,6 @@ const JobSchema = new mongoose.Schema({
   company: { type: String, required: true, trim: true },
   location: { type: String, required: true, trim: true },
   fieldSelections: [{ type: mongoose.Schema.Types.ObjectId, ref: "JobFieldOption" }],
-  isStudentPosition: { type: Boolean, default: false },
   description: { type: String, default: null },
   salary: { type: String, default: null },
   contactName: { type: String, default: null },

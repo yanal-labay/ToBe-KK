@@ -13,7 +13,7 @@ import PlaceholderPage from './GUIComponents/Screens/PlaceholderPage'
 import NotFound from './GUIComponents/Screens/NotFound'
 import AdminLogin from './components/UsersManager/AdminLogin'
 import AdminActivity from './components/ActivityManager/AdminActivity'
-import './styles/components.css'
+import './styles/shared.css'
 
 /**
  * Route tree. Nearly every route (including public pages like /events)

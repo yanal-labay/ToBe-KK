@@ -7,7 +7,7 @@ import { listJobFields } from './JobFieldsService'
 import JobForm from './JobForm'
 import JobCard from './JobCard'
 import JobFieldsManager from './JobFieldsManager'
-import JobFilterSidebar from './JobFilterSidebar'
+import FilterSidebar from '../../GUIComponents/Widgets/FilterSidebar'
 import SortBar from '../../GUIComponents/Widgets/SortBar'
 import { byDateDesc, byTextAsc } from '../../utils/sortComparators'
 import './Jobs.css'
@@ -85,7 +85,6 @@ function Jobs() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedOptionIds, setSelectedOptionIds] = useState({}) // { [fieldId]: optionId[] }
   const [sortKey, setSortKey] = useState(SORT_OPTIONS[0].value)
-  const [studentOnly, setStudentOnly] = useState(false)
 
   const loadJobs = () => {
     setLoadState('loading')
@@ -169,13 +168,11 @@ function Jobs() {
 
   const hasActiveFilters =
     searchTerm.trim() !== '' ||
-    Object.values(selectedOptionIds).some((ids) => ids.length > 0) ||
-    studentOnly
+    Object.values(selectedOptionIds).some((ids) => ids.length > 0)
 
   const clearFilters = () => {
     setSearchTerm('')
     setSelectedOptionIds({})
-    setStudentOnly(false)
   }
 
   const visibleJobs = jobs.filter((job) => {
@@ -186,7 +183,6 @@ function Jobs() {
       if (!selected || selected.length === 0) continue
       if (!job.fieldSelections.some((sel) => selected.includes(sel._id))) return false
     }
-    if (studentOnly && !job.isStudentPosition) return false
     return true
   })
 
@@ -263,7 +259,6 @@ function Jobs() {
                     title: job.title,
                     company: job.company,
                     location: job.location,
-                    isStudentPosition: job.isStudentPosition,
                     description: job.description || '',
                     salary: job.salary || '',
                     contactName: job.contactName || '',
@@ -300,14 +295,14 @@ function Jobs() {
         </div>
 
         <aside className="jobs-filter-sidebar">
-          <JobFilterSidebar
+          <FilterSidebar
+            searchLabel="חיפוש לפי שם משרה"
+            searchPlaceholder="לדוגמה: מדריך/ה, מזכיר/ה..."
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             fields={fields}
             selectedOptionIds={selectedOptionIds}
             onToggleOption={toggleOption}
-            studentOnly={studentOnly}
-            onToggleStudentOnly={() => setStudentOnly((current) => !current)}
             hasActiveFilters={hasActiveFilters}
             onClearFilters={clearFilters}
           />

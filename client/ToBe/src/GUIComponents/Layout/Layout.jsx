@@ -3,7 +3,7 @@ import Header from './Header'
 import Navbar from './Navbar'
 import AdminTopbar from './AdminTopbar'
 import { useAdminSession } from '../../hooks/useAdminSession'
-import { NAV_LINKS, ADMIN_NAV_LINKS } from '../../navConfig'
+import { NAV_LINKS, ADMIN_NAV_LINKS } from '../../config/navConfig'
 import './Layout.css'
 
 /**

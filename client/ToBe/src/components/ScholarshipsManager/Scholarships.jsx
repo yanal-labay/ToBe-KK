@@ -7,7 +7,7 @@ import { listScholarshipFields } from './ScholarshipFieldsService'
 import ScholarshipForm from './ScholarshipForm'
 import ScholarshipCard, { isScholarshipExpired } from './ScholarshipCard'
 import ScholarshipFieldsManager from './ScholarshipFieldsManager'
-import ScholarshipFilterSidebar from './ScholarshipFilterSidebar'
+import FilterSidebar from '../../GUIComponents/Widgets/FilterSidebar'
 import SortBar from '../../GUIComponents/Widgets/SortBar'
 import { byDateAsc, byDateDesc, byNumberAsc, byNumberDesc, chain } from '../../utils/sortComparators'
 import './Scholarships.css'
@@ -291,7 +291,9 @@ function Scholarships() {
         </div>
 
         <aside className="scholarships-filter-sidebar">
-          <ScholarshipFilterSidebar
+          <FilterSidebar
+            searchLabel="חיפוש לפי שם מלגה"
+            searchPlaceholder="לדוגמה: מלגת מצוינות..."
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             fields={fields}

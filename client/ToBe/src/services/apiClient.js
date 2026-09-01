@@ -1,4 +1,4 @@
-import { API_URL } from '../apiConfig'
+import { API_URL } from '../config/apiConfig'
 
 /**
  * Low-level fetch wrapper shared by every service module — centralizes only

@@ -9,7 +9,7 @@ import { useEffect } from 'react'
  * `block: 'start'` rather than 'center': these panels are tall, and centering
  * one taller than the viewport pushes its first field off the top. Clearance
  * under the sticky top bar comes from `scroll-margin-top` on .form-focus-panel
- * (see styles/components.css).
+ * (see styles/shared.css).
  *
  * Call it once per independently-openable panel rather than passing a single
  * merged id — that way each panel scrolls only when it is the one that opened,

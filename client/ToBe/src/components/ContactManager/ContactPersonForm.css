@@ -1,5 +1,5 @@
 /* Layout specific to the contact-person form; the field styling itself comes
-   from the shared `.form-fields` class (see styles/components.css).
+   from the shared `.form-fields` class (see styles/shared.css).
 
    Contact details pair up naturally (mobile + phone, email + location), so
    this form groups them two-per-row instead of the single column the other

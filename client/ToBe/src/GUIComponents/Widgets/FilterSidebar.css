@@ -1,4 +1,4 @@
-.event-filter-sidebar {
+.filter-sidebar {
   position: sticky;
   top: 16px;
   display: flex;
@@ -10,7 +10,7 @@
   padding: 16px;
 }
 
-.event-filter-search {
+.filter-search {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -18,7 +18,7 @@
   font-size: 14px;
 }
 
-.event-filter-search input {
+.filter-search input {
   font: inherit;
   font-weight: 400;
   padding: 8px 10px;
@@ -28,7 +28,7 @@
   color: var(--color-text);
 }
 
-.event-filter-group {
+.filter-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -36,36 +36,36 @@
   padding-top: 12px;
 }
 
-.event-filter-field-header {
+.filter-field-header {
   display: flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
 }
 
-.event-filter-field-header h4 {
+.filter-field-header h4 {
   margin: 0;
   font-size: 14px;
 }
 
-.event-filter-collapse-toggle {
+.filter-collapse-toggle {
   display: inline-block;
   font-size: 16px;
   line-height: 1;
   transition: transform 0.2s ease;
 }
 
-.event-filter-collapse-toggle.is-collapsed {
+.filter-collapse-toggle.is-collapsed {
   transform: rotate(-90deg);
 }
 
-.event-filter-field-options {
+.filter-field-options {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.event-filter-checkbox {
+.filter-checkbox {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -73,15 +73,16 @@
   font-size: 14px;
 }
 
-.event-filter-clear {
+.filter-clear {
   align-self: flex-start;
 }
 
-/* Below the layout's stacking breakpoint (see Events.css), the sidebar loses
-   its sticky-while-scrolling behavior since it's no longer beside a
-   possibly-taller column. */
+/* Below the stacking breakpoint each listing page's grid uses (see
+   Events.css / Jobs.css / Scholarships.css, all 900px), the sidebar loses
+   its sticky-while-scrolling behavior since it is no longer beside a
+   possibly-taller column. Kept in sync with those three by hand. */
 @media (max-width: 900px) {
-  .event-filter-sidebar {
+  .filter-sidebar {
     position: static;
   }
 }

@@ -96,7 +96,7 @@
 
 /* Secondary metadata — deliberately smaller than the rest of the card so it
    reads as a footnote rather than part of the posting's details.
-   Scoped under .job-card on purpose: `.card p` in styles/components.css is
+   Scoped under .job-card on purpose: `.card p` in styles/shared.css is
    (0,1,1) and would otherwise win over a bare `.job-added-date` (0,1,0),
    forcing this back to 15px. */
 .job-card .job-added-date {

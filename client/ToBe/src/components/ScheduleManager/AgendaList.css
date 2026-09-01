@@ -28,7 +28,7 @@
 /* Not `position: sticky`: `.site-topbar` already is, and two sticky layers
    competing for the same top edge means the heading parks underneath the
    navbar instead of above the content it labels. `scroll-margin-top` is the
-   same trick `.form-focus-panel` uses in styles/components.css — it gives the
+   same trick `.form-focus-panel` uses in styles/shared.css — it gives the
    auto-scroll-to-today clearance under that same topbar. */
 .schedule-agenda-day-heading {
   display: flex;
