@@ -99,6 +99,13 @@ function Jobs() {
   useScrollToOpenPanel(openFormId)
   useScrollToOpenPanel(openManagerId)
 
+  // The applicants panel gets its own scroll hook too. The panel renders *inside* its card, so the card is what
+  // stays sharp above the backdrop — and is therefore also the scroll target,
+  // reusing the id the ?highlight= effect below already relies on. Anchoring at
+  // the card's top also survives the panel growing when its fetch resolves.
+  const openSubmissionsId = viewingApplicationsId ? `job-${viewingApplicationsId}` : null
+  useScrollToOpenPanel(openSubmissionsId)
+
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedOptionIds, setSelectedOptionIds] = useState({}) // { [fieldId]: optionId[] }
   const [sortKey, setSortKey] = useState(SORT_OPTIONS[0].value)
@@ -208,7 +215,9 @@ function Jobs() {
 
   return (
     <div className="jobs-page">
-      {isAdmin && (openFormId || openManagerId) && <div className="form-focus-overlay" />}
+      {isAdmin && (openFormId || openManagerId || openSubmissionsId) && (
+        <div className="form-focus-overlay" />
+      )}
 
       <div className="jobs-page-header">
         <h1>לוח משרות</h1>
@@ -304,6 +313,15 @@ function Jobs() {
                   onToggleApplications={() =>
                     setViewingApplicationsId((current) =>
                       current === job._id ? null : job._id
+                    )
+                  }
+                  // Keeps the button's count honest after the open panel adds
+                  // or removes a row — see the note in Events.jsx.
+                  onApplicationCountChange={(count) =>
+                    setJobs((current) =>
+                      current.map((item) =>
+                        item._id === job._id ? { ...item, applicationCount: count } : item
+                      )
                     )
                   }
                 />

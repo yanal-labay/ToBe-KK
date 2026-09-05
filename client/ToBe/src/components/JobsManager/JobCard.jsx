@@ -81,6 +81,7 @@ function JobCard({
   onDelete,
   isViewingApplications,
   onToggleApplications,
+  onApplicationCountChange,
 }) {
   const [sharing, setSharing] = useState(false)
   const [descriptionExpanded, setDescriptionExpanded] = useState(false)
@@ -112,7 +113,14 @@ function JobCard({
   )
 
   return (
-    <div id={`job-${job._id}`} className={`card job-card ${isHighlighted ? 'is-highlighted' : ''}`}>
+    // The applicants panel renders inside this card, so the whole card is what
+    // stays sharp above the page's focus overlay (same as EventCard).
+    <div
+      id={`job-${job._id}`}
+      className={`card job-card ${isHighlighted ? 'is-highlighted' : ''} ${
+        isViewingApplications ? 'form-focus-panel' : ''
+      }`}
+    >
       {isAdmin && !job.isActive && <span className="job-inactive-badge">לא פעיל</span>}
       <div className="job-card-top">
         <div className="job-card-info">
@@ -198,9 +206,14 @@ function JobCard({
             <button type="button" className="btn btn-secondary" onClick={onDelete}>
               מחיקה
             </button>
+            {/* Count from GET /api/jobs/admin; still clickable at zero so the
+                panel's manual "+ הוספת מועמד" form stays reachable. Same
+                reasoning as EventCard. */}
             {job.applicationMethod === 'form' && (
               <button type="button" className="btn btn-outline" onClick={onToggleApplications}>
-                {isViewingApplications ? 'הסתרת מועמדים' : 'מועמדים'}
+                {isViewingApplications
+                  ? 'הסתרת מועמדים'
+                  : `מועמדים (${job.applicationCount ?? 0})`}
               </button>
             )}
             <button
@@ -218,6 +231,7 @@ function JobCard({
               statusMeta={APPLICATION_STATUS_META}
               api={applicationsApi}
               labels={APPLICATION_LABELS}
+              onCountChange={onApplicationCountChange}
             />
           )}
           {sharing && <ShareBox text={buildJobShareText(job)} />}

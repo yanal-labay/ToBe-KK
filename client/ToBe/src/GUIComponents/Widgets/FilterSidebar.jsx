@@ -17,7 +17,16 @@ import './FilterSidebar.css'
  * }} props
  */
 function FilterFieldGroup({ field, selected, onToggleOption }) {
-  const [collapsed, setCollapsed] = useState(false)
+  // Collapsed by default: several fields' worth of checkboxes pushed the search
+  // box and the clear button off a phone screen, so the sidebar opens as a stack
+  // of headers instead. A group that already has selections starts open, so an
+  // applied filter is never hidden behind a closed header.
+  //
+  // An initial value only — clearing a filter must not re-collapse the group out
+  // from under the user. Per-visit rather than persisted, matching
+  // `LinksManager/LinkGroupCard.jsx`, whose cards also begin collapsed on every
+  // visit.
+  const [collapsed, setCollapsed] = useState(selected.length === 0)
 
   if (field.options.length === 0) return null
 

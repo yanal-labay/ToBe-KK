@@ -136,11 +136,30 @@ async function listJobs(req, res) {
 /**
  * GET /api/jobs/admin — admin-only. Lists every posting regardless of
  * `isActive`, so the admin can see, reactivate, or delete inactive ones.
+ *
+ * Each posting also carries an `applicationCount` for the admin UI's "מועמדים"
+ * button — same reasoning, same shape and same $group/.lean() constraints as
+ * listEventsAdmin in event.controller.js; see the note there.
+ *
+ * Postings whose `applicationMethod` isn't "form" can never have applications,
+ * so most counts are legitimately 0. That isn't filtered server-side: the client
+ * already renders the button only for form postings.
  */
 async function listJobsAdmin(req, res) {
   try {
-    const jobs = await Job.find().sort({ createdAt: -1 }).populate(FIELD_SELECTIONS_POPULATE);
-    res.json(jobs);
+    const [jobs, counts] = await Promise.all([
+      Job.find().sort({ createdAt: -1 }).populate(FIELD_SELECTIONS_POPULATE).lean(),
+      JobApplication.aggregate([{ $group: { _id: "$job", count: { $sum: 1 } } }]),
+    ]);
+
+    const countByJob = new Map(counts.map((row) => [String(row._id), row.count]));
+
+    res.json(
+      jobs.map((job) => ({
+        ...job,
+        applicationCount: countByJob.get(String(job._id)) || 0,
+      }))
+    );
   } catch (err) {
     res.status(500).json({ success: false, message: "Database error" });
   }

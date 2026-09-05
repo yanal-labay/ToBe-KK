@@ -430,6 +430,13 @@
   color: var(--color-text);
 }
 
+/* Shares z-index 50 with .form-focus-overlay (styles/shared.css). Safe because
+   the two can never be mounted at once: every path in here that opens an admin
+   panel (an entry click, a delete) also calls setExpandedDayKey(null) in the
+   same handler, so React unmounts this popover in the very same commit that
+   mounts the form. Don't raise this above 60 to "fix" the tie — that would put
+   the popover over .form-focus-panel, which is wrong in the one case it would
+   ever matter. */
 .schedule-day-popover-overlay {
   position: fixed;
   inset: 0;

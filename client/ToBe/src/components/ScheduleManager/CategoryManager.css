@@ -95,3 +95,14 @@
 .category-manager-add-toggle {
   align-self: flex-start;
 }
+
+/* Closing row at the end of the panel, holding the "סגירה" escape hatch that
+   the focus overlay makes necessary (see CategoryManager.jsx). Mirrors
+   .fields-actions in FieldsManager.css — not reused from there, since that
+   stylesheet isn't imported by this component. */
+.category-manager-actions {
+  display: flex;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}

@@ -51,9 +51,17 @@ function TrashIcon() {
  *     confirmDelete: (name: string) => string,
  *     deleteAria: (name: string) => string, deleteTitle: string,
  *   },
+ *   onCountChange?: (count: number) => void,
  * }} props
  */
-function SubmissionsPanel({ parentTitle, statusOrder, statusMeta, api, labels }) {
+function SubmissionsPanel({
+  parentTitle,
+  statusOrder,
+  statusMeta,
+  api,
+  labels,
+  onCountChange,
+}) {
   const [registrations, setRegistrations] = useState([])
   const [loadState, setLoadState] = useState('loading') // loading | ready | error
   const [adding, setAdding] = useState(false)
@@ -71,13 +79,19 @@ function SubmissionsPanel({ parentTitle, statusOrder, statusMeta, api, labels })
       .then((data) => {
         setRegistrations(data)
         setLoadState('ready')
+        // The card that opened this panel shows the count on its own button,
+        // from a number fetched with the list. Reporting the authoritative
+        // count here keeps that label honest after an add or a delete, both of
+        // which re-run `load`. Safe against a refetch loop: the parent patches
+        // one row of its list, leaving the memoised `api` identity — and so
+        // this effect's only dependency — untouched.
+        onCountChange?.(data.length)
       })
       .catch(() => setLoadState('error'))
   }
 
   useEffect(() => {
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [api])
 

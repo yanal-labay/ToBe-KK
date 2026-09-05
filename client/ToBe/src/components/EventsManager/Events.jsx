@@ -97,6 +97,13 @@ function Events() {
   useScrollToOpenPanel(openFormId)
   useScrollToOpenPanel(openManagerId)
 
+  // The registrants panel gets its own scroll hook too. The panel renders *inside* its card, so the card is what
+  // stays sharp above the backdrop — and is therefore also the scroll target,
+  // reusing the id the ?highlight= effect below already relies on. Anchoring at
+  // the card's top also survives the panel growing when its fetch resolves.
+  const openSubmissionsId = viewingRegistrationsId ? `event-${viewingRegistrationsId}` : null
+  useScrollToOpenPanel(openSubmissionsId)
+
   const loadEvents = () => {
     setLoadState('loading')
     listEvents({ isAdmin })
@@ -209,7 +216,9 @@ function Events() {
 
   return (
     <div className="events-page">
-      {isAdmin && (openFormId || openManagerId) && <div className="form-focus-overlay" />}
+      {isAdmin && (openFormId || openManagerId || openSubmissionsId) && (
+        <div className="form-focus-overlay" />
+      )}
 
       <div className="events-page-header">
         <h1>אירועים</h1>
@@ -306,6 +315,18 @@ function Events() {
               onToggleRegistrations={() =>
                 setViewingRegistrationsId((current) =>
                   current === event._id ? null : event._id
+                )
+              }
+              // The count on the button came from the list fetch, so it goes
+              // stale the moment the open panel adds or removes a row. Patch
+              // just this event rather than reloading the whole list: `_id` is
+              // unchanged, so the card's memoised `api` keeps its identity and
+              // the panel does not refetch.
+              onRegistrationCountChange={(count) =>
+                setEvents((current) =>
+                  current.map((item) =>
+                    item._id === event._id ? { ...item, registrationCount: count } : item
+                  )
                 )
               }
             />

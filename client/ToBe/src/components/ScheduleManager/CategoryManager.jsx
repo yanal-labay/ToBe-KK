@@ -33,12 +33,19 @@ function SwatchPicker({ value, onChange }) {
  * nothing here treats a color as a scarce resource. See `ScheduleEntryForm`'s
  * category select, which only ever offers categories created here.
  *
+ * Every action here saves immediately; there is no draft state to cancel.
+ * `onCategoriesChanged` is what refreshes the list afterwards, and `onClose`
+ * closes the panel — see the closing row at the end of the render, which is the
+ * only way out while the focus overlay is up.
+ *
  * @param {{
+ *   panelId?: string,
  *   categories: Array<{_id: string, name: string, colorKey: string}>,
  *   onCategoriesChanged: () => void,
+ *   onClose: () => void,
  * }} props
  */
-function CategoryManager({ categories, onCategoriesChanged }) {
+function CategoryManager({ panelId, categories, onCategoriesChanged, onClose }) {
   const [creating, setCreating] = useState(false)
   const [newName, setNewName] = useState('')
   const [newColorKey, setNewColorKey] = useState(CATEGORY_COLOR_KEYS[0].key)
@@ -111,7 +118,7 @@ function CategoryManager({ categories, onCategoriesChanged }) {
   }
 
   return (
-    <div className="category-manager">
+    <div id={panelId} className="category-manager form-focus-panel">
       {categories.map((category) => {
         const isEditing = editingId === category._id
 
@@ -182,6 +189,16 @@ function CategoryManager({ categories, onCategoriesChanged }) {
       )}
 
       {error && <p className="category-manager-error">{error}</p>}
+
+      {/* The header's "סגירת ניהול קטגוריות" toggle sits behind the focus
+          overlay while this panel is open, so the way out has to live in here.
+          Labelled "סגירה", not "ביטול": every action above saves immediately,
+          so there is nothing to undo — this only closes the panel. */}
+      <div className="category-manager-actions">
+        <button type="button" className="btn btn-outline" onClick={onClose}>
+          סגירה
+        </button>
+      </div>
     </div>
   )
 }

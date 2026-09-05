@@ -120,11 +120,40 @@ async function listEvents(req, res) {
 /**
  * GET /api/events/admin — admin-only. Lists every event regardless of
  * `isActive`, so the admin can see, reactivate, or delete inactive ones.
+ *
+ * Each event also carries a `registrationCount`, which the admin UI puts on the
+ * "נרשמים" button so nobody has to open a panel to discover it is empty. It is
+ * deliberately absent from the public `listEvents` above: how many people signed
+ * up is admin-only information.
+ *
+ * Counted with one $group over the whole Registration collection rather than a
+ * countDocuments per event, which would be an N+1 that grows with the list.
+ * There is no $match stage because this endpoint returns every event, so the
+ * relevant rows are the entire collection — a $in over every id would filter
+ * nothing while blocking the `event` index. Add one back if this ever paginates.
+ *
+ * `.lean()` is required, not an optimisation: a plain property assigned to a
+ * hydrated Mongoose document is dropped by res.json(), which serializes via
+ * toJSON() and so only emits schema paths. Event declares no virtuals, getters
+ * or toJSON options, so the lean objects serialize identically to before.
  */
 async function listEventsAdmin(req, res) {
   try {
-    const events = await Event.find().sort({ date: 1 }).populate(FIELD_SELECTIONS_POPULATE);
-    res.json(events);
+    const [events, counts] = await Promise.all([
+      Event.find().sort({ date: 1 }).populate(FIELD_SELECTIONS_POPULATE).lean(),
+      Registration.aggregate([{ $group: { _id: "$event", count: { $sum: 1 } } }]),
+    ]);
+
+    // Keyed by string on both sides: two distinct ObjectId instances with the
+    // same hex are never equal under Map's SameValueZero lookup.
+    const countByEvent = new Map(counts.map((row) => [String(row._id), row.count]));
+
+    res.json(
+      events.map((event) => ({
+        ...event,
+        registrationCount: countByEvent.get(String(event._id)) || 0,
+      }))
+    );
   } catch (err) {
     res.status(500).json({ success: false, message: "Database error" });
   }

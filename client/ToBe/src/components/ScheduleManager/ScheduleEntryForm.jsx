@@ -15,7 +15,13 @@ const EMPTY_FORM = { title: '', startDate: '', endDate: '', categoryId: '' }
  * Submits via `onSubmit(payload)` with a plain object (not FormData) since
  * there's no file upload here.
  *
+ * `formId` becomes the form's DOM id, which Schedule.jsx uses to scroll the
+ * panel into view on open (see hooks/useScrollToOpenPanel.js). It is applied to
+ * both return paths below, since the no-categories variant is just as much an
+ * open panel as the form itself.
+ *
  * @param {{
+ *   formId?: string,
  *   categories: Array<{_id: string, name: string, colorKey: string}>,
  *   initialValues?: {title: string, startDate: string, endDate: string, categoryId: string},
  *   submitLabel: string,
@@ -24,7 +30,15 @@ const EMPTY_FORM = { title: '', startDate: '', endDate: '', categoryId: '' }
  *   onDelete?: () => void,
  * }} props
  */
-function ScheduleEntryForm({ categories, initialValues, submitLabel, onSubmit, onCancel, onDelete }) {
+function ScheduleEntryForm({
+  formId,
+  categories,
+  initialValues,
+  submitLabel,
+  onSubmit,
+  onCancel,
+  onDelete,
+}) {
   const [values, setValues] = useState(
     initialValues || { ...EMPTY_FORM, categoryId: categories[0]?._id || '' }
   )
@@ -54,7 +68,7 @@ function ScheduleEntryForm({ categories, initialValues, submitLabel, onSubmit, o
 
   if (categories.length === 0) {
     return (
-      <div className="schedule-entry-form">
+      <div id={formId} className="schedule-entry-form form-focus-panel">
         <p>יש להגדיר לפחות קטגוריה אחת (בניהול הקטגוריות) לפני הוספת רשומה ללוח.</p>
         <div className="form-actions">
           <button type="button" className="btn btn-outline" onClick={onCancel}>
@@ -66,7 +80,7 @@ function ScheduleEntryForm({ categories, initialValues, submitLabel, onSubmit, o
   }
 
   return (
-    <form className="schedule-entry-form form-fields" onSubmit={handleSubmit}>
+    <form id={formId} className="schedule-entry-form form-focus-panel form-fields" onSubmit={handleSubmit}>
       <label>
         כותרת
         <input value={values.title} onChange={handleChange('title')} required />

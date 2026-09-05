@@ -67,10 +67,13 @@
   color: var(--color-text);
 }
 
+/* Matches .admin-activity-child's margin, so the top-level groups are never
+   packed tighter than the children nested inside them — the outer level
+   reading as the closer-spaced one inverts the hierarchy. */
 .admin-activity-tree {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 14px;
 }
 
 .admin-activity-group,
@@ -81,8 +84,12 @@
   background: var(--color-surface);
 }
 
+/* Separates one nested header bar from the next. Generous on purpose: two
+   filled header bars stacked close together read as a single striped block
+   rather than as distinct rows, and at this depth the gap is the main cue
+   that they are siblings. */
 .admin-activity-child {
-  margin-bottom: 8px;
+  margin-bottom: 14px;
 }
 
 /* Disclosure row for both levels. `level-2` is inset and slightly smaller so
@@ -166,8 +173,12 @@
   font-weight: 700;
 }
 
+/* The top padding is what keeps an expanded group's first nested header from
+   sitting flush against the level-1 header directly above it — with the two
+   bars touching, the colour step between them was the only thing separating
+   a parent from its first child. */
 .admin-activity-group-body {
-  padding: 0 14px 12px;
+  padding: 14px 14px 12px;
 }
 
 .admin-activity-entries {

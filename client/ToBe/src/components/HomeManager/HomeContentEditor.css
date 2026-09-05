@@ -5,8 +5,14 @@
   padding: 56px 24px;
 }
 
+/* Nothing sets a line-height on headings globally (see index.css, which styles
+   h1-h3 for font and colour only), so this inherited the browser default of
+   roughly 1.15 — tight enough at 36px that the lines nearly touched. Invisible
+   on a desktop where the title fits on one line; on a phone it wraps to two or
+   three, which is where it showed. */
 .home-content h1 {
   font-size: 36px;
+  line-height: 1.3;
   margin-bottom: 12px;
 }
 

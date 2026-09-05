@@ -94,9 +94,19 @@ export function isRegistrationClosed(event) {
  *   onDelete: () => void,
  *   isViewingRegistrations: boolean,
  *   onToggleRegistrations: () => void,
+ *   onRegistrationCountChange: (count: number) => void,
  * }} props
  */
-function EventCard({ event, isAdmin, isHighlighted, onEdit, onDelete, isViewingRegistrations, onToggleRegistrations }) {
+function EventCard({
+  event,
+  isAdmin,
+  isHighlighted,
+  onEdit,
+  onDelete,
+  isViewingRegistrations,
+  onToggleRegistrations,
+  onRegistrationCountChange,
+}) {
   const expired = isEventExpired(event)
   const registrationClosed = isRegistrationClosed(event)
   const [descriptionExpanded, setDescriptionExpanded] = useState(false)
@@ -123,7 +133,15 @@ function EventCard({ event, isAdmin, isHighlighted, onEdit, onDelete, isViewingR
   )
 
   return (
-    <div id={`event-${event._id}`} className={`card event-card ${isHighlighted ? 'is-highlighted' : ''}`}>
+    // The registrants panel renders inside this card, so the whole card is what
+    // stays sharp above the page's focus overlay — a panel lifted on its own
+    // would read as a crisp box floating in a blurred card.
+    <div
+      id={`event-${event._id}`}
+      className={`card event-card ${isHighlighted ? 'is-highlighted' : ''} ${
+        isViewingRegistrations ? 'form-focus-panel' : ''
+      }`}
+    >
 
       {(expired || (isAdmin && !event.isActive)) && (
         <div className="event-card-badges">
@@ -182,8 +200,15 @@ function EventCard({ event, isAdmin, isHighlighted, onEdit, onDelete, isViewingR
             <button type="button" className="btn btn-secondary" onClick={onDelete}>
               מחיקה
             </button>
+            {/* The count comes from GET /api/events/admin (see
+                listEventsAdmin) so an admin can tell an empty event from a busy
+                one without opening the panel. Deliberately still clickable at
+                zero: this panel holds the manual "+ הוספת נרשם" form, which is
+                exactly what's needed when nobody has signed up yet. */}
             <button type="button" className="btn btn-outline" onClick={onToggleRegistrations}>
-              {isViewingRegistrations ? 'הסתרת נרשמים' : 'נרשמים'}
+              {isViewingRegistrations
+                ? 'הסתרת נרשמים'
+                : `נרשמים (${event.registrationCount ?? 0})`}
             </button>
             <button
               type="button"
@@ -200,6 +225,7 @@ function EventCard({ event, isAdmin, isHighlighted, onEdit, onDelete, isViewingR
               statusMeta={REGISTRATION_STATUS_META}
               api={registrationsApi}
               labels={REGISTRATION_LABELS}
+              onCountChange={onRegistrationCountChange}
             />
           )}
           {sharing && <ShareBox text={buildEventShareText(event)} />}
