@@ -63,7 +63,7 @@ The interface is in Hebrew, with a right-to-left layout, light and dark themes a
 |:---:|:---:|
 | <img src="docs/screenshots/Event.png" alt="Event card with its registrations panel" width="380"> | <img src="docs/screenshots/mobile.png" alt="Homepage on a phone" width="260"> |
 
-**Youth registry (admin): searchable table with a pie-chart breakdown by any field**
+**Youth registry (admin): searchable table with a pie chart breakdown by any field**
 
 ![Youth registry admin table with pie chart](docs/screenshots/student%20list.png)
 
@@ -91,11 +91,12 @@ What a visitor can do without an account, and what the administrator can do afte
 
 ![Use case diagram](docs/graphs/Use%20case%20diagram.png)
 
+<!--
 ### Function tree
 A call-level map from a click in the browser down to a database query. The full set of diagrams is in [docs/function-tree.md](docs/function-tree.md).
 
 [![Function tree](docs/function-tree-light.png)](docs/function-tree.md)
-
+-->
 
 ## Author
 
