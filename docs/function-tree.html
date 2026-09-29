@@ -1,0 +1,578 @@
+<title>ToBe-KK Function Tree</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --paper: #eef1f0;
+    --card: #ffffff;
+    --panel: #f7f9f8;
+    --ink: #101716;
+    --ink-soft: #3a4745;
+    --muted: #6b7a77;
+    --rule: #c9d3d0;
+    --rule-soft: #e0e7e5;
+    --root-bg: #14201f;
+    --root-ink: #f2f6f5;
+
+    --g1: #ae2f6a;  --g1-bg: #fbeef4;
+    --g2: #0d7a62;  --g2-bg: #e8f5f1;
+    --g3: #a96a12;  --g3-bg: #faf1e2;
+    --g4: #2a58b8;  --g4-bg: #eaf0fc;
+    --g5: #6344ad;  --g5-bg: #f0ecfb;
+    --g6: #ab3526;  --g6-bg: #fbeceb;
+
+    --f-sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0c1211;
+      --card: #151d1c;
+      --panel: #111918;
+      --ink: #e8eeec;
+      --ink-soft: #c0ccc9;
+      --muted: #8a9a96;
+      --rule: #2a3533;
+      --rule-soft: #1e2726;
+      --root-bg: #e8eeec;
+      --root-ink: #101716;
+
+      --g1: #ef7aa9;  --g1-bg: #2b1420;
+      --g2: #4cc3a4;  --g2-bg: #0f2620;
+      --g3: #dfa254;  --g3-bg: #2a1f0f;
+      --g4: #7aa2f0;  --g4-bg: #131f38;
+      --g5: #a58ce8;  --g5-bg: #1d1733;
+      --g6: #ef7f6e;  --g6-bg: #2d1613;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #0c1211;
+    --card: #151d1c;
+    --panel: #111918;
+    --ink: #e8eeec;
+    --ink-soft: #c0ccc9;
+    --muted: #8a9a96;
+    --rule: #2a3533;
+    --rule-soft: #1e2726;
+    --root-bg: #e8eeec;
+    --root-ink: #101716;
+
+    --g1: #ef7aa9;  --g1-bg: #2b1420;
+    --g2: #4cc3a4;  --g2-bg: #0f2620;
+    --g3: #dfa254;  --g3-bg: #2a1f0f;
+    --g4: #7aa2f0;  --g4-bg: #131f38;
+    --g5: #a58ce8;  --g5-bg: #1d1733;
+    --g6: #ef7f6e;  --g6-bg: #2d1613;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--f-sans);
+  }
+
+  /* ---------- toolbar ---------- */
+
+  .bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: 0.55rem 1rem;
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .bar-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .bar-sub {
+    font-family: var(--f-mono);
+    font-size: 0.68rem;
+    color: var(--muted);
+  }
+
+  .zoom { margin-left: auto; display: flex; align-items: center; gap: 0.3rem; }
+
+  .zoom button {
+    font-family: var(--f-mono);
+    font-size: 0.68rem;
+    color: var(--ink-soft);
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 0.22rem 0.5rem;
+    cursor: pointer;
+    line-height: 1.4;
+  }
+
+  .zoom button:hover { border-color: var(--g4); color: var(--g4); }
+  .zoom button[aria-pressed="true"] { border-color: var(--g4); color: var(--g4); background: var(--g4-bg); }
+  .zoom button:focus-visible { outline: 2px solid var(--g4); outline-offset: 1px; }
+  .zoom .pct { font-family: var(--f-mono); font-size: 0.68rem; color: var(--muted); min-width: 3.2rem; text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* ---------- stage ---------- */
+
+  #stage { overflow-x: auto; overflow-y: hidden; padding: 1rem; }
+  #poster { width: 1900px; transform-origin: top left; }
+
+  /* ---------- masthead ---------- */
+
+  .masthead { text-align: center; margin-bottom: 0.9rem; }
+
+  h1 {
+    font-size: 1.65rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    margin: 0 0 0.25rem;
+  }
+
+  .deck {
+    font-family: var(--f-mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .root-node {
+    display: inline-block;
+    margin: 0.85rem 0 0;
+    background: var(--root-bg);
+    color: var(--root-ink);
+    border-radius: 4px;
+    padding: 0.4rem 1.6rem;
+    text-align: center;
+  }
+
+  .root-node b { display: block; font-family: var(--f-mono); font-size: 0.82rem; font-weight: 600; }
+  .root-node span { display: block; font-family: var(--f-mono); font-size: 0.64rem; opacity: 0.72; }
+
+  .stem { width: 1px; height: 0.85rem; background: var(--rule); margin: 0 auto; }
+  .bus { height: 1px; background: var(--rule); margin-bottom: 0.9rem; }
+
+  /* ---------- grid of groups ---------- */
+
+  .groups {
+    display: grid;
+    grid-template-columns: 1.02fr 1.18fr 0.88fr 3.5fr 1fr 1.6fr;
+    gap: 0.7rem;
+    align-items: start;
+  }
+
+  .group {
+    background: var(--panel);
+    border: 1.5px solid var(--gc);
+    border-radius: 5px;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .group > h2 {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--gc);
+    margin: 0;
+    letter-spacing: 0.01em;
+    display: flex;
+    gap: 0.35rem;
+    align-items: baseline;
+  }
+
+  .group > h2 .n { font-family: var(--f-mono); font-size: 0.7rem; opacity: 0.75; }
+
+  .band { display: flex; flex-direction: column; gap: 0.35rem; }
+
+  .band > h3 {
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--gc);
+    background: var(--gb);
+    border-radius: 3px;
+    text-align: center;
+    padding: 0.16rem 0.3rem;
+    margin: 0;
+  }
+
+  .cards { display: grid; grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr)); gap: 0.35rem; align-items: start; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--gc);
+    border-radius: 3px;
+    padding: 0.28rem 0.34rem 0.32rem;
+    min-width: 0;
+  }
+
+  .card h4 {
+    font-family: var(--f-mono);
+    font-size: 0.665rem;
+    font-weight: 600;
+    color: var(--gc);
+    margin: 0 0 0.2rem;
+    padding-bottom: 0.16rem;
+    border-bottom: 1px solid var(--rule-soft);
+    overflow-wrap: anywhere;
+  }
+
+  .card ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.04rem; }
+
+  .card li {
+    font-family: var(--f-mono);
+    font-size: 0.615rem;
+    line-height: 1.42;
+    color: var(--ink-soft);
+    overflow-wrap: anywhere;
+  }
+
+  .card li.grp { color: var(--muted); font-style: italic; }
+
+  /* ---------- footer blocks ---------- */
+
+  .base {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr 1.1fr;
+    gap: 0.7rem;
+    margin-top: 0.7rem;
+    align-items: start;
+  }
+
+  .box {
+    background: var(--panel);
+    border: 1.5px solid var(--rule);
+    border-radius: 5px;
+    padding: 0.55rem 0.65rem;
+  }
+
+  .box h2 {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.45rem;
+  }
+
+  .legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.22rem 0.9rem; }
+
+  .legend div { display: flex; align-items: center; gap: 0.4rem; font-size: 0.68rem; color: var(--ink-soft); }
+
+  .swatch { width: 0.85rem; height: 0.85rem; border-radius: 2px; border: 1.5px solid var(--sc); background: var(--sb); flex: none; }
+
+  .flow { font-family: var(--f-mono); font-size: 0.65rem; line-height: 1.85; color: var(--ink-soft); margin: 0; }
+  .flow b { color: var(--ink); font-weight: 600; }
+  .flow .ar { color: var(--muted); }
+
+  .tally { width: 100%; border-collapse: collapse; font-size: 0.66rem; }
+  .tally td { padding: 0.1rem 0; color: var(--ink-soft); }
+  .tally td:last-child { text-align: right; font-family: var(--f-mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  .foot {
+    font-family: var(--f-mono);
+    font-size: 0.64rem;
+    color: var(--muted);
+    margin: 0.7rem 0 0;
+    display: flex;
+    gap: 1.2rem;
+    flex-wrap: wrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+
+<div class="bar">
+  <span class="bar-title">ToBe-KK · Function Tree</span>
+  <span class="bar-sub">functions only · anonymous callbacks excluded</span>
+  <span class="zoom">
+    <button id="bFit" aria-pressed="true">Fit width</button>
+    <button id="bOut" aria-label="Zoom out">−</button>
+    <button id="bIn" aria-label="Zoom in">+</button>
+    <button id="bFull">100%</button>
+    <span class="pct" id="pct">—</span>
+  </span>
+</div>
+
+<div id="stage">
+  <div id="poster">
+
+    <div class="masthead">
+      <h1>ToBe-KK — Function Tree</h1>
+      <p class="deck">React 19 + Vite client · Express + Mongoose API · MongoDB · Cloudinary</p>
+      <div class="root-node">
+        <b>main.jsx → App.jsx</b>
+        <span>BrowserRouter › AdminSessionProvider › ActivityProvider › App()</span>
+      </div>
+      <div class="stem"></div>
+    </div>
+    <div class="bus"></div>
+
+    <div class="groups" id="groups"></div>
+
+    <div class="base">
+      <div class="box">
+        <h2>Legend — colour by responsibility</h2>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div class="box">
+        <h2>Call flow</h2>
+        <p class="flow">
+          <b>UI / Page</b><br>
+          <span class="ar">↓</span> named handler <span class="ar">(handleCreate…)</span><br>
+          <span class="ar">↓</span> <b>hook</b> <span class="ar">or</span> <b>*Service.js</b><br>
+          <span class="ar">↓</span> <b>apiRequest()</b> <span class="ar">— apiClient.js</span><br>
+          <span class="ar">↓ HTTP · cookie ↓</span><br>
+          <b>router</b> <span class="ar">→</span> requireAuth <span class="ar">→</span> upload<br>
+          <span class="ar">↓</span> <b>controller</b><br>
+          <span class="ar">↓</span> <b>Mongoose model</b> <span class="ar">→</span> MongoDB
+        </p>
+      </div>
+      <div class="box">
+        <h2>Tally</h2>
+        <table class="tally">
+          <tr><td>Page / screen components</td><td>14</td></tr>
+          <tr><td>Child + widget components</td><td>33</td></tr>
+          <tr><td>Handlers &amp; loaders in components</td><td>~95</td></tr>
+          <tr><td>Hooks (2 are providers)</td><td>6</td></tr>
+          <tr><td>Client API service functions</td><td>66</td></tr>
+          <tr><td>Client utilities / pure helpers</td><td>30</td></tr>
+          <tr><td>Express controller functions</td><td>61</td></tr>
+          <tr><td>Middleware &amp; upload helpers</td><td>6</td></tr>
+          <tr><td>Route registrations</td><td>70</td></tr>
+          <tr><td>Seeders</td><td>4</td></tr>
+          <tr><td>Mongoose models</td><td>22</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <p class="foot">
+      <span>No repository layer — controllers call Mongoose models directly.</span>
+      <span>No client store — every service funnels through apiRequest().</span>
+      <span>Source: docs/function-tree.md</span>
+    </p>
+
+  </div>
+</div>
+
+<script>
+  const GROUPS = [
+    {
+      n: "1", title: "Global State & Hooks", key: "g1", cols: 1,
+      bands: [{ cards: [
+        { f: "useAdminSession.jsx", fns: ["AdminSessionProvider()", "useAdminSession()", "refresh()", "markAuthed()", "clearSession()"] },
+        { f: "useActivity.jsx", fns: ["ActivityProvider()", "useActivity()", "refreshSummary()", "notifyActivityChanged()"] },
+        { f: "useCalendarView.js", fns: ["useCalendarView()", "startOfToday()", "addDays()", "startOfWeek()", "addMonthsClamped()", "anchorForView()"] },
+        { f: "useTheme.js", fns: ["useTheme()", "getInitialTheme()"] },
+        { f: "useIsMobile.js", fns: ["useIsMobile()", "subscribe()", "getSnapshot()"] },
+        { f: "useScrollToOpenPanel.js", fns: ["useScrollToOpenPanel()"] }
+      ]}]
+    },
+    {
+      n: "2", title: "Services (Frontend API Client)", key: "g2", cols: 1,
+      bands: [{ cards: [
+        { f: "apiClient.js · apiConfig.js", fns: ["apiRequest(path, opts)", "API_URL"] },
+        { f: "UsersService.js", fns: ["getCurrentAdmin()", "login()", "logout()"] },
+        { f: "EventsService.js", fns: ["listEvents()", "createEvent()", "updateEvent()", "deleteEvent()", "registerForEvent()", "listRegistrations()", "updateRegistrationStatus()", "deleteRegistration()"] },
+        { f: "EventFieldsService.js", fns: ["listEventFields()", "createEventField()", "renameEventField()", "deleteEventField()", "addEventFieldOption()", "deleteEventFieldOption()"] },
+        { f: "JobsService.js", fns: ["listJobs()", "createJob()", "updateJob()", "deleteJob()", "applyToJob()", "listApplications()", "updateApplicationStatus()", "deleteApplication()"] },
+        { f: "JobFieldsService.js", fns: ["listJobFields()", "createJobField()", "renameJobField()", "deleteJobField()", "addJobFieldOption()", "deleteJobFieldOption()"] },
+        { f: "ScholarshipsService.js", fns: ["listScholarships()", "createScholarship()", "updateScholarship()", "deleteScholarship()"] },
+        { f: "ScholarshipFieldsService.js", fns: ["listScholarshipFields()", "createScholarshipField()", "renameScholarshipField()", "deleteScholarshipField()", "addScholarshipFieldOption()", "deleteScholarshipFieldOption()"] },
+        { f: "ScheduleService.js", fns: ["getScheduleEntries()", "createScheduleEntry()", "updateScheduleEntry()", "deleteScheduleEntry()", "getScheduleCategories()", "createScheduleCategory()", "renameScheduleCategory()", "deleteScheduleCategory()"] },
+        { f: "HomeService.js", fns: ["getHome()", "saveHomeContent()", "saveHomeCaption()", "addHomePhoto()", "deleteHomePhoto()"] },
+        { f: "LinksService.js", fns: ["getLinks()", "createLinkGroup()", "renameLinkGroup()", "deleteLinkGroup()", "createLinkItem()", "updateLinkItem()", "deleteLinkItem()", "reorderLinkGroups()", "reorderLinkItems()"] },
+        { f: "ContactService.js", fns: ["getContact()", "createContactGroup()", "renameContactGroup()", "deleteContactGroup()", "createContactPerson()", "updateContactPerson()", "deleteContactPerson()"] },
+        { f: "RegistryService.js", fns: ["listRegistrants()", "createRegistrant()", "updateRegistrant()", "deleteRegistrant()"] },
+        { f: "RegistryOptionsService.js", fns: ["getRegistryOptions()", "addRegistryOption()", "deleteRegistryOption()"] },
+        { f: "ActivityService.js", fns: ["getActivitySummary()", "markActivitySeen()", "getActivityStats()", "setActivityFlag()"] }
+      ]}]
+    },
+    {
+      n: "3", title: "App Composition & Routing", key: "g3", cols: 1,
+      bands: [{ cards: [
+        { f: "main.jsx", fns: ["createRoot().render()", "BrowserRouter", "AdminSessionProvider", "ActivityProvider"] },
+        { f: "App.jsx", fns: ["App()", "11 Layout routes", "/admin/login outside Layout", "path=\"*\" → NotFound"] },
+        { f: "Layout.jsx", fns: ["Layout()"] },
+        { f: "Header.jsx", fns: ["Header()"] },
+        { f: "Navbar.jsx", fns: ["Navbar()", "HomeIcon()"] },
+        { f: "AdminTopbar.jsx", fns: ["AdminTopbar()", "handleLogout()"] },
+        { f: "ActivityBell.jsx", fns: ["ActivityBell()", "handleClear()"] },
+        { f: "BrandLogo.jsx", fns: ["BrandLogo()"] },
+        { f: "ThemeToggleButton.jsx", fns: ["ThemeToggleButton()"] },
+        { f: "navConfig.js", fns: ["NAV_LINKS", "ADMIN_NAV_LINKS", "WHATSAPP_GROUP_URL"] },
+        { f: "Screens/", fns: ["NotFound()", "PlaceholderPage()", "StyleGuide()"] }
+      ]}]
+    },
+    {
+      n: "4", title: "Feature Modules (Pages & Components)", key: "g4", cols: 3,
+      bands: [
+        { label: "Home", cols: 4, cards: [
+          { f: "Home.jsx", fns: ["Home()", "loadHome()", "loadSchedule()", "handleSaveContent()", "handleSaveCaption()", "handleAddPhoto()", "handleDeletePhoto()"] },
+          { f: "PhotoCarousel.jsx", fns: ["PhotoCarousel()", "resetTimer()", "goTo()", "handleFileChange()"] },
+          { f: "HomeContentEditor.jsx", fns: ["HomeContentEditor()", "startEditing()", "handleSubmit()"] },
+          { f: "QuickLinks.jsx", fns: ["QuickLinks()"] }
+        ]},
+        { label: "Events", cols: 3, cards: [
+          { f: "Events.jsx", fns: ["Events()", "loadEvents()", "loadFields()", "handleCreate()", "handleUpdate()", "handleDelete()", "toggleOption()", "clearFilters()", "fieldSelectionsToFieldValues()"] },
+          { f: "EventCard.jsx", fns: ["EventCard()", "registrationsApi (memo)"] },
+          { f: "EventForm.jsx", fns: ["EventForm()", "handleChange()", "toggleFieldOption()", "handleSubmit()"] }
+        ]},
+        { label: "Jobs", cols: 3, cards: [
+          { f: "Jobs.jsx", fns: ["Jobs()", "loadJobs()", "loadFields()", "handleCreate()", "handleUpdate()", "handleDelete()", "toggleOption()", "clearFilters()", "fieldSelectionsToFieldValues()"] },
+          { f: "JobCard.jsx", fns: ["JobCard()", "applicationsApi (memo)"] },
+          { f: "JobForm.jsx", fns: ["JobForm()", "handleChange()", "toggleFieldOption()", "handleSubmit()"] }
+        ]},
+        { label: "Scholarships", cols: 3, cards: [
+          { f: "Scholarships.jsx", fns: ["Scholarships()", "loadScholarships()", "loadFields()", "handleCreate()", "handleUpdate()", "handleDelete()", "toggleOption()", "clearFilters()", "fieldSelectionsToFieldValues()"] },
+          { f: "ScholarshipCard.jsx", fns: ["ScholarshipCard()"] },
+          { f: "ScholarshipForm.jsx", fns: ["ScholarshipForm()", "handleChange()", "toggleOption()", "handleSubmit()"] }
+        ]},
+        { label: "Schedule", cols: 5, cards: [
+          { f: "Schedule.jsx", fns: ["Schedule()", "loadEntries()", "loadCategories()", "handleCreate()", "handleUpdate()", "handleDelete()", "handleSelectManual()", "toggleFilterKey()", "filterKeyFor()"] },
+          { f: "Calendar.jsx", fns: ["Calendar()", "handleEntryClick()", "handlePillClick()", "buildMonthGrid()", "buildDayWindow()", "buildMonthDays()", "computeRowLaneAssignments()", "computeDaySpanningSegments()", "previewTitle()"] },
+          { f: "AgendaList.jsx", fns: ["AgendaList()", "occupiedDayKeys()"] },
+          { f: "CategoryManager.jsx", fns: ["CategoryManager()", "SwatchPicker()", "startEditing()", "handleCreate()", "handleRename()", "handleDelete()"] },
+          { f: "ScheduleEntryForm.jsx", fns: ["ScheduleEntryForm()", "handleChange()", "handleSubmit()"] }
+        ]},
+        { label: "Student Registry", cols: 5, cards: [
+          { f: "StudentRegistry.jsx", fns: ["StudentRegistry()", "loadOptions()"] },
+          { f: "RegistrantsPanel.jsx", fns: ["RegistrantsPanel()", "load()", "handleHeaderClick()", "startEdit()", "cancelEdit()", "commitCell()", "toggleSelected()", "toggleSelectAll()", "handleDeleteSelected()", "handleExport()", "renderCell()", "formatDateTime()", "displayValue()", "searchableText()", "sortValue()", "compareSortValues()", "valuesForChartField()", "computeCounts()"] },
+          { f: "cell editors", fns: ["TextCellEditor()", "ListSelectCellEditor()", "InterestsCellEditor()", "toggle()"] },
+          { f: "RegistrantForm.jsx", fns: ["RegistrantForm()", "handleChange()", "toggleInterest()", "handleSubmit()", "RegistrantFormFields()", "invalidClass()"] },
+          { f: "PieChart.jsx · ListOptionsManager.jsx", fns: ["PieChart()", "ListOptionsManager()", "addOption()", "deleteOption()"] }
+        ]},
+        { label: "Links", cols: 3, cards: [
+          { f: "Links.jsx", fns: ["Links()", "loadLinks()", "handleCreateGroup()", "handleRenameGroup()", "handleDeleteGroup()", "handleAddItem()", "handleUpdateItem()", "handleDeleteItem()", "handleGroupDragStart()", "handleGroupDrop()", "handleReorderItems()"] },
+          { f: "LinkGroupCard.jsx", fns: ["LinkGroupCard()", "handleRenameSubmit()", "handleItemDragStart()", "handleItemDrop()"] },
+          { f: "LinkItemForm.jsx", fns: ["LinkItemForm()", "handleChange()", "handleSubmit()"] }
+        ]},
+        { label: "Contact", cols: 3, cards: [
+          { f: "Contact.jsx", fns: ["Contact()", "loadContact()", "handleCreateGroup()", "handleRenameGroup()", "handleDeleteGroup()", "handleAddPerson()", "handleUpdatePerson()", "handleDeletePerson()"] },
+          { f: "ContactGroupCard.jsx", fns: ["ContactGroupCard()", "handleRenameSubmit()"] },
+          { f: "ContactPersonForm.jsx", fns: ["ContactPersonForm()", "handleChange()", "handleSubmit()"] }
+        ]},
+        { label: "Admin — session & activity", cols: 3, cards: [
+          { f: "AdminLogin.jsx", fns: ["AdminLogin()", "handleSubmit()"] },
+          { f: "AdminActivity.jsx", fns: ["AdminActivity()", "handleClear() → clear()", "handleToggleFlag() → applyTo()", "isExpanded()", "toggle()", "relativeTime()", "summarise()", "filterGroups() → matches()"] },
+          { f: "AdminActivity parts", fns: ["NodeHeader()", "EntryRow()"] }
+        ]},
+        { label: "Shared widgets — GUIComponents/Widgets", cols: 5, cards: [
+          { f: "FilterSidebar.jsx", fns: ["FilterSidebar()", "FilterFieldGroup()"] },
+          { f: "FieldsManager.jsx", fns: ["FieldsManager()", "handleAddField()", "handleRenameField()", "handleDeleteField()", "handleAddOption()", "handleDeleteOption()", "FieldSection()", "handleRenameSubmit()"] },
+          { f: "SubmissionsPanel.jsx", fns: ["SubmissionsPanel()", "load()", "handleStatusChange()", "handleDelete()", "handleAddSubmit()", "handleExport()", "TrashIcon()"] },
+          { f: "SignupForm.jsx · OptionChipManager.jsx", fns: ["SignupForm()", "handleChange()", "handleSubmit()", "OptionChipManager()", "handleAdd()", "handleDelete()"] },
+          { f: "SortBar · PhotoDropzone · ShareBox · ExportExcelButton", fns: ["SortBar()", "PhotoDropzone()", "ShareBox() → handleCopy()", "ExportExcelButton()", "ExcelExportIcon()"] }
+        ]}
+      ]
+    },
+    {
+      n: "5", title: "Utilities (Helpers)", key: "g5", cols: 1,
+      bands: [{ cards: [
+        { f: "formatDate.js · previewText.js · photoUrl.js", fns: ["formatDate()", "previewText()", "resolvePhotoUrl()"] },
+        { f: "exportToExcel.js", fns: ["exportRowsToExcel()"] },
+        { f: "shareText.js", fns: ["buildEventShareText()", "buildScholarshipShareText()", "buildJobShareText()", "formatDate()", "buildShareUrl()", "joinLines()"] },
+        { f: "sortComparators.js", fns: ["byDateAsc()", "byDateDesc()", "byNumberAsc()", "byNumberDesc()", "byTextAsc()", "chain()", "dateValue()"] },
+        { f: "scheduleEntries.js", fns: ["toDateKey()", "dateKeyToDate()", "dayOnly()", "isSpanning()", "buildEntriesByDay()", "coversDay()", "entriesOnDay()", "colorClassFor()", "splitDeadlineTitle()"] },
+        { f: "categoryPalette.js", fns: ["CATEGORY_COLOR_KEYS"] },
+        { f: "RegistryManager/constants.js", fns: ["resolveOptionValue()", "validateRegistrant()", "buildRegistrantPayload()", "INTEREST_OPTIONS", "MILITARY_STATUS_OPTIONS", "EDUCATION_OPTIONS"] }
+      ]}]
+    },
+    {
+      n: "6", title: "Backend (Express Layer)", key: "g6", cols: 2,
+      bands: [
+        { label: "Bootstrap & Middleware", cols: 2, cards: [
+          { f: "index.js", fns: ["helmet()", "morgan()", "cors({credentials})", "express.json()", "cookieParser()", "no-store Cache-Control", "/uploads CORP + static", "14 router mounts", "GET /api/health", "404 JSON fallback", "mongoose.connect()", "app.listen()", "keep-alive setInterval"] },
+          { f: "auth.middleware.js · rate limits · uploads", fns: ["requireAuth()", "loginLimiter", "registerLimiter", "applyLimiter", "createUploader()", "toCloudinary()", "uploadBufferToCloudinary()", "publicIdFromUrl()"] }
+        ]},
+        { label: "Controllers", cols: 2, cards: [
+          { f: "auth.controller.js", fns: ["login()", "logout()", "me()", "signToken()", "setAuthCookie()"] },
+          { f: "event.controller.js", fns: ["listEvents()", "listEventsAdmin()", "createEvent()", "updateEvent()", "deleteEvent()", "registerForEvent()", "listRegistrations()", "updateRegistrationStatus()", "deleteRegistration()", "isRegistrationClosed()"] },
+          { f: "job.controller.js", fns: ["listJobs()", "listJobsAdmin()", "createJob()", "updateJob()", "deleteJob()", "applyToJob()", "listApplications()", "updateApplicationStatus()", "deleteApplication()", "clearUnusedApplicationFields()"] },
+          { f: "scholarship.controller.js", fns: ["listScholarships()", "createScholarship()", "updateScholarship()", "deleteScholarship()", "optionalNonNegativeNumber()"] },
+          { f: "eventField / jobField / scholarshipField .controller.js", fns: ["list*Fields()", "createField()", "renameField()", "deleteField()", "createFieldOption()", "deleteFieldOption()", "— same 6 in each"] },
+          { f: "schedule.controller.js", fns: ["listSchedule()", "createScheduleEntry()", "updateScheduleEntry()", "deleteScheduleEntry()", "listCategories()", "createCategory()", "updateCategory()", "deleteCategory()"] },
+          { f: "home.controller.js", fns: ["getHome()", "updateHomeContent()", "addHomePhoto()", "deleteHomePhoto()"] },
+          { f: "link.controller.js", fns: ["listLinks()", "createGroup()", "updateGroup()", "deleteGroup()", "reorderGroups()", "createItem()", "updateItem()", "deleteItem()", "reorderItems()"] },
+          { f: "contact.controller.js", fns: ["listContact()", "createGroup()", "updateGroup()", "deleteGroup()", "createPerson()", "updatePerson()", "deletePerson()"] },
+          { f: "registrant / listOption .controller.js", fns: ["createRegistrant()", "listRegistrants()", "updateRegistrant()", "deleteRegistrant()", "listOptions()", "createOption()", "deleteOption()"] },
+          { f: "activity.controller.js", fns: ["getSummary()", "markSeen()", "getStats()", "setFlag()", "unseenFilter()", "summarise()", "groupByParent()", "byNewestActivity()"] },
+          { f: "seeders", fns: ["seedAdmin()", "seedListOptions()", "seedJobFields()", "seedEventFields()"] }
+        ]},
+        { label: "Routers — 14 mounts, 70 routes", cols: 1, cards: [
+          { f: "*.routes.js", fns: ["/api/auth", "/api/events · /api/event-fields", "/api/jobs · /api/job-fields", "/api/scholarships · /api/scholarship-fields", "/api/schedule · /api/home", "/api/student-registry · -options", "/api/contact · /api/links · /api/activity"] }
+        ]},
+        { label: "Models — data access, no repository layer", cols: 2, cards: [
+          { f: "users · events · jobs", fns: ["User", "Event", "Registration", "EventField", "EventFieldOption", "Job", "JobApplication", "JobField", "JobFieldOption"] },
+          { f: "scholarships · schedule · home · links · contact · registry", fns: ["Scholarship", "ScholarshipField", "ScholarshipFieldOption", "ScheduleEntry", "ScheduleCategory", "HomeContent", "HomePhoto", "LinkGroup", "LinkItem", "ContactGroup", "ContactPerson", "Registrant", "ListOption"] }
+        ]}
+      ]
+    }
+  ];
+
+  const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  function cardHTML(c) {
+    const items = c.fns.map((fn) => {
+      const plain = !/\(\)$|\(.*\)$/.test(fn);
+      return '<li' + (plain ? ' class="grp"' : '') + '>' + esc(fn) + "</li>";
+    }).join("");
+    return '<div class="card"><h4>' + esc(c.f) + "</h4><ul>" + items + "</ul></div>";
+  }
+
+  function groupHTML(g) {
+    const bands = g.bands.map((b) => {
+      const head = b.label ? "<h3>" + esc(b.label) + "</h3>" : "";
+      const cols = b.cols || g.cols || 1;
+      return '<div class="band">' + head + '<div class="cards" style="--cols:' + cols + '">' +
+        b.cards.map(cardHTML).join("") + "</div></div>";
+    }).join("");
+    return '<section class="group" style="--gc:var(--' + g.key + ');--gb:var(--' + g.key + '-bg)">' +
+      '<h2><span class="n">' + g.n + ")</span>" + esc(g.title) + "</h2>" + bands + "</section>";
+  }
+
+  document.getElementById("groups").innerHTML = GROUPS.map(groupHTML).join("");
+
+  document.getElementById("legend").innerHTML = GROUPS.map((g) =>
+    '<div><span class="swatch" style="--sc:var(--' + g.key + ');--sb:var(--' + g.key + '-bg)"></span>' +
+    g.n + ") " + esc(g.title) + "</div>"
+  ).join("");
+
+  /* ---------- zoom ---------- */
+  const stage = document.getElementById("stage");
+  const poster = document.getElementById("poster");
+  const pct = document.getElementById("pct");
+  const W = 1900;
+  let fit = true;
+  let manual = 1;
+
+  function apply() {
+    const avail = stage.clientWidth - 32;
+    const k = fit ? Math.min(1, avail / W) : manual;
+    poster.style.transform = "scale(" + k + ")";
+    stage.style.height = poster.offsetHeight * k + 32 + "px";
+    pct.textContent = Math.round(k * 100) + "%";
+    document.getElementById("bFit").setAttribute("aria-pressed", String(fit));
+  }
+
+  document.getElementById("bFit").onclick = () => { fit = true; apply(); };
+  document.getElementById("bFull").onclick = () => { fit = false; manual = 1; apply(); };
+  document.getElementById("bIn").onclick = () => { fit = false; manual = Math.min(2.5, manual * 1.25); apply(); };
+  document.getElementById("bOut").onclick = () => { fit = false; manual = Math.max(0.25, manual / 1.25); apply(); };
+  window.addEventListener("resize", apply);
+  apply();
+  window.addEventListener("load", apply);
+</script>
