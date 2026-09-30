@@ -69,7 +69,7 @@ The interface is in Hebrew, with a right-to-left layout, light and dark themes a
 
 ## Architecture
 
-The React app is served by Vercel. It calls the Express API on Render, which stores data in MongoDB Atlas and uploaded photos in Cloudinary.
+The React app is served by Vercel. It calls the Express API on Render, which stores data in MongoDB Atlas and uploaded photos in Cloudinary. The client is built with a **component-first architecture**: the UI is composed from small, self-contained components, and each feature keeps its components, styles and API calls together.
 
 ### System architecture
 The three layers (client, server and data) and how a request flows between them.
@@ -78,6 +78,12 @@ The three layers (client, server and data) and how a request flows between them.
 
 ### Client architecture
 How the React app is organised: app shell, hooks, shared widgets, feature modules and the API client.
+
+The client follows a **component-first architecture**. Every page is assembled from self-contained components, and each feature owns everything it needs in one folder:
+- `src/components/<Feature>Manager/`: one folder per feature (Events, Jobs, Scholarships, Schedule, Registry, Home, Links, Contact, Users, Activity) holding its page, cards, forms, CSS and service module side by side
+- `src/GUIComponents/`: shared building blocks reused across features: `Layout` (header, navbar, admin top bar), `Widgets` (filter sidebar, sort bar, share box, photo dropzone, Excel export, submissions panel) and `Screens` (404, placeholders)
+- `src/hooks/`: shared state hooks such as the admin session and activity feed
+- `src/services/apiClient.js`: the single HTTP client every feature service calls
 
 ![Client architecture](docs/graphs/Client%20Aitecture.png)
 
