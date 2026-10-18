@@ -10,7 +10,7 @@ A full-stack web portal for **מרכז צעירים כפר כמא** (the Kfar Ka
 ![Vercel](https://img.shields.io/badge/Vercel-000000?logo=vercel&logoColor=white)
 ![Render](https://img.shields.io/badge/Render-46E3B7?logo=render&logoColor=black)
 
-**Live site:** [to-be-kk.vercel.app](https://to-be-kk.vercel.app/)
+
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/Homepage-Dark.png">
